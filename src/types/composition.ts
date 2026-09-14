@@ -34,10 +34,11 @@ export type SilhouetteDefinition = {
   id: string;
   variant:
     | 'full-body' | 'half-body' | 'bust' | 'headshot' | 'side' | 'hand-on-hip' | 'looking-back' | 'sitting'
+    | 'walking' | 'arms-crossed' | 'waving' | 'kneeling' | 'selfie'
     | 'couple-side-by-side' | 'couple-staggered' | 'couple-facing' | 'couple-sit-stand' | 'couple-holding-hands'
     | 'food-plate' | 'coffee-dessert' | 'table-setting'
     | 'mountain-view' | 'city-skyline' | 'architecture'
-    | 'dog' | 'product';
+    | 'dog' | 'cat' | 'product' | 'bottle';
   x: number;
   y: number;
   width: number;

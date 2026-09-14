@@ -15,6 +15,7 @@
     "@react-native-camera-roll/camera-roll": "^7.10.2",
     "@react-native/new-app-screen": "0.87.1",
     "@shopify/react-native-skia": "^2.11.2",
+    "lucide-react-native": "^1.45.0",
     "react": "19.2.3",
     "react-native": "0.87.1",
     "react-native-gesture-handler": "^3.2.1",
@@ -50,6 +51,11 @@
     "prettier": "2.8.8",
     "react-test-renderer": "19.2.3",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "metro": "0.87.1",
+    "metro-config": "0.87.1",
+    "metro-transform-worker": "0.87.1"
   },
   "engines": {
     "node": ">= 22.11.0"

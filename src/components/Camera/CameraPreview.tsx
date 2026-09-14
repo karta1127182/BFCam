@@ -5,9 +5,10 @@ import type {GestureType} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';
 import {Camera, type CameraDevice, type CameraPhotoOutput, type CameraRef} from 'react-native-vision-camera';
 
-type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>};
+export type ZoomCapabilities = {minimum: number; maximum: number; displayFactor: number};
+type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; onZoomCapabilities: (capabilities: ZoomCapabilities) => void; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>; isActive: boolean};
 
-export function CameraPreview({onConfigured, onStopped, onError, device, photoOutput, pinchGesture, torchEnabled, zoom}: Props) {
+export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilities, device, photoOutput, pinchGesture, torchEnabled, zoom, isActive}: Props) {
   const cameraRef = useRef<CameraRef>(null);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cameraStarted, setCameraStarted] = useState(false);
@@ -15,12 +16,20 @@ export function CameraPreview({onConfigured, onStopped, onError, device, photoOu
   const getInitialZoom = useCallback(() => zoom.get(), [zoom]);
   const handleStarted = useCallback(() => {
     setCameraStarted(true);
+    const controller = cameraRef.current?.controller;
+    if (controller) {
+      onZoomCapabilities({minimum: controller.minZoom, maximum: controller.maxZoom, displayFactor: controller.displayableZoomFactor});
+    }
     onConfigured();
-  }, [onConfigured]);
+  }, [onConfigured, onZoomCapabilities]);
   const handleStopped = useCallback(() => {
     setCameraStarted(false);
     onStopped();
   }, [onStopped]);
+  const handleError = useCallback((error: Error) => {
+    setCameraStarted(false);
+    onError(error);
+  }, [onError]);
   useEffect(() => () => {if (focusTimer.current) clearTimeout(focusTimer.current);}, []);
   const tapGesture = useMemo(() => Gesture.Tap().runOnJS(true).onEnd((event, success) => {
     if (!success || !device.supportsFocusMetering) return;
@@ -39,13 +48,14 @@ export function CameraPreview({onConfigured, onStopped, onError, device, photoOu
           getInitialZoom={getInitialZoom}
           onStarted={handleStarted}
           onStopped={handleStopped}
-          onError={onError}
+          onError={handleError}
           device={device}
-          isActive
+          isActive={isActive}
           outputs={[photoOutput]}
+          implementationMode="compatible"
           resizeMode="cover"
           style={styles.fill}
-          torchMode={device.hasTorch ? (torchEnabled ? 'on' : 'off') : undefined}
+          torchMode={cameraStarted && device.hasTorch ? (torchEnabled ? 'on' : 'off') : undefined}
           // VisionCamera applies SharedValue updates before CameraX has started
           // the session. Attach the live updater only after onStarted; the same
           // value is already supplied through getInitialZoom during configure.

@@ -31,9 +31,9 @@ test('photo adjustments are non-destructive at their defaults', () => {
 });
 
 test('photo adjustments clamp invalid and out-of-range values', () => {
-  const invalid = editMatrix(0, 1, {exposure: NaN, contrast: NaN, saturation: NaN, temperature: NaN});
+  const invalid = editMatrix(0, 1, {exposure: NaN, contrast: NaN, saturation: NaN, temperature: NaN, highlights: NaN, shadows: NaN, fade: NaN, smoothing: NaN, whitening: NaN, rosy: NaN, contour: NaN});
   expect(invalid).toEqual(identity);
-  const high = editMatrix(0, 1, {exposure: 2, contrast: 2, saturation: 2, temperature: 2});
+  const high = editMatrix(0, 1, {exposure: 2, contrast: 2, saturation: 2, temperature: 2, highlights: 2, shadows: 2, fade: 2, smoothing: 2, whitening: 2, rosy: 2, contour: 2});
   expect(high).toHaveLength(20);
   expect(high.every(Number.isFinite)).toBe(true);
   expect(high.slice(15)).toEqual([0, 0, 0, 1, 0]);

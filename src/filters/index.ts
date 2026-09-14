@@ -24,10 +24,10 @@ export function filterMatrix(index: number, strength: number) {
   return (filters[index] ?? filters[0]).matrix.map((value, i) => identity[i] + (value - identity[i]) * amount);
 }
 
-export type PhotoAdjustments = {exposure: number; contrast: number; saturation: number; temperature: number};
+export type PhotoAdjustments = {exposure: number; contrast: number; saturation: number; temperature: number; highlights: number; shadows: number; fade: number; smoothing: number; whitening: number; rosy: number; contour: number};
 export type CropAspect = 'original' | '1:1' | '4:3' | '3:2' | '9:16';
-export type PhotoGeometry = {rotation: 0 | 90 | 180 | 270; cropAspect: CropAspect; mirrored: boolean};
-export const initialGeometry: PhotoGeometry = {rotation: 0, cropAspect: 'original', mirrored: false};
+export type PhotoGeometry = {rotation: 0 | 90 | 180 | 270; cropAspect: CropAspect; mirrored: boolean; heightScale: number};
+export const initialGeometry: PhotoGeometry = {rotation: 0, cropAspect: 'original', mirrored: false, heightScale: 1};
 export function cropAspectRatio(cropAspect: CropAspect, originalAspect: number) {
   if (cropAspect === 'original') return Number.isFinite(originalAspect) && originalAspect > 0 ? originalAspect : 1;
   return cropAspect === '1:1' ? 1 : cropAspect === '4:3' ? 4 / 3 : cropAspect === '3:2' ? 3 / 2 : 9 / 16;
@@ -51,7 +51,7 @@ export function centerCropRect(width: number, height: number, cropAspect: CropAs
   const cropHeight = width / targetAspect;
   return {startX: 0, startY: (height - cropHeight) / 2, endX: width, endY: (height + cropHeight) / 2};
 }
-export const initialAdjustments: PhotoAdjustments = {exposure: 0, contrast: 0, saturation: 0, temperature: 0};
+export const initialAdjustments: PhotoAdjustments = {exposure: 0, contrast: 0, saturation: 0, temperature: 0, highlights: 0, shadows: 0, fade: 0, smoothing: 0, whitening: 0, rosy: 0, contour: 0};
 
 function multiplyMatrices(after: number[], before: number[]) {
   const result = Array(20).fill(0);
@@ -67,11 +67,18 @@ function multiplyMatrices(after: number[], before: number[]) {
 
 export function editMatrix(filterIndex: number, strength: number, adjustments: PhotoAdjustments) {
   const clamp = (value: number) => Math.max(-1, Math.min(1, Number.isFinite(value) ? value : 0));
-  const exposure = clamp(adjustments.exposure) * .22;
-  const contrast = 1 + clamp(adjustments.contrast) * .55;
-  const saturation = 1 + clamp(adjustments.saturation) * .8;
-  const temperature = clamp(adjustments.temperature) * .12;
-  const contrastOffset = (1 - contrast) / 2;
+  const highlights = clamp(adjustments.highlights);
+  const shadows = clamp(adjustments.shadows);
+  const fade = clamp(adjustments.fade);
+  const smoothing = Math.max(0, clamp(adjustments.smoothing));
+  const whitening = Math.max(0, clamp(adjustments.whitening));
+  const rosy = Math.max(0, clamp(adjustments.rosy));
+  const contour = Math.max(0, clamp(adjustments.contour));
+  const exposure = clamp(adjustments.exposure) * .22 + shadows * .08 + highlights * .04 + whitening * .09;
+  const contrast = 1 + clamp(adjustments.contrast) * .55 + highlights * .12 - fade * .22 - smoothing * .16 + contour * .12;
+  const saturation = 1 + clamp(adjustments.saturation) * .8 - fade * .12 - smoothing * .04 + rosy * .06;
+  const temperature = clamp(adjustments.temperature) * .12 + rosy * .035;
+  const contrastOffset = (1 - contrast) / 2 + Math.max(0, fade) * .045 + smoothing * .018;
   const saturationMatrix = [
     .2126 + .7874 * saturation, .7152 - .7152 * saturation, .0722 - .0722 * saturation, 0, 0,
     .2126 - .2126 * saturation, .7152 + .2848 * saturation, .0722 - .0722 * saturation, 0, 0,
@@ -79,9 +86,9 @@ export function editMatrix(filterIndex: number, strength: number, adjustments: P
     0, 0, 0, 1, 0,
   ];
   const toneMatrix = [
-    contrast,0,0,0,contrastOffset + exposure + temperature,
-    0,contrast,0,0,contrastOffset + exposure,
-    0,0,contrast,0,contrastOffset + exposure - temperature,
+    contrast,0,0,0,contrastOffset + exposure + temperature + rosy * .025,
+    0,contrast,0,0,contrastOffset + exposure + rosy * .006,
+    0,0,contrast,0,contrastOffset + exposure - temperature - rosy * .012,
     0,0,0,1,0,
   ];
   return multiplyMatrices(toneMatrix, multiplyMatrices(saturationMatrix, filterMatrix(filterIndex, strength)));

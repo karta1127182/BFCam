@@ -61,7 +61,14 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
       const colorFilter = Skia.ColorFilter.MakeMatrix(matrix);
       try {
         paint.setColorFilter(colorFilter);
-        surface.getCanvas().drawImage(image, 0, 0, paint);
+        const canvas = surface.getCanvas();
+        const heightScale = Math.max(1, Math.min(1.15, Number.isFinite(geometry.heightScale) ? geometry.heightScale : 1));
+        if (heightScale !== 1) {
+          canvas.translate(0, image.height() / 2);
+          canvas.scale(1, heightScale);
+          canvas.translate(0, -image.height() / 2);
+        }
+        canvas.drawImage(image, 0, 0, paint);
         surface.flush();
         const snapshot = surface.makeImageSnapshot();
         try {
