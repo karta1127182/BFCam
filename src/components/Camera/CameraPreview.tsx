@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import type {GestureType} from 'react-native-gesture-handler';
@@ -12,7 +12,17 @@ type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: 
 export function CameraPreview({onConfigured, onStopped, onError, matrix, device, photoOutput, pinchGesture, torchEnabled, zoom}: Props) {
   const cameraRef = useRef<SkiaCameraRef>(null);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [cameraStarted, setCameraStarted] = useState(false);
   const [focusPoint, setFocusPoint] = useState<{x: number; y: number} | null>(null);
+  const getInitialZoom = useCallback(() => zoom.get(), [zoom]);
+  const handleStarted = useCallback(() => {
+    setCameraStarted(true);
+    onConfigured();
+  }, [onConfigured]);
+  const handleStopped = useCallback(() => {
+    setCameraStarted(false);
+    onStopped();
+  }, [onStopped]);
   const filterResources = useMemo(() => {
     const paint = Skia.Paint();
     const colorFilter = Skia.ColorFilter.MakeMatrix(matrix);
@@ -42,8 +52,9 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
       <View style={styles.fill}>
         <SkiaCamera
           ref={cameraRef}
-          onConfigured={onConfigured}
-          onStopped={onStopped}
+          getInitialZoom={getInitialZoom}
+          onStarted={handleStarted}
+          onStopped={handleStopped}
           onError={onError}
           onFrame={(frame, render) => {
             'worklet';
@@ -65,7 +76,10 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
           // photo at full quality.
           targetResolution={CommonResolutions.VGA_4_3}
           torchMode={device.hasTorch ? (torchEnabled ? 'on' : 'off') : undefined}
-          zoom={zoom}
+          // VisionCamera applies SharedValue updates before CameraX has started
+          // the session. Attach the live updater only after onStarted; the same
+          // value is already supplied through getInitialZoom during configure.
+          zoom={cameraStarted ? zoom : undefined}
         />
         {focusPoint && <View pointerEvents="none" style={[styles.focusRing, {left: focusPoint.x - 24, top: focusPoint.y - 24}]} />}
       </View>
