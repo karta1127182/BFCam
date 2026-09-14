@@ -67,10 +67,10 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
           device={device}
           isActive
           outputs={[photoOutput]}
-          // Android's native format maps to CameraX PRIVATE ImageAnalysis,
-          // which is unavailable on some cameras. YUV is the portable
-          // CameraX analysis format and is also supported by SkiaCamera.
-          pixelFormat="yuv"
+          // Android's native PRIVATE analysis format is unavailable on some
+          // cameras, while some YUV buffers cannot be sampled by Skia. RGB uses
+          // CameraX RGBA_8888 and is the most compatible rendered-preview path.
+          pixelFormat="rgb"
           style={styles.fill}
           // Keep the live filter preview lightweight while leaving the captured
           // photo at full quality.
