@@ -56,10 +56,13 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
           device={device}
           isActive
           outputs={[photoOutput]}
+          // Android's native format maps to CameraX PRIVATE ImageAnalysis,
+          // which is unavailable on some cameras. YUV is the portable
+          // CameraX analysis format and is also supported by SkiaCamera.
+          pixelFormat="yuv"
           style={styles.fill}
-          // The default 1280x720 ImageAnalysis stream cannot be combined with
-          // photo capture on some Android CameraX devices. Keep the live filter
-          // preview lightweight while leaving the captured photo at full quality.
+          // Keep the live filter preview lightweight while leaving the captured
+          // photo at full quality.
           targetResolution={CommonResolutions.VGA_4_3}
           torchMode={device.hasTorch ? (torchEnabled ? 'on' : 'off') : undefined}
           zoom={zoom}
