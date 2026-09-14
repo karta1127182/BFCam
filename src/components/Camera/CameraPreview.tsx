@@ -3,14 +3,12 @@ import {StyleSheet, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import type {GestureType} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';
-import {SkiaCamera, type SkiaCameraRef} from 'react-native-vision-camera-skia';
-import {Skia} from '@shopify/react-native-skia';
-import {CommonResolutions, type CameraDevice, type CameraPhotoOutput} from 'react-native-vision-camera';
+import {Camera, type CameraDevice, type CameraPhotoOutput, type CameraRef} from 'react-native-vision-camera';
 
-type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; matrix: number[]; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>};
+type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>};
 
-export function CameraPreview({onConfigured, onStopped, onError, matrix, device, photoOutput, pinchGesture, torchEnabled, zoom}: Props) {
-  const cameraRef = useRef<SkiaCameraRef>(null);
+export function CameraPreview({onConfigured, onStopped, onError, device, photoOutput, pinchGesture, torchEnabled, zoom}: Props) {
+  const cameraRef = useRef<CameraRef>(null);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cameraStarted, setCameraStarted] = useState(false);
   const [focusPoint, setFocusPoint] = useState<{x: number; y: number} | null>(null);
@@ -23,20 +21,6 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
     setCameraStarted(false);
     onStopped();
   }, [onStopped]);
-  const filterResources = useMemo(() => {
-    const paint = Skia.Paint();
-    const colorFilter = Skia.ColorFilter.MakeMatrix(matrix);
-    paint.setColorFilter(colorFilter);
-    return {paint, colorFilter};
-  }, [matrix]);
-  useEffect(() => () => {
-    // Give any in-flight worklet frame time to finish before releasing HostObjects.
-    setTimeout(() => {
-      filterResources.paint.dispose();
-      filterResources.colorFilter.dispose();
-    }, 250);
-  }, [filterResources]);
-  const filterPaint = filterResources.paint;
   useEffect(() => () => {if (focusTimer.current) clearTimeout(focusTimer.current);}, []);
   const tapGesture = useMemo(() => Gesture.Tap().runOnJS(true).onEnd((event, success) => {
     if (!success || !device.supportsFocusMetering) return;
@@ -50,31 +34,17 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
   return (
     <GestureDetector gesture={cameraGesture}>
       <View style={styles.fill}>
-        <SkiaCamera
+        <Camera
           ref={cameraRef}
           getInitialZoom={getInitialZoom}
           onStarted={handleStarted}
           onStopped={handleStopped}
           onError={onError}
-          onFrame={(frame, render) => {
-            'worklet';
-            try {
-              render(({canvas, frameTexture}) => {
-                canvas.drawImage(frameTexture, 0, 0, filterPaint);
-              });
-            } finally { frame.dispose(); }
-          }}
           device={device}
           isActive
           outputs={[photoOutput]}
-          // Android's native PRIVATE analysis format is unavailable on some
-          // cameras, while some YUV buffers cannot be sampled by Skia. RGB uses
-          // CameraX RGBA_8888 and is the most compatible rendered-preview path.
-          pixelFormat="rgb"
+          resizeMode="cover"
           style={styles.fill}
-          // Keep the live filter preview lightweight while leaving the captured
-          // photo at full quality.
-          targetResolution={CommonResolutions.VGA_4_3}
           torchMode={device.hasTorch ? (torchEnabled ? 'on' : 'off') : undefined}
           // VisionCamera applies SharedValue updates before CameraX has started
           // the session. Attach the live updater only after onStarted; the same

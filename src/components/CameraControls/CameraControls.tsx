@@ -73,6 +73,7 @@ export function CameraControls(props: Props) {
           </Pressable>)}
         </ScrollView>}
         {panel === 'filters' && <View>
+          <Text style={styles.filterNotice}>為確保相機相容性，濾鏡會在拍照後套用。</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryTabs}>{filterCategories.map(category => <Pressable key={category} accessibilityRole="tab" accessibilityState={{selected: filterCategory === category}} onPress={() => setFilterCategory(category)} style={[styles.categoryTab, filterCategory === category && styles.activeCategoryTab]}><Text style={[styles.categoryTabLabel, filterCategory === category && styles.activeCategoryTabLabel]}>{category}</Text></Pressable>)}</ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.choices}>{visibleFilters.map(filter => {const index = filters.indexOf(filter); return <View key={filter.name}>{button(filter.name, () => props.onSelectFilter(index), props.filterIndex === index, props.isCapturing)}</View>;})}</ScrollView>
           <View style={styles.settings}>
@@ -134,6 +135,7 @@ export function CameraControls(props: Props) {
 const styles = StyleSheet.create({
   dock: {position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(16,20,25,0.94)', paddingTop: 12, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderColor: '#384049'},
   hint: {position: 'absolute', alignSelf: 'center', maxWidth: '90%', backgroundColor: 'rgba(10,15,20,0.65)', borderRadius: 12, padding: 10},
+  filterNotice: {color: '#c8d0d6', fontSize: 12, paddingHorizontal: 14, paddingTop: 8},
   tabs: {flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 8, gap: 6},
   shutterRow: {flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center'},
   choices: {flexDirection: 'row', gap: 10, padding: 14},

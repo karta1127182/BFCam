@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {filterMatrix} from '../../filters';
 import type {PhotoGeometry} from '../../filters';
 import {saveEditedPhoto} from '../../filters/saveFilteredPhoto';
 import {ActivityIndicator, Alert, Linking, PermissionsAndroid, Platform, StyleSheet, Text, View} from 'react-native';
@@ -35,7 +34,6 @@ export function CameraScreen() {
   const [filterIndex, setFilterIndex] = useState(0);
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
   const [filterStrength, setFilterStrength] = useState(1);
-  const matrix = useMemo(() => filterMatrix(filterIndex, filterStrength), [filterIndex, filterStrength]);
   const [position, setPosition] = useState<'back' | 'front'>('back');
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [guideVisible, setGuideVisible] = useState(true);
@@ -234,7 +232,7 @@ export function CameraScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.container} pointerEvents={!silhouetteLocked && silhouetteVisible ? 'none' : 'auto'}>
-        <CameraPreview key={device.id} onConfigured={markConfigured} onStopped={markStopped} onError={handleCameraError} matrix={matrix} device={device} photoOutput={photoOutput} pinchGesture={pinchGesture} torchEnabled={flashEnabled && device.hasTorch} zoom={zoom} />
+        <CameraPreview key={device.id} onConfigured={markConfigured} onStopped={markStopped} onError={handleCameraError} device={device} photoOutput={photoOutput} pinchGesture={pinchGesture} torchEnabled={flashEnabled && device.hasTorch} zoom={zoom} />
       </View>
       <CompositionOverlay
         template={template}
