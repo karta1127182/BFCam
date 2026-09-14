@@ -5,7 +5,7 @@ import type {GestureType} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';
 import {SkiaCamera, type SkiaCameraRef} from 'react-native-vision-camera-skia';
 import {Skia} from '@shopify/react-native-skia';
-import type {CameraDevice, CameraPhotoOutput} from 'react-native-vision-camera';
+import {CommonResolutions, type CameraDevice, type CameraPhotoOutput} from 'react-native-vision-camera';
 
 type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; matrix: number[]; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>};
 
@@ -57,6 +57,10 @@ export function CameraPreview({onConfigured, onStopped, onError, matrix, device,
           isActive
           outputs={[photoOutput]}
           style={styles.fill}
+          // The default 1280x720 ImageAnalysis stream cannot be combined with
+          // photo capture on some Android CameraX devices. Keep the live filter
+          // preview lightweight while leaving the captured photo at full quality.
+          targetResolution={CommonResolutions.VGA_4_3}
           torchMode={device.hasTorch ? (torchEnabled ? 'on' : 'off') : undefined}
           zoom={zoom}
         />
