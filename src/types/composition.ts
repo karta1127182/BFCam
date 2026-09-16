@@ -34,7 +34,8 @@ export type SilhouetteDefinition = {
   id: string;
   variant:
     | 'full-body' | 'half-body' | 'bust' | 'headshot' | 'side' | 'hand-on-hip' | 'looking-back' | 'sitting'
-    | 'walking' | 'arms-crossed' | 'waving' | 'kneeling' | 'selfie'
+    | 'walking' | 'arms-crossed' | 'waving' | 'kneeling' | 'selfie' | 'street-coat'
+    | 'male-suit' | 'male-pocket' | 'male-lean' | 'female-dress' | 'female-cross-leg' | 'female-street-side'
     | 'couple-side-by-side' | 'couple-staggered' | 'couple-facing' | 'couple-sit-stand' | 'couple-holding-hands'
     | 'food-plate' | 'coffee-dessert' | 'table-setting'
     | 'mountain-view' | 'city-skyline' | 'architecture'

@@ -5,7 +5,9 @@ buildscript {
         compileSdkVersion = 37
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
-        kotlinVersion = "2.2.0"
+        // React Native 0.87 resolves Kotlin 2.2.10. Keep libraries that derive
+        // their KSP plugin from this value on the exact same compiler line.
+        kotlinVersion = "2.2.10"
     }
     repositories {
         google()

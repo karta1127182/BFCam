@@ -1,4 +1,9 @@
 {
   "name": "BFCam",
-  "displayName": "BFCam"
+  "displayName": "BFCam",
+  "extra": {
+    "eas": {
+      "projectId": "11d5f5fa-d70c-4a61-b1be-4ac99b3b2845"
+    }
+  }
 }

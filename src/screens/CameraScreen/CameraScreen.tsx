@@ -5,7 +5,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type {PhotoGeometry} from '../../filters';
+import type {PhotoGeometry, RetouchSettings} from '../../filters';
+import {colors, radii} from '../../theme';
 import {saveEditedPhoto} from '../../filters/saveFilteredPhoto';
 import {
   ActivityIndicator,
@@ -43,6 +44,7 @@ import {
   type NormalizedFaceBounds,
 } from '../../utils/compositionRecommender';
 import {normalizeRotation} from '../../utils/zoom';
+import {friendlyCameraError} from '../../utils/cameraErrors';
 import {filters} from '../../filters';
 import {
   loadCameraPreferences,
@@ -58,6 +60,7 @@ export function CameraScreen() {
 
   const readyRef = useRef(false);
   const captureLock = useRef(false);
+  const editExportLock = useRef(false);
   const permissionRequestedRef = useRef(false);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
 
@@ -84,11 +87,7 @@ export function CameraScreen() {
       return;
     }
     setFlashEnabled(false);
-    setCameraError(
-      message.includes('Camera is disabled') || message.includes('device policy')
-        ? '相機目前被系統停用，請確認相機權限、隱私開關，並關閉其他正在使用相機的 App。'
-        : message.split('\n')[0],
-    );
+    setCameraError(friendlyCameraError(error, '相機無法啟動，請稍後再試。'));
   }, []);
 
   const [filterIndex, setFilterIndex] = useState(0);
@@ -433,9 +432,7 @@ export function CameraScreen() {
     } catch (error) {
       Alert.alert(
         '無法拍照',
-        error instanceof Error
-          ? error.message
-          : '請稍後再試。',
+        friendlyCameraError(error, '請稍後再試。'),
       );
     } finally {
       captureLock.current = false;
@@ -454,14 +451,17 @@ export function CameraScreen() {
     async (
       edit: number[],
       geometry: PhotoGeometry,
+      retouch: RetouchSettings,
     ) => {
       if (
         !pendingPhotoPath ||
-        isSavingEdit
+        isSavingEdit ||
+        editExportLock.current
       ) {
         return;
       }
 
+      editExportLock.current = true;
       setIsSavingEdit(true);
 
       try {
@@ -470,6 +470,7 @@ export function CameraScreen() {
             pendingPhotoPath,
             edit,
             geometry,
+            retouch,
           );
 
         await CameraRoll.saveAsset(
@@ -489,11 +490,10 @@ export function CameraScreen() {
       } catch (error) {
         Alert.alert(
           '無法儲存',
-          error instanceof Error
-            ? error.message
-            : '請稍後再試。',
+          friendlyCameraError(error, '請稍後再試。'),
         );
       } finally {
+        editExportLock.current = false;
         setIsSavingEdit(false);
       }
     },
@@ -507,14 +507,17 @@ export function CameraScreen() {
     async (
       edit: number[],
       geometry: PhotoGeometry,
+      retouch: RetouchSettings,
     ) => {
       if (
         !pendingPhotoPath ||
-        isSharingEdit
+        isSharingEdit ||
+        editExportLock.current
       ) {
         return;
       }
 
+      editExportLock.current = true;
       setIsSharingEdit(true);
 
       try {
@@ -523,6 +526,7 @@ export function CameraScreen() {
             pendingPhotoPath,
             edit,
             geometry,
+            retouch,
           );
 
         await Share.open({
@@ -534,11 +538,10 @@ export function CameraScreen() {
       } catch (error) {
         Alert.alert(
           '無法分享',
-          error instanceof Error
-            ? error.message
-            : '請稍後再試。',
+          friendlyCameraError(error, '請稍後再試。'),
         );
       } finally {
+        editExportLock.current = false;
         setIsSharingEdit(false);
       }
     },
@@ -664,9 +667,7 @@ export function CameraScreen() {
 
       Alert.alert(
         '無法偵測',
-        error instanceof Error
-          ? error.message
-          : '請稍後再試。',
+        friendlyCameraError(error, '請稍後再試。'),
       );
     } finally {
       captureLock.current = false;
@@ -779,6 +780,11 @@ export function CameraScreen() {
       );
 
       setTemplateIndex(nextIndex);
+      const nextTemplate = compositionTemplates[nextIndex];
+      setSilhouetteAnchor({
+        x: nextTemplate.silhouette.x,
+        y: nextTemplate.silhouette.y,
+      });
 
       setActiveScenarioId(null);
 
@@ -824,23 +830,18 @@ export function CameraScreen() {
   if (!permission.hasPermission) {
     return (
       <View style={styles.message}>
-        <Text style={styles.title}>
-          需要相機權限
-        </Text>
-
-        <Text style={styles.body}>
-          請允許 BFCam 使用相機，才能顯示預覽並拍照。
-        </Text>
-
-        {!permission.canRequestPermission && (
-          <Text
-            style={styles.link}
-            onPress={() =>
-              Linking.openSettings()
-            }>
-            開啟系統設定
-          </Text>
-        )}
+        <View style={styles.messageCard}>
+          <Text style={styles.brand}>BFCAM</Text>
+          <View style={styles.brandMark}><Text style={styles.brandMarkText}>B</Text></View>
+          <Text style={styles.title}>需要相機權限</Text>
+          <Text style={styles.body}>允許相機權限後，即可使用取景構圖、人物輪廓與智慧拍攝功能。</Text>
+          {permission.canRequestPermission && (
+            <Text accessibilityRole="button" accessibilityHint="重新顯示系統相機權限視窗" style={styles.link} onPress={() => {permissionRequestedRef.current = true; requestPermission().catch(() => undefined);}}>允許使用相機</Text>
+          )}
+          {!permission.canRequestPermission && (
+            <Text accessibilityRole="link" accessibilityHint="開啟系統中的 BFCam 權限設定" style={styles.link} onPress={() => Linking.openSettings()}>前往系統設定</Text>
+          )}
+        </View>
       </View>
     );
   }
@@ -851,72 +852,57 @@ export function CameraScreen() {
   if (!device) {
     return (
       <View style={styles.message}>
-        <ActivityIndicator color="#fff" />
-
-        <Text style={styles.body}>
-          正在尋找相機…
-        </Text>
+        <View style={styles.messageCard}>
+          <Text style={styles.brand}>BFCAM</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.title}>準備拍攝</Text>
+          <Text style={styles.body}>正在連接相機與載入鏡頭能力…</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View
-        style={styles.container}
-        pointerEvents={
-          !silhouetteLocked &&
-          silhouetteVisible
-            ? 'none'
-            : 'auto'
-        }>
-        <CameraPreview
-          key={device.id}
-          onConfigured={markConfigured}
-          onStopped={markStopped}
-          onError={handleCameraError}
-          onZoomCapabilities={setZoomCapabilities}
-          device={device}
-          photoOutput={photoOutput}
-          pinchGesture={pinchGesture}
-          torchEnabled={
-            flashEnabled &&
-            device.hasTorch
-          }
-          zoom={zoom}
-          isActive={appActive}
+      <View style={styles.viewfinder}>
+        <View
+          style={styles.cameraFill}
+          pointerEvents={
+            !silhouetteLocked &&
+            silhouetteVisible
+              ? 'none'
+              : 'auto'
+          }>
+          <CameraPreview
+            key={device.id}
+            onConfigured={markConfigured}
+            onStopped={markStopped}
+            onError={handleCameraError}
+            onZoomCapabilities={setZoomCapabilities}
+            device={device}
+            photoOutput={photoOutput}
+            pinchGesture={pinchGesture}
+            torchEnabled={flashEnabled && device.hasTorch}
+            zoom={zoom}
+            isActive={appActive}
+          />
+        </View>
+
+        <CompositionOverlay
+          template={template}
+          guidesVisible={guideVisible}
+          silhouetteVisible={silhouetteVisible}
+          silhouetteOpacity={overlayOpacity}
+          silhouetteLocked={silhouetteLocked}
+          silhouetteResetKey={silhouetteResetKey}
+          detectedFaces={detectedFaces}
+          detectedPose={detectedPose}
+          mirrored={position === 'front'}
+          cameraZoom={zoom}
+          followZoom={followZoom}
         />
-      </View>
 
-      <CompositionOverlay
-        template={template}
-        guidesVisible={guideVisible}
-        silhouetteVisible={
-          silhouetteVisible
-        }
-        silhouetteOpacity={
-          overlayOpacity
-        }
-        silhouetteLocked={
-          silhouetteLocked
-        }
-        silhouetteResetKey={
-          silhouetteResetKey
-        }
-        detectedFaces={
-          detectedFaces
-        }
-        detectedPose={
-          detectedPose
-        }
-        mirrored={
-          position === 'front'
-        }
-        cameraZoom={zoom}
-        followZoom={followZoom}
-      />
-
-      <RecommendationPanel
+        <RecommendationPanel
         recommendations={
           recommendations
         }
@@ -968,7 +954,8 @@ export function CameraScreen() {
             value => value + 1,
           );
         }}
-      />
+        />
+      </View>
 
       <CameraControls
         activeScenarioId={
@@ -1136,34 +1123,66 @@ export function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.background,
+  },
+
+  viewfinder: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    bottom: 230,
+    overflow: 'hidden',
+    borderRadius: radii.xlarge,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: '#050607',
+    shadowColor: '#000',
+    shadowOpacity: .5,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+
+  cameraFill: {
+    flex: 1,
   },
 
   message: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#101010',
+    backgroundColor: colors.background,
     padding: 28,
-    gap: 12,
   },
 
+  messageCard: {width: '100%', maxWidth: 360, alignItems: 'center', paddingHorizontal: 28, paddingVertical: 34, gap: 13, borderRadius: radii.xlarge, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: .45, shadowRadius: 20, elevation: 12},
+  brand: {color: colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 3},
+  brandMark: {width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(215,185,120,.48)', backgroundColor: colors.primaryMuted},
+  brandMarkText: {color: colors.primarySoft, fontSize: 30, fontWeight: '900'},
+
   title: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
+    color: colors.text,
+    fontSize: 21,
+    fontWeight: '800',
   },
 
   body: {
-    color: '#ccc',
-    fontSize: 15,
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
     textAlign: 'center',
   },
 
   link: {
-    color: '#78b7ff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.primarySoft,
+    fontSize: 14,
+    fontWeight: '800',
     marginTop: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
   },
 });

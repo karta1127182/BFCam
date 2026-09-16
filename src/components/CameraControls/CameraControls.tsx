@@ -22,6 +22,7 @@ import {
 } from '../../scenarios';
 import type {SilhouetteDefinition} from '../../types/composition';
 import type {CompositionTemplate} from '../../types/composition';
+import {colors} from '../../theme';
 
 type Props = {
   cameraReady: boolean;
@@ -205,7 +206,7 @@ export function CameraControls(
         selected && styles.selected,
         disabled && styles.disabled,
       ]}>
-      <Text style={styles.label}>
+      <Text style={[styles.label, selected && styles.controlLabelSelected]}>
         {label}
       </Text>
     </Pressable>
@@ -214,7 +215,7 @@ export function CameraControls(
   const tabButton = (label: string, Icon: LucideIcon, action: () => void, selected = false, disabled = false, smart = false) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected, disabled}} disabled={disabled} onPress={action} style={[styles.tab, disabled && styles.disabled]}>
       <View style={smart ? [styles.smartIconContainer, selected && styles.smartIconActive] : styles.tabIcon}>
-        <Icon size={smart ? 20 : 21} color={selected ? '#D7B978' : '#AAB2B9'} strokeWidth={1.8} />
+      <Icon size={smart ? 20 : 21} color={selected ? colors.primary : colors.textSecondary} strokeWidth={1.8} />
       </View>
       <Text numberOfLines={1} style={[styles.tabLabel, selected && styles.tabLabelActive]}>{label}</Text>
       {selected && <View style={styles.activeIndicator} />}
@@ -223,7 +224,7 @@ export function CameraControls(
 
   const cameraAction = (label: string, Icon: LucideIcon, action: () => void, selected = false, disabled = false) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected, disabled}} disabled={disabled} onPress={action} style={[styles.cameraAction, disabled && styles.disabled]}>
-      <Icon size={22} color={selected ? '#D7B978' : '#F3F5F6'} strokeWidth={1.8} />
+      <Icon size={22} color={selected ? colors.primary : colors.text} strokeWidth={1.8} />
       <Text style={[styles.cameraActionLabel, selected && styles.tabLabelActive]}>{label}</Text>
     </Pressable>
   );
@@ -276,6 +277,7 @@ export function CameraControls(
               ),
           },
         ]}>
+        <View pointerEvents="none" style={styles.dockHandle} />
 
         {/* 情境 */}
         {panel === 'scenario' && (
@@ -1045,16 +1047,22 @@ const styles =
       right: 0,
 
       backgroundColor:
-        'rgba(18,23,28,0.94)',
+        'rgba(15,19,23,0.98)',
 
-      paddingTop: 12,
+      paddingTop: 10,
 
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
 
       borderTopWidth: 1,
-      borderColor: 'rgba(255,255,255,0.08)',
+      borderColor: 'rgba(215,185,120,0.18)',
+      shadowColor: '#000',
+      shadowOpacity: .6,
+      shadowRadius: 20,
+      elevation: 22,
     },
+
+    dockHandle: {alignSelf: 'center', width: 34, height: 3, marginBottom: 3, borderRadius: 2, backgroundColor: 'rgba(215,185,120,0.45)'},
 
     hint: {
       position: 'absolute',
@@ -1062,10 +1070,13 @@ const styles =
       maxWidth: '90%',
 
       backgroundColor:
-        'rgba(10,15,20,0.65)',
+        'rgba(10,15,20,0.78)',
 
-      borderRadius: 12,
-      padding: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.10)',
+      paddingHorizontal: 13,
+      paddingVertical: 9,
     },
 
     filterNotice: {
@@ -1117,7 +1128,7 @@ const styles =
 
     tab: {
       width: 58,
-      height: 56,
+      height: 54,
       alignItems: 'center',
       justifyContent: 'center',
       gap: 3,
@@ -1126,7 +1137,7 @@ const styles =
     tabIcon: {height: 24, alignItems: 'center', justifyContent: 'center'},
     tabLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
     tabLabelActive: {color: '#FFF0CF', fontWeight: '700'},
-    activeIndicator: {position: 'absolute', bottom: 0, width: 20, height: 2, borderRadius: 2, backgroundColor: '#D7B978'},
+    activeIndicator: {position: 'absolute', bottom: 0, width: 18, height: 2, borderRadius: 2, backgroundColor: '#D7B978', shadowColor: '#D7B978', shadowOpacity: .65, shadowRadius: 4},
     smartIconContainer: {width: 32, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(215,185,120,0.10)', borderWidth: 1, borderColor: 'rgba(215,185,120,0.28)'},
     smartIconActive: {backgroundColor: 'rgba(215,185,120,0.16)', borderColor: 'rgba(215,185,120,0.55)'},
 
@@ -1145,7 +1156,7 @@ const styles =
     cameraActionLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
 
     zoomRow: {
-      minHeight: 42,
+      minHeight: 40,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1356,20 +1367,25 @@ const styles =
 
     control: {
       backgroundColor:
-        'rgba(0,0,0,0.62)',
+        'rgba(31,38,44,0.92)',
 
       borderRadius: 18,
+
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)',
 
       paddingHorizontal: 12,
       paddingVertical: 9,
     },
 
     label: {
-      color: '#fff',
+      color: colors.text,
 
       fontSize: 13,
       fontWeight: '600',
     },
+
+    controlLabelSelected: {color: colors.primarySoft},
 
     disabledText: {
       color: '#777',
@@ -1385,6 +1401,11 @@ const styles =
       borderColor: '#FFFFFF',
 
       padding: 5,
+      backgroundColor: 'rgba(255,255,255,0.08)',
+      shadowColor: '#FFFFFF',
+      shadowOpacity: .22,
+      shadowRadius: 9,
+      elevation: 7,
     },
 
     shutterInner: {

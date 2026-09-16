@@ -1,6 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import type {NormalizedFaceBounds} from '../../utils/compositionRecommender';
+import {colors, radii} from '../../theme';
 
 type Props = {faces: NormalizedFaceBounds[]; mirrored: boolean};
 
@@ -18,8 +19,8 @@ export function DetectionOverlay({faces, mirrored}: Props) {
 }
 
 const styles = StyleSheet.create({
-  face: {position: 'absolute', borderWidth: 2, borderColor: '#75e6c8', borderRadius: 14, backgroundColor: 'rgba(117,230,200,.08)'},
-  label: {position: 'absolute', top: -11, left: -2, minWidth: 22, height: 22, borderRadius: 11, overflow: 'hidden', textAlign: 'center', lineHeight: 22, color: '#09251e', backgroundColor: '#75e6c8', fontSize: 11, fontWeight: '800'},
-  notice: {position: 'absolute', top: '16%', alignSelf: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(8,25,21,.75)'},
-  noticeText: {color: '#cafff0', fontSize: 11, fontWeight: '600'},
+  face: {position: 'absolute', borderWidth: 1.5, borderColor: colors.primarySoft, borderRadius: radii.medium, backgroundColor: 'rgba(215,185,120,.06)'},
+  label: {position: 'absolute', top: -11, left: -2, minWidth: 22, height: 22, borderRadius: 11, overflow: 'hidden', textAlign: 'center', lineHeight: 22, color: '#211A0F', backgroundColor: colors.primarySoft, fontSize: 11, fontWeight: '900'},
+  notice: {position: 'absolute', top: '16%', alignSelf: 'center', paddingHorizontal: 11, paddingVertical: 7, borderRadius: radii.pill, borderWidth: 1, borderColor: 'rgba(215,185,120,.28)', backgroundColor: colors.overlay},
+  noticeText: {color: colors.primarySoft, fontSize: 11, fontWeight: '600'},
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import type {CompositionRecommendation} from '../../utils/compositionRecommender';
+import {colors, radii, typography} from '../../theme';
 
 type Props = {recommendations: CompositionRecommendation[]; onApply: (recommendation: CompositionRecommendation) => void; onDismiss: () => void};
 
@@ -17,11 +18,11 @@ export function RecommendationPanel({recommendations, onApply, onDismiss}: Props
 }
 
 const styles = StyleSheet.create({
-  panel: {position: 'absolute', zIndex: 20, left: 14, right: 14, top: '22%', padding: 14, borderRadius: 20, borderWidth: 1, borderColor: '#5d686f', backgroundColor: 'rgba(18,24,29,.97)', shadowColor: '#000', shadowOpacity: .35, shadowRadius: 14, elevation: 12},
+  panel: {position: 'absolute', zIndex: 20, left: 14, right: 14, top: '22%', padding: 16, borderRadius: radii.large, borderWidth: 1, borderColor: 'rgba(215,185,120,.28)', backgroundColor: 'rgba(18,23,28,.98)', shadowColor: '#000', shadowOpacity: .5, shadowRadius: 20, elevation: 16},
   header: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10},
-  eyebrow: {color: '#75e6c8', fontSize: 11, fontWeight: '800'}, title: {color: '#fff', fontSize: 17, fontWeight: '700', marginTop: 2},
-  close: {width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2a333a'}, closeText: {color: '#fff', fontSize: 24, lineHeight: 27},
-  option: {minHeight: 68, flexDirection: 'row', alignItems: 'center', padding: 10, marginTop: 8, borderRadius: 14, borderWidth: 1, borderColor: '#374149', backgroundColor: '#232c33'},
-  best: {borderColor: '#d8bc86', backgroundColor: '#3c362b'}, rank: {width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#75e6c8'}, rankText: {color: '#09251e', fontWeight: '800'},
-  copy: {flex: 1, marginHorizontal: 10}, optionTitle: {color: '#fff', fontSize: 14, fontWeight: '700'}, reason: {color: '#bfc7cd', fontSize: 11, marginTop: 3, lineHeight: 15}, apply: {color: '#fff0cf', fontSize: 12, fontWeight: '800'},
+  eyebrow: {...typography.eyebrow, color: colors.primary}, title: {...typography.title, color: colors.text, marginTop: 3},
+  close: {width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card}, closeText: {color: colors.text, fontSize: 23, lineHeight: 26},
+  option: {minHeight: 70, flexDirection: 'row', alignItems: 'center', padding: 11, marginTop: 8, borderRadius: radii.medium, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card},
+  best: {borderColor: colors.primary, backgroundColor: colors.primaryMuted}, rank: {width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary}, rankText: {color: '#211A0F', fontWeight: '900'},
+  copy: {flex: 1, marginHorizontal: 11}, optionTitle: {color: colors.text, fontSize: 14, fontWeight: '700'}, reason: {color: colors.textSecondary, fontSize: 11, marginTop: 3, lineHeight: 15}, apply: {color: colors.primarySoft, fontSize: 12, fontWeight: '800'},
 });
