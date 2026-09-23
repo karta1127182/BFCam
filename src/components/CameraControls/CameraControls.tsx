@@ -964,15 +964,39 @@ export function CameraControls(
         </ScrollView>
 
         <View style={styles.zoomRow}>
-          {props.onToggleUltraWide && button(props.ultraWideActive ? '主鏡頭' : '超廣角', props.onToggleUltraWide, Boolean(props.ultraWideActive), !props.cameraReady || props.isCapturing)}
-          {props.zoomOptions.map(zoom =>
-            button(
-              `${Number.isInteger(zoom * props.zoomDisplayFactor) ? (zoom * props.zoomDisplayFactor).toFixed(0) : (zoom * props.zoomDisplayFactor).toFixed(1)}×`,
-              () => props.onZoom(zoom),
-              Math.abs(props.zoomLevel - zoom) < 0.08,
-              !props.cameraReady || props.isCapturing,
-            ),
+          {props.onToggleUltraWide && (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="0.6 倍超廣角"
+                accessibilityState={{selected: props.ultraWideActive, disabled: !props.cameraReady || props.isCapturing}}
+                disabled={!props.cameraReady || props.isCapturing}
+                onPress={props.onToggleUltraWide}
+                style={styles.zoomPreset}>
+                <Text style={[styles.zoomPresetText, props.ultraWideActive && styles.zoomPresetTextActive]}>0.6×</Text>
+              </Pressable>
+              <Text style={styles.zoomSeparator}>•••</Text>
+            </>
           )}
+          {props.zoomOptions.map((zoom, index) => {
+            const displayedZoom = zoom * props.zoomDisplayFactor;
+            const label = Number.isInteger(displayedZoom) ? displayedZoom.toFixed(0) : displayedZoom.toFixed(1);
+            const selected = !props.ultraWideActive && Math.abs(props.zoomLevel - zoom) < 0.08;
+            return (
+              <React.Fragment key={`zoom-${zoom}`}>
+                {index > 0 && <Text style={styles.zoomSeparator}>•••</Text>}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${label} 倍`}
+                  accessibilityState={{selected, disabled: !props.cameraReady || props.isCapturing}}
+                  disabled={!props.cameraReady || props.isCapturing}
+                  onPress={() => props.onZoom(zoom)}
+                  style={styles.zoomPreset}>
+                  <Text style={[styles.zoomPresetText, selected && styles.zoomPresetTextActive]}>{displayedZoom < 1 ? `${label}×` : label}</Text>
+                </Pressable>
+              </React.Fragment>
+            );
+          })}
         </View>
 
         {/* 快門 */}
@@ -1147,13 +1171,21 @@ const styles =
     cameraActionLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
 
     zoomRow: {
-      minHeight: 40,
+      minHeight: 36,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 7,
-      paddingHorizontal: 12,
+      alignSelf: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      borderRadius: 18,
+      backgroundColor: 'rgba(0,0,0,.48)',
     },
+
+    zoomPreset: {minWidth: 29, minHeight: 26, alignItems: 'center', justifyContent: 'center'},
+    zoomPresetText: {color: '#FFFFFF', fontSize: 13, fontWeight: '600', textShadowColor: 'rgba(0,0,0,.85)', textShadowRadius: 3},
+    zoomPresetTextActive: {color: '#FFD43B', fontWeight: '800'},
+    zoomSeparator: {color: 'rgba(255,255,255,.48)', fontSize: 8, letterSpacing: 3, marginHorizontal: 4},
 
     choices: {
       flexDirection: 'row',

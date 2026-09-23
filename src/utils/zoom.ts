@@ -9,7 +9,7 @@ export function cameraZoomDisplayMultiplier(displayableZoom: number, nativeZoom:
 }
 
 export function cameraZoomOptions(minimum: number, maximum: number, displayFactor: number) {
-  const candidates = [minimum, ...[.5, 1, 2, 3, 5].map(value => value / displayFactor)];
+  const candidates = [minimum, ...[.6, 1, 2, 3, 10].map(value => value / displayFactor)];
   return candidates.filter(value => Number.isFinite(value) && value >= minimum && value <= maximum)
     .filter((value, index, values) => index === values.findIndex(item => Math.abs(item - value) < .01))
     .sort((a, b) => a - b);
