@@ -39,7 +39,11 @@ export type SilhouetteDefinition = {
     | 'couple-side-by-side' | 'couple-staggered' | 'couple-facing' | 'couple-sit-stand' | 'couple-holding-hands'
     | 'food-plate' | 'coffee-dessert' | 'table-setting'
     | 'mountain-view' | 'city-skyline' | 'architecture'
-    | 'dog' | 'cat' | 'product' | 'bottle';
+    | 'dog' | 'cat' | 'product' | 'bottle'
+    | 'male-seated' | 'male-backpack' | 'male-long-coat'
+    | 'female-seated' | 'female-handbag' | 'female-umbrella'
+    | 'group-three' | 'family-three'
+    | 'dog-front' | 'dog-sitting' | 'cat-resting';
   x: number;
   y: number;
   width: number;

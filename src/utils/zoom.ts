@@ -3,6 +3,18 @@ export function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum);
 }
 
+export function cameraZoomDisplayMultiplier(displayableZoom: number, nativeZoom: number) {
+  const ratio = displayableZoom / nativeZoom;
+  return Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+}
+
+export function cameraZoomOptions(minimum: number, maximum: number, displayFactor: number) {
+  const candidates = [minimum, ...[.5, 1, 2, 3, 5].map(value => value / displayFactor)];
+  return candidates.filter(value => Number.isFinite(value) && value >= minimum && value <= maximum)
+    .filter((value, index, values) => index === values.findIndex(item => Math.abs(item - value) < .01))
+    .sort((a, b) => a - b);
+}
+
 export function overlayScaleForZoom(cameraZoom: number) {
   'worklet';
   if (!Number.isFinite(cameraZoom)) return 1;

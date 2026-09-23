@@ -1,6 +1,7 @@
 import {Skia, type SkImageFilter, type SkPaint, type Uniforms} from '@shopify/react-native-skia';
-import type {FaceRetouchSettings} from './index';
+import type {FaceRetouchSettings, ManualWarpStroke} from './index';
 import {buildFaceReshapeUniforms, MAX_RESHAPE_FACES} from './faceReshapeModel';
+import {manualWarpUniforms, MAX_MANUAL_WARPS} from './manualRetouch';
 
 // The shader works as an inverse warp: each output pixel looks up the matching
 // source coordinate. Smooth elliptical falloffs keep every edit local and avoid
@@ -14,6 +15,9 @@ uniform float4 leftEyes[${MAX_RESHAPE_FACES}];
 uniform float4 rightEyes[${MAX_RESHAPE_FACES}];
 uniform float4 noses[${MAX_RESHAPE_FACES}];
 uniform float4 reshapeAmounts[${MAX_RESHAPE_FACES}];
+uniform float manualWarpCount;
+uniform float4 manualWarpPoints[${MAX_MANUAL_WARPS}];
+uniform float4 manualWarpVectors[${MAX_MANUAL_WARPS}];
 
 float ellipseFalloff(float2 p, float2 center, float2 radius) {
   float2 safeRadius = max(radius, float2(1.0));
@@ -62,18 +66,30 @@ half4 main(float2 xy) {
     p = enlargeFeature(p, rightEyes[i], amount.z);
     p = shrinkFeature(p, noses[i], amount.w);
   }
+  for (int i = 0; i < ${MAX_MANUAL_WARPS}; i++) {
+    if (float(i) >= manualWarpCount) break;
+    float4 point = manualWarpPoints[i];
+    float4 vector = manualWarpVectors[i];
+    // Keep a push centered along the drag, so the sampled pixels follow the
+    // user's finger rather than deforming only around the touch-down point.
+    float2 center = point.w < 2.5 ? point.xy + vector.xy * 0.5 * vector.z : point.xy;
+    float influence = 1.0 - smoothstep(0.05, 1.0, distance(p, center) / max(point.z, 1.0));
+    if (point.w < 2.5) p -= vector.xy * vector.z * influence;
+    else if (point.w < 3.5) p = center + (p - center) * (1.0 - vector.z * 0.22 * influence);
+    else p = center + (p - center) * (1.0 + vector.z * 0.18 * influence);
+  }
   return image.eval(p * max(pixelScale, 1.0));
 }
 `);
 
-export function faceReshapeUniforms(faces: FaceRetouchSettings[], pixelScale = 1): Uniforms {
-  return buildFaceReshapeUniforms(faces, pixelScale) as Uniforms;
+export function faceReshapeUniforms(faces: FaceRetouchSettings[], pixelScale = 1, warpStrokes: ManualWarpStroke[] = []): Uniforms {
+  return {...buildFaceReshapeUniforms(faces, pixelScale), ...manualWarpUniforms(warpStrokes)} as Uniforms;
 }
 
-export function makeFaceReshapeLayer(faces: FaceRetouchSettings[]): {paint: SkPaint; filter: SkImageFilter} | null {
+export function makeFaceReshapeLayer(faces: FaceRetouchSettings[], warpStrokes: ManualWarpStroke[] = []): {paint: SkPaint; filter: SkImageFilter} | null {
   if (!faceReshapeEffect) return null;
-  const uniforms = faceReshapeUniforms(faces);
-  if (uniforms.faceCount === 0) return null;
+  const uniforms = faceReshapeUniforms(faces, 1, warpStrokes);
+  if (uniforms.faceCount === 0 && uniforms.manualWarpCount === 0) return null;
   const builder = Skia.RuntimeShaderBuilder(faceReshapeEffect);
   for (let index = 0; index < faceReshapeEffect.getUniformCount(); index++) {
     const name = faceReshapeEffect.getUniformName(index);
@@ -83,7 +99,7 @@ export function makeFaceReshapeLayer(faces: FaceRetouchSettings[]): {paint: SkPa
     visit(value);
     builder.setUniform(name, flattened);
   }
-  const filter = Skia.ImageFilter.MakeRuntimeShader(builder, null, null);
+  const filter = Skia.ImageFilter.MakeRuntimeShader(builder, 'image', null);
   const paint = Skia.Paint();
   paint.setImageFilter(filter);
   return {paint, filter};

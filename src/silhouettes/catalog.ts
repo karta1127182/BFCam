@@ -1,4 +1,16 @@
 import type {SilhouetteDefinition} from '../types/composition';
+import {extraPoses} from './extraPoses';
+
+export const silhouetteCategories = ['全部', '男', '女', '多人', '寵物', '通用人物', '美食', '風景', '建築', '商品'] as const;
+export type SilhouetteCategory = typeof silhouetteCategories[number];
+export function matchesSilhouetteCategory(item: SilhouetteCatalogItem, category: SilhouetteCategory) {
+  if (category === '全部') return true;
+  if (category === '男') return item.id.startsWith('male-');
+  if (category === '女') return item.id.startsWith('female-');
+  if (category === '多人') return item.id.startsWith('couple-') || item.id.startsWith('group-') || item.id.startsWith('family-');
+  if (category === '通用人物') return item.category === '人物' && !/^(male|female|couple|group|family)-/.test(item.id);
+  return item.category === category;
+}
 
 export type SilhouetteCatalogItem = {
   id: SilhouetteDefinition['variant'];
@@ -45,4 +57,5 @@ export const poseCatalog: SilhouetteCatalogItem[] = [
   {id: 'cat', name: '貓咪坐姿', category: '寵物', width: 0.38, height: 0.46, hint: '鏡頭對齊眼睛，耳朵與尾巴都保留在畫面內。'},
   {id: 'product', name: '商品主體', category: '商品', width: 0.42, height: 0.46, hint: '商品置中並留出邊界，避免背景線條穿過主體。'},
   {id: 'bottle', name: '瓶罐商品', category: '商品', width: 0.3, height: 0.56, hint: '保持瓶身垂直，標籤正對鏡頭並在上下保留空間。'},
+  ...extraPoses,
 ];

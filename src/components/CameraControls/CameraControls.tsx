@@ -13,7 +13,9 @@ import {GuideRenderer} from '../GuideRenderer/GuideRenderer';
 import {PoseDrawing} from '../Silhouette/Silhouette';
 import {
   poseCatalog,
-  type SilhouetteCatalogItem,
+  silhouetteCategories,
+  matchesSilhouetteCategory,
+  type SilhouetteCategory,
 } from '../../silhouettes/catalog';
 import {filters} from '../../filters';
 import {
@@ -60,6 +62,8 @@ type Props = {
   zoomOptions: number[];
   zoomDisplayFactor: number;
   onZoom: (zoom: number) => void;
+  ultraWideActive?: boolean;
+  onToggleUltraWide?: () => void;
 
   template: CompositionTemplate;
 
@@ -134,7 +138,7 @@ export function CameraControls(
   ] =
     useState<
       | '全部'
-      | SilhouetteCatalogItem['category']
+      | SilhouetteCategory
     >('全部');
 
   const [
@@ -145,26 +149,12 @@ export function CameraControls(
   const insets =
     useSafeAreaInsets();
 
-  const silhouetteCategories: (
-    | '全部'
-    | SilhouetteCatalogItem['category']
-  )[] = [
-    '全部',
-    '人物',
-    '美食',
-    '風景',
-    '建築',
-    '寵物',
-    '商品',
-  ];
-
   const visibleSilhouettes =
     silhouetteCategory === '全部'
       ? poseCatalog
       : poseCatalog.filter(
           item =>
-            item.category ===
-            silhouetteCategory,
+            matchesSilhouetteCategory(item, silhouetteCategory),
         );
 
   const filterCategories = [
@@ -974,6 +964,7 @@ export function CameraControls(
         </ScrollView>
 
         <View style={styles.zoomRow}>
+          {props.onToggleUltraWide && button(props.ultraWideActive ? '主鏡頭' : '超廣角', props.onToggleUltraWide, Boolean(props.ultraWideActive), !props.cameraReady || props.isCapturing)}
           {props.zoomOptions.map(zoom =>
             button(
               `${Number.isInteger(zoom * props.zoomDisplayFactor) ? (zoom * props.zoomDisplayFactor).toFixed(0) : (zoom * props.zoomDisplayFactor).toFixed(1)}×`,

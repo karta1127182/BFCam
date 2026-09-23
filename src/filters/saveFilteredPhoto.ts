@@ -1,8 +1,10 @@
-import {ClipOp, FillType, ImageFormat, Skia, TileMode} from '@shopify/react-native-skia';
+import {ClipOp, FillType, ImageFormat, Skia} from '@shopify/react-native-skia';
 import {Images} from 'react-native-nitro-image';
 import type {Photo} from 'react-native-vision-camera';
 import {centerCropRect, localizedBrightnessMatrix, localizedRosyMatrix, type FaceRegion, type PhotoGeometry, type RetouchSettings} from './index';
 import {makeFaceReshapeLayer} from './faceReshape';
+import {addBrushDabs, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, smoothingBlurRadius} from './manualRetouch';
+import {makeSkinSmoothingFilter} from './skinSmoothing';
 
 export async function saveFilteredPhoto(photo: Photo, matrix: number[]) {
   // Decode through Photo first so the camera's EXIF orientation is applied.
@@ -40,6 +42,8 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
     let transformed = source;
     let faces = retouch.faces.map(face => ({...face, region: {...face.region}, eyes: face.eyes.map(region => ({...region})), nose: face.nose ? {...face.nose} : undefined, mouth: face.mouth ? {...face.mouth} : undefined, skinMask: face.skinMask ? {outer: face.skinMask.outer.map(point => ({...point})), exclusions: face.skinMask.exclusions.map(points => points.map(point => ({...point})))} : undefined, underEyes: face.underEyes.map(region => ({...region}))}));
     let healSpots = retouch.healSpots.map(spot => ({...spot}));
+    let brushStrokes = retouch.brushStrokes.map(stroke => ({...stroke, points: stroke.points.map(point => ({...point}))}));
+    let warpStrokes = retouch.warpStrokes.map(stroke => ({...stroke}));
     let regionWidth = source.width;
     let regionHeight = source.height;
     if (geometry.rotation !== 0) {
@@ -53,6 +57,8 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
       const rotatePoint = (point: {x: number; y: number}) => geometry.rotation === 90 ? {x: regionHeight - point.y, y: point.x} : geometry.rotation === 180 ? {x: regionWidth - point.x, y: regionHeight - point.y} : {x: point.y, y: regionWidth - point.x};
       faces = faces.map(face => ({...face, region: rotateRegion(face.region), eyes: face.eyes.map(rotateRegion), nose: face.nose ? rotateRegion(face.nose) : undefined, mouth: face.mouth ? rotateRegion(face.mouth) : undefined, underEyes: face.underEyes.map(rotateRegion), skinMask: face.skinMask ? {outer: face.skinMask.outer.map(rotatePoint), exclusions: face.skinMask.exclusions.map(points => points.map(rotatePoint))} : undefined}));
       healSpots = healSpots.map(spot => {const target = rotatePoint(spot); const sourcePoint = rotatePoint({x: spot.sourceX, y: spot.sourceY}); return {...spot, ...target, sourceX: sourcePoint.x, sourceY: sourcePoint.y};});
+      brushStrokes = brushStrokes.map(stroke => ({...stroke, points: stroke.points.map(rotatePoint)}));
+      warpStrokes = warpStrokes.map(stroke => {const point = rotatePoint(stroke); const vector = geometry.rotation === 90 ? {dx: -stroke.dy, dy: stroke.dx} : geometry.rotation === 180 ? {dx: -stroke.dx, dy: -stroke.dy} : {dx: stroke.dy, dy: -stroke.dx}; return {...stroke, ...point, ...vector};});
       if (geometry.rotation === 90 || geometry.rotation === 270) [regionWidth, regionHeight] = [regionHeight, regionWidth];
     }
     if (geometry.mirrored) {
@@ -61,6 +67,8 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
       const mirrorRegion = (region: FaceRegion) => ({...region, x: regionWidth - region.x - region.width});
       faces = faces.map(face => ({...face, region: mirrorRegion(face.region), eyes: face.eyes.map(mirrorRegion), nose: face.nose ? mirrorRegion(face.nose) : undefined, mouth: face.mouth ? mirrorRegion(face.mouth) : undefined, underEyes: face.underEyes.map(mirrorRegion), skinMask: face.skinMask ? {outer: face.skinMask.outer.map(point => ({x: regionWidth - point.x, y: point.y})), exclusions: face.skinMask.exclusions.map(points => points.map(point => ({x: regionWidth - point.x, y: point.y})))} : undefined}));
       healSpots = healSpots.map(spot => ({...spot, x: regionWidth - spot.x, sourceX: regionWidth - spot.sourceX}));
+      brushStrokes = brushStrokes.map(stroke => ({...stroke, points: stroke.points.map(point => ({x: regionWidth - point.x, y: point.y}))}));
+      warpStrokes = warpStrokes.map(stroke => ({...stroke, x: regionWidth - stroke.x, dx: -stroke.dx}));
     }
     if (geometry.cropAspect !== 'original') {
       const rect = centerCropRect(transformed.width, transformed.height, geometry.cropAspect);
@@ -69,6 +77,8 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
       const cropRegion = (region: FaceRegion) => ({...region, x: region.x - rect.startX, y: region.y - rect.startY});
       faces = faces.map(face => ({...face, region: cropRegion(face.region), eyes: face.eyes.map(cropRegion), nose: face.nose ? cropRegion(face.nose) : undefined, mouth: face.mouth ? cropRegion(face.mouth) : undefined, underEyes: face.underEyes.map(cropRegion), skinMask: face.skinMask ? {outer: face.skinMask.outer.map(point => ({x: point.x - rect.startX, y: point.y - rect.startY})), exclusions: face.skinMask.exclusions.map(points => points.map(point => ({x: point.x - rect.startX, y: point.y - rect.startY})))} : undefined}));
       healSpots = healSpots.map(spot => ({...spot, x: spot.x - rect.startX, y: spot.y - rect.startY, sourceX: spot.sourceX - rect.startX, sourceY: spot.sourceY - rect.startY}));
+      brushStrokes = brushStrokes.map(stroke => ({...stroke, points: stroke.points.map(point => ({x: point.x - rect.startX, y: point.y - rect.startY}))}));
+      warpStrokes = warpStrokes.map(stroke => ({...stroke, x: stroke.x - rect.startX, y: stroke.y - rect.startY}));
       regionWidth = rect.endX - rect.startX;
       regionHeight = rect.endY - rect.startY;
     }
@@ -85,7 +95,7 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
       try {
         paint.setColorFilter(colorFilter);
         const canvas = surface.getCanvas();
-        reshapeLayer = makeFaceReshapeLayer(faces);
+        reshapeLayer = makeFaceReshapeLayer(faces, warpStrokes);
         if (reshapeLayer) canvas.saveLayer(reshapeLayer.paint);
         canvas.drawImage(image, 0, 0, paint);
         for (const face of faces) {
@@ -106,14 +116,13 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
           if (smoothing > 0) {
           const blurPaint = Skia.Paint();
           const blurColorFilter = Skia.ColorFilter.MakeMatrix(matrix);
-          const blurFilter = Skia.ImageFilter.MakeBlur(Math.max(1, image.width() * .0025 * smoothing), Math.max(1, image.width() * .0025 * smoothing), TileMode.Clamp);
+          const smoothingFilter = makeSkinSmoothingFilter(smoothingBlurRadius(image.width(), smoothing), smoothing);
           try {
             blurPaint.setColorFilter(blurColorFilter);
-            blurPaint.setImageFilter(blurFilter);
-            blurPaint.setAlphaf(Math.min(.72, smoothing * .72));
+            if (smoothingFilter) blurPaint.setImageFilter(smoothingFilter);
             canvas.save(); clipFace(); canvas.drawImage(image, 0, 0, blurPaint); canvas.restore();
           } finally {
-            blurPaint.dispose(); blurColorFilter.dispose(); blurFilter.dispose();
+            blurPaint.dispose(); blurColorFilter.dispose(); smoothingFilter?.dispose();
           }
         }
           const whitening = Math.max(0, Math.min(1, face.whitening));
@@ -168,20 +177,39 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
           }
         }
         }
+        for (const stroke of brushStrokes) {
+          if (!stroke.points.length) continue;
+          const strokePaint = Skia.Paint();
+          const strokeMatrix = stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : stroke.tool === 'darkCircle' ? stroke.strength : 0);
+          const strokeColorFilter = Skia.ColorFilter.MakeMatrix(stroke.tool === 'smoothing' ? matrix : strokeMatrix);
+          const strokeSmoothing = stroke.tool === 'smoothing' ? makeSkinSmoothingFilter(smoothingBlurRadius(image.width(), stroke.strength), stroke.strength) : null;
+          try {
+            strokePaint.setColorFilter(strokeColorFilter); if (strokeSmoothing) strokePaint.setImageFilter(strokeSmoothing);
+            for (const layer of BRUSH_FEATHER_LAYERS) {
+              const strokePath = Skia.Path.Make();
+              try {
+                addBrushDabs(strokePath, stroke.points, stroke.radius * layer.radius);
+                strokePaint.setAlphaf(Math.min(.78, stroke.strength * .78) * layer.opacity);
+                canvas.save(); canvas.clipPath(strokePath, ClipOp.Intersect, true); canvas.drawImage(image, 0, 0, strokePaint); canvas.restore();
+              } finally {strokePath.dispose();}
+            }
+          } finally {strokePaint.dispose(); strokeColorFilter.dispose(); strokeSmoothing?.dispose();}
+        }
         for (const spot of healSpots) {
           if (spot.x + spot.radius < 0 || spot.y + spot.radius < 0 || spot.x - spot.radius > regionWidth || spot.y - spot.radius > regionHeight) continue;
           const healPaint = Skia.Paint();
           const healColorFilter = Skia.ColorFilter.MakeMatrix(matrix);
-          const healBlur = Skia.ImageFilter.MakeBlur(Math.max(1, spot.radius * .1), Math.max(1, spot.radius * .1), TileMode.Clamp);
           try {
             healPaint.setColorFilter(healColorFilter);
-            healPaint.setImageFilter(healBlur);
-            healPaint.setAlphaf(Math.max(0, Math.min(1, spot.strength)));
-            canvas.save();
-            canvas.clipRRect(Skia.RRectXY(Skia.XYWHRect(spot.x - spot.radius, spot.y - spot.radius, spot.radius * 2, spot.radius * 2), spot.radius, spot.radius), ClipOp.Intersect, true);
-            canvas.drawImage(image, spot.x - spot.sourceX, spot.y - spot.sourceY, healPaint);
-            canvas.restore();
-          } finally { healPaint.dispose(); healColorFilter.dispose(); healBlur.dispose(); }
+            for (const layer of HEAL_FEATHER_LAYERS) {
+              const radius = spot.radius * layer.radius;
+              healPaint.setAlphaf(Math.max(0, Math.min(1, spot.strength)) * layer.opacity);
+              canvas.save();
+              canvas.clipRRect(Skia.RRectXY(Skia.XYWHRect(spot.x - radius, spot.y - radius, radius * 2, radius * 2), radius, radius), ClipOp.Intersect, true);
+              canvas.drawImage(image, spot.x - spot.sourceX, spot.y - spot.sourceY, healPaint);
+              canvas.restore();
+            }
+          } finally { healPaint.dispose(); healColorFilter.dispose(); }
         }
         if (reshapeLayer) {
           canvas.restore();

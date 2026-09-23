@@ -100,8 +100,12 @@ export type FaceRegion = {x: number; y: number; width: number; height: number};
 export type RetouchPoint = {x: number; y: number};
 export type SkinMask = {outer: RetouchPoint[]; exclusions: RetouchPoint[][]};
 export type HealSpot = {x: number; y: number; sourceX: number; sourceY: number; radius: number; strength: number};
+export type ManualBrushTool = 'smoothing' | 'whitening' | 'rosy' | 'brightEyes' | 'teethWhitening' | 'darkCircle';
+export type ManualWarpTool = 'slimFace' | 'chin' | 'largeEyes' | 'smallNose';
+export type ManualBrushStroke = {tool: ManualBrushTool; points: RetouchPoint[]; radius: number; strength: number};
+export type ManualWarpStroke = {tool: ManualWarpTool; x: number; y: number; dx: number; dy: number; radius: number; strength: number};
 export type FaceRetouchSettings = {region: FaceRegion; skinMask?: SkinMask; eyes: FaceRegion[]; nose?: FaceRegion; mouth?: FaceRegion; underEyes: FaceRegion[]; smoothing: number; whitening: number; rosy: number; brightEyes: number; teethWhitening: number; darkCircle: number; slimFace: number; chin: number; largeEyes: number; smallNose: number};
-export type RetouchSettings = {faces: FaceRetouchSettings[]; healSpots: HealSpot[]};
+export type RetouchSettings = {faces: FaceRetouchSettings[]; healSpots: HealSpot[]; brushStrokes: ManualBrushStroke[]; warpStrokes: ManualWarpStroke[]};
 export const initialRetouch = {smoothing: 0, whitening: 0, rosy: 0, brightEyes: 0, teethWhitening: 0, darkCircle: 0, slimFace: 0, chin: 0, largeEyes: 0, smallNose: 0};
 export const initialGeometry: PhotoGeometry = {rotation: 0, cropAspect: 'original', mirrored: false};
 export function cropAspectRatio(cropAspect: CropAspect, originalAspect: number) {

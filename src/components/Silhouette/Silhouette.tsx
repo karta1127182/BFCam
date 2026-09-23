@@ -6,6 +6,7 @@ import type {SharedValue} from 'react-native-reanimated';
 import Svg, {Path} from 'react-native-svg';
 import type {SilhouetteDefinition} from '../../types/composition';
 import {clampOverlayTranslation, overlayScaleForZoom} from '../../utils/zoom';
+import {extraPosePaths} from '../../silhouettes/extraPoses';
 
 type Props = {
   definition: SilhouetteDefinition;
@@ -27,6 +28,7 @@ const silhouetteStroke = {
 };
 
 const silhouettePaths: Record<SilhouetteDefinition['variant'], string> = {
+  ...extraPosePaths,
   'street-coat': 'M47 2 C39 3 35 9 35 18 L32 21 L33 28 L37 31 L37 39 L31 39 L26 47 L19 51 C13 56 10 68 8 82 L3 122 C2 137 5 149 10 157 L16 165 L20 163 L23 168 L28 165 L29 176 L28 199 L25 221 L29 227 L25 233 L23 241 L31 245 L39 241 L41 233 L45 217 L49 181 L51 181 L55 217 L59 233 L61 242 L70 246 L78 243 L77 237 L72 228 L76 222 L73 198 L72 176 L73 165 L78 168 L82 165 L86 162 L92 149 L97 139 L97 91 C96 78 91 66 85 56 L77 48 L68 44 L63 36 L62 30 C65 26 65 18 63 11 C60 5 55 2 47 2 Z',
   'male-suit': 'M50 3 C41 3 36 10 36 20 C36 29 41 35 46 38 L45 44 L34 48 L25 56 L20 91 L15 126 C14 134 23 137 27 129 L35 91 L37 134 L34 177 L29 224 L25 231 L30 236 L42 233 L46 220 L50 158 L55 220 L59 233 L71 236 L76 231 L71 224 L67 177 L64 134 L66 91 L74 129 C78 137 87 134 86 126 L81 91 L76 56 L65 48 L55 44 L54 38 C60 34 65 29 65 20 C65 10 59 3 50 3 Z M46 45 L50 58 L54 45 L59 61 L51 75 L42 61 Z',
   'male-pocket': 'M47 3 C38 3 33 10 33 20 C33 29 38 35 44 38 L43 45 C33 48 27 55 24 67 L17 111 C15 119 24 123 28 115 L36 79 L39 96 L32 119 L39 126 L44 116 L43 144 L39 182 L32 225 L27 231 L32 236 L43 233 L48 217 L52 158 L58 218 L63 233 L75 235 L79 230 L73 223 L69 181 L66 141 L67 91 L75 117 C78 125 87 122 86 114 L78 69 C76 56 68 49 56 45 L55 38 C62 34 66 28 66 19 C66 9 58 3 47 3 Z M38 96 L48 108 L43 120 L33 113 Z',
@@ -136,6 +138,7 @@ const silhouettePaths: Record<SilhouetteDefinition['variant'], string> = {
 };
 
 const silhouetteViewBoxes: Partial<Record<SilhouetteDefinition['variant'], string>> = {
+  'dog-front': '0 0 100 100', 'dog-sitting': '0 0 100 100', 'cat-resting': '0 0 100 100',
   'street-coat': '0 0 100 248',
   'half-body': '0 0 100 175',
   bust: '0 0 100 125',
@@ -154,6 +157,7 @@ const silhouetteViewBoxes: Partial<Record<SilhouetteDefinition['variant'], strin
 };
 
 const humanVariants = new Set<SilhouetteDefinition['variant']>([
+  'male-seated', 'male-backpack', 'male-long-coat', 'female-seated', 'female-handbag', 'female-umbrella', 'group-three', 'family-three',
   'full-body', 'half-body', 'bust', 'headshot', 'side', 'hand-on-hip', 'looking-back', 'sitting',
   'walking', 'arms-crossed', 'waving', 'kneeling', 'selfie', 'street-coat',
   'male-suit', 'male-pocket', 'male-lean', 'female-dress', 'female-cross-leg', 'female-street-side',

@@ -4,6 +4,7 @@ import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import type {GestureType} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';
 import {Camera, type CameraDevice, type CameraPhotoOutput, type CameraRef} from 'react-native-vision-camera';
+import {cameraZoomDisplayMultiplier} from '../../utils/zoom';
 
 export type ZoomCapabilities = {minimum: number; maximum: number; displayFactor: number};
 type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; onZoomCapabilities: (capabilities: ZoomCapabilities) => void; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>; isActive: boolean};
@@ -18,7 +19,7 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
     setCameraStarted(true);
     const controller = cameraRef.current?.controller;
     if (controller) {
-      onZoomCapabilities({minimum: controller.minZoom, maximum: controller.maxZoom, displayFactor: controller.displayableZoomFactor});
+      onZoomCapabilities({minimum: controller.minZoom, maximum: controller.maxZoom, displayFactor: cameraZoomDisplayMultiplier(controller.displayableZoomFactor, controller.zoom)});
     }
     onConfigured();
   }, [onConfigured, onZoomCapabilities]);
@@ -32,13 +33,13 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
   }, [onError]);
   useEffect(() => () => {if (focusTimer.current) clearTimeout(focusTimer.current);}, []);
   const tapGesture = useMemo(() => Gesture.Tap().runOnJS(true).onEnd((event, success) => {
-    if (!success || !device.supportsFocusMetering) return;
+    if (!success || !cameraStarted || !isActive || !device.supportsFocusMetering) return;
     const point = {x: event.x, y: event.y};
     setFocusPoint(point);
     if (focusTimer.current) clearTimeout(focusTimer.current);
     focusTimer.current = setTimeout(() => setFocusPoint(null), 900);
     cameraRef.current?.focusTo(point, {responsiveness: 'snappy', adaptiveness: 'continuous', autoResetAfter: 3}).catch(() => setFocusPoint(null));
-  }), [device.supportsFocusMetering]);
+  }), [cameraStarted, device.supportsFocusMetering, isActive]);
   const cameraGesture = useMemo(() => Gesture.Simultaneous(pinchGesture, tapGesture), [pinchGesture, tapGesture]);
   return (
     <GestureDetector gesture={cameraGesture}>

@@ -23,6 +23,7 @@ import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import Share from 'react-native-share';
 import {
   useCameraDevice,
+  useCameraDevices,
   useCameraPermission,
   usePhotoOutput,
 } from 'react-native-vision-camera';
@@ -43,7 +44,7 @@ import {
   type CompositionRecommendation,
   type NormalizedFaceBounds,
 } from '../../utils/compositionRecommender';
-import {normalizeRotation} from '../../utils/zoom';
+import {cameraZoomOptions, normalizeRotation} from '../../utils/zoom';
 import {friendlyCameraError} from '../../utils/cameraErrors';
 import {filters} from '../../filters';
 import {
@@ -80,12 +81,12 @@ export function CameraScreen() {
   }, []);
 
   const handleCameraError = useCallback((error: Error) => {
-    readyRef.current = false;
-    setCameraReady(false);
     const message = error.message ?? '';
     if (message.includes('Camera is not active') || message.includes('OperationCanceledException')) {
       return;
     }
+    readyRef.current = false;
+    setCameraReady(false);
     setFlashEnabled(false);
     setCameraError(friendlyCameraError(error, '相機無法啟動，請稍後再試。'));
   }, []);
@@ -152,12 +153,16 @@ export function CameraScreen() {
   const permission = useCameraPermission();
   const {canRequestPermission, requestPermission} = permission;
 
-  const device = useCameraDevice(
+  const [useSeparateUltraWide, setUseSeparateUltraWide] = useState(false);
+  const cameraDevices = useCameraDevices();
+  const separateUltraWide = cameraDevices.find(candidate => candidate.position === 'back' && candidate.type === 'ultra-wide-angle' && !candidate.isVirtualDevice);
+  const preferredDevice = useCameraDevice(
     position,
     position === 'back'
       ? {physicalDevices: ['ultra-wide-angle', 'wide-angle', 'telephoto']}
       : undefined,
   );
+  const device = position === 'back' && useSeparateUltraWide && separateUltraWide ? separateUltraWide : preferredDevice;
 
   const photoOutput = usePhotoOutput({
     qualityPrioritization: 'balanced',
@@ -165,7 +170,9 @@ export function CameraScreen() {
 
   useEffect(() => {
     setZoomCapabilities(null);
-  }, [device?.id]);
+    markStopped();
+    setFlashEnabled(false);
+  }, [device?.id, markStopped]);
 
   const detectorOptions = useMemo(
     () => ({
@@ -317,7 +324,7 @@ export function CameraScreen() {
   const zoomDisplayFactor = zoomCapabilities?.displayFactor ?? 1;
 
   const initialZoom = Math.min(
-    Math.max(1, minimumZoom),
+    Math.max(useSeparateUltraWide && position === 'back' ? minimumZoom : 1 / zoomDisplayFactor, minimumZoom),
     maximumZoom,
   );
 
@@ -327,13 +334,7 @@ export function CameraScreen() {
     initialZoom,
   );
 
-  const zoomOptions = useMemo(() => {
-    const displayCandidates = [0.5, 1, 2, 3, 5];
-    const candidates = [minimumZoom, ...displayCandidates.map(value => value / zoomDisplayFactor)];
-    return candidates
-      .filter(value => value >= minimumZoom && value <= maximumZoom)
-      .filter((value, index, values) => index === values.findIndex(item => Math.abs(item - value) < 0.01));
-  }, [maximumZoom, minimumZoom, zoomDisplayFactor]);
+  const zoomOptions = useMemo(() => cameraZoomOptions(minimumZoom, maximumZoom, zoomDisplayFactor), [maximumZoom, minimumZoom, zoomDisplayFactor]);
 
   const baseTemplate =
     compositionTemplates[templateIndex];
@@ -997,6 +998,13 @@ export function CameraScreen() {
         zoomOptions={zoomOptions}
         zoomDisplayFactor={zoomDisplayFactor}
         onZoom={setZoom}
+        ultraWideActive={position === 'back' && useSeparateUltraWide}
+        onToggleUltraWide={position === 'back' && separateUltraWide && separateUltraWide.id !== preferredDevice?.id && (useSeparateUltraWide || minimumZoom * zoomDisplayFactor >= .9) ? () => {
+          if (captureLock.current || !readyRef.current) return;
+          markStopped(); setFlashEnabled(false); setCameraError('');
+          setSmartCompositionActive(false); setDetectedFaces([]); setDetectedPose(null); setRecommendations([]);
+          setUseSeparateUltraWide(value => !value);
+        } : undefined}
         template={template}
 
         /**
@@ -1065,6 +1073,7 @@ export function CameraScreen() {
               ? 'front'
               : 'back',
           );
+          setUseSeparateUltraWide(false);
 
           setFlashEnabled(false);
         }}

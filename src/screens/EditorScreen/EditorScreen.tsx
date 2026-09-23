@@ -1,12 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {PanResponder, PixelRatio, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View} from 'react-native';
-import {Blur, Canvas, ColorMatrix, FillType, Group, Image as SkiaImage, Paint, RoundedRect, RuntimeShader, Skia, useImage} from '@shopify/react-native-skia';
+import {PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View} from 'react-native';
+import {Canvas, Circle, ColorMatrix, FillType, Group, Image as SkiaImage, Line, Paint, RoundedRect, RuntimeShader, Skia, useImage} from '@shopify/react-native-skia';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Crop, Redo2, RotateCcw, SlidersHorizontal, Sparkles, Undo2, WandSparkles, type LucideIcon} from 'lucide-react-native';
 import {useImageFaceDetector} from 'react-native-vision-camera-face-detector';
-import {cropAspectRatio, editMatrix, filterMatrix, filters, fitAspectWithin, identity, initialAdjustments, initialGeometry, initialRetouch, localizedBrightnessMatrix, localizedRosyMatrix, type CropAspect, type FaceRegion, type HealSpot, type PhotoAdjustments, type PhotoGeometry, type RetouchSettings, type SkinMask} from '../../filters';
+import {cropAspectRatio, editMatrix, filterMatrix, filters, fitAspectWithin, identity, initialAdjustments, initialGeometry, initialRetouch, localizedBrightnessMatrix, localizedRosyMatrix, type CropAspect, type FaceRegion, type HealSpot, type ManualBrushStroke, type ManualBrushTool, type ManualWarpStroke, type ManualWarpTool, type PhotoAdjustments, type PhotoGeometry, type RetouchPoint, type RetouchSettings, type SkinMask} from '../../filters';
 import {faceReshapeEffect, faceReshapeUniforms} from '../../filters/faceReshape';
+import {addBrushDabs, appendBrushPoint, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, makeWarpStroke, MAX_MANUAL_WARPS, smoothingBlurRadius, warpEndFromDrag} from '../../filters/manualRetouch';
+import {skinSmoothingEffect, skinSmoothingUniforms} from '../../filters/skinSmoothing';
 import {colors, radii} from '../../theme';
+import {clampEditorPan, clampEditorZoom, zoomFromPinch} from '../../utils/editorViewport';
 
 type Props = {
   path: string;
@@ -21,7 +24,7 @@ type Props = {
 
 type AdjustmentKey = keyof PhotoAdjustments;
 type FaceRetouchValues = {smoothing: number; whitening: number; rosy: number; brightEyes: number; teethWhitening: number; darkCircle: number; slimFace: number; chin: number; largeEyes: number; smallNose: number};
-type EditState = {filterIndex: number; strength: number; adjustments: PhotoAdjustments; geometry: PhotoGeometry; retouchByFace: Record<number, FaceRetouchValues>; healSpots: HealSpot[]};
+type EditState = {filterIndex: number; strength: number; adjustments: PhotoAdjustments; geometry: PhotoGeometry; oneTapEnabled: boolean; retouchByFace: Record<number, FaceRetouchValues>; healSpots: HealSpot[]; brushStrokes: ManualBrushStroke[]; warpStrokes: ManualWarpStroke[]};
 type RetouchTool = 'smooth' | 'whiten' | 'rosy' | 'brightEyes' | 'teeth' | 'darkCircle' | 'slimFace' | 'chin' | 'largeEyes' | 'smallNose' | 'heal';
 type RetouchContourKey = 'FACE' | 'LEFT_EYE' | 'RIGHT_EYE' | 'LEFT_EYEBROW_TOP' | 'LEFT_EYEBROW_BOTTOM' | 'RIGHT_EYEBROW_TOP' | 'RIGHT_EYEBROW_BOTTOM' | 'UPPER_LIP_TOP' | 'UPPER_LIP_BOTTOM' | 'LOWER_LIP_TOP' | 'LOWER_LIP_BOTTOM' | 'NOSE_BRIDGE' | 'NOSE_BOTTOM';
 type RetouchFace = {bounds: FaceRegion; eyes: Array<{x: number; y: number}>; contours: Partial<Record<RetouchContourKey, Array<{x: number; y: number}>>>; hasLandmarks: boolean; hasContours: boolean};
@@ -44,7 +47,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const insets = useSafeAreaInsets();
   const {width, height} = useWindowDimensions();
   const image = useImage(`file://${path}`);
-  const initialState = useMemo<EditState>(() => ({filterIndex: initialFilterIndex, strength: initialFilterStrength, adjustments: initialAdjustments, geometry: initialGeometry, retouchByFace: {}, healSpots: []}), [initialFilterIndex, initialFilterStrength]);
+  const initialState = useMemo<EditState>(() => ({filterIndex: initialFilterIndex, strength: initialFilterStrength, adjustments: initialAdjustments, geometry: initialGeometry, oneTapEnabled: false, retouchByFace: {}, healSpots: [], brushStrokes: [], warpStrokes: []}), [initialFilterIndex, initialFilterStrength]);
   const [edit, setEdit] = useState(initialState);
   const [undoStack, setUndoStack] = useState<EditState[]>([]);
   const [redoStack, setRedoStack] = useState<EditState[]>([]);
@@ -52,15 +55,23 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const [faceAnalysis, setFaceAnalysis] = useState<'detecting' | 'ready' | 'empty' | 'error'>('detecting');
   const [retouchFaces, setRetouchFaces] = useState<RetouchFace[]>([]);
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(0);
-  const [retouchBarWidth, setRetouchBarWidth] = useState(1);
   const [retouchTool, setRetouchTool] = useState<RetouchTool>('smooth');
+  const [healSource, setHealSource] = useState<RetouchPoint | null>(null);
+  const [pickingHealSource, setPickingHealSource] = useState(true);
   const [healBrushSize, setHealBrushSize] = useState(.028);
+  const [manualBrushSize, setManualBrushSize] = useState(.035);
+  const [manualStrength, setManualStrength] = useState(.8);
+  const [manualBarWidth, setManualBarWidth] = useState(1);
+  const [brushSizeBarWidth, setBrushSizeBarWidth] = useState(1);
   const [editZoom, setEditZoom] = useState(1);
   const [editPan, setEditPan] = useState({x: 0, y: 0});
   const editZoomRef = useRef(1); const editPanRef = useRef(editPan);
   editZoomRef.current = editZoom; editPanRef.current = editPan;
-  const pinchStart = useRef({distance: 0, scale: 1});
-  const panStart = useRef({x: 0, y: 0});
+  const pinchStart = useRef({distance: 0, scale: 1, centerX: 0, centerY: 0, panX: 0, panY: 0});
+  const strokeStart = useRef<RetouchPoint | null>(null);
+  const draftWarpRef = useRef<ManualWarpStroke | null>(null);
+  const [draftWarp, setDraftWarp] = useState<ManualWarpStroke | null>(null);
+  const activeBrushIndex = useRef(-1);
   const healGestureMoved = useRef(false);
   const faceDetectorOptions = useMemo(() => ({performanceMode: 'accurate' as const, runLandmarks: true, runContours: true, minFaceSize: 0.08}), []);
   const faceDetector = useImageFaceDetector(faceDetectorOptions);
@@ -85,7 +96,8 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   }), [retouchSheetSnaps]);
   const categories = useMemo(() => ['全部', ...Array.from(new Set(filters.map(filter => filter.category)))], []);
   const visibleFilters = category === '全部' ? filters : filters.filter(filter => filter.category === category);
-  useEffect(() => {if (retouchTool !== 'heal' || section !== 'retouch') {setEditZoom(1); setEditPan({x: 0, y: 0});}}, [retouchTool, section]);
+  useEffect(() => {if (section !== 'retouch') {setEditZoom(1); setEditPan({x: 0, y: 0});}}, [section]);
+  useEffect(() => {if (editZoom <= 1) setEditPan({x: 0, y: 0});}, [editZoom]);
   const {filterIndex, strength, adjustments, geometry} = edit;
   const matrix = useMemo(() => editMatrix(filterIndex, strength, adjustments), [adjustments, filterIndex, strength]);
   const previewHeight = Math.max(190, height - 370 - insets.top - insets.bottom);
@@ -94,9 +106,6 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const cropPreview = fitAspectWithin(Math.max(0, width - 20), Math.max(0, previewHeight - 12), cropAspectRatio(geometry.cropAspect, rotatedSourceAspect));
   const previewCanvasWidth = geometry.rotation % 180 === 0 ? cropPreview.width : cropPreview.height;
   const previewCanvasHeight = geometry.rotation % 180 === 0 ? cropPreview.height : cropPreview.width;
-  const selectedFace = retouchFaces[selectedFaceIndex];
-  const selectedRetouch = edit.retouchByFace[selectedFaceIndex] ?? initialRetouch;
-  const {smoothing, whitening, rosy, brightEyes, teethWhitening, darkCircle, slimFace, chin, largeEyes, smallNose} = selectedRetouch;
   const previewMapping = useMemo(() => {
     if (!image) return null;
     const scale = Math.max(previewCanvasWidth / image.width(), previewCanvasHeight / image.height());
@@ -104,18 +113,26 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     const offsetY = (previewCanvasHeight - image.height() * scale) / 2;
     return {scale, offsetX, offsetY};
   }, [image, previewCanvasHeight, previewCanvasWidth]);
-  const healSpotClips = useMemo(() => previewMapping ? edit.healSpots.map(spot => {
-    const radius = spot.radius * previewMapping.scale;
-    return Skia.RRectXY(Skia.XYWHRect(previewMapping.offsetX + spot.x * previewMapping.scale - radius, previewMapping.offsetY + spot.y * previewMapping.scale - radius, radius * 2, radius * 2), radius, radius);
-  }) : [], [edit.healSpots, previewMapping]);
-  const mouthRegion = useMemo(() => boundsForPoints([...(selectedFace?.contours.UPPER_LIP_TOP ?? []), ...(selectedFace?.contours.LOWER_LIP_BOTTOM ?? [])]), [selectedFace]);
-  const noseRegion = useMemo(() => boundsForPoints([...(selectedFace?.contours.NOSE_BRIDGE ?? []), ...(selectedFace?.contours.NOSE_BOTTOM ?? [])]), [selectedFace]);
+  const healSpotClips = useMemo(() => previewMapping ? edit.healSpots.map(spot => HEAL_FEATHER_LAYERS.map(layer => Skia.RRectXY(Skia.XYWHRect(previewMapping.offsetX + (spot.x - spot.radius * layer.radius) * previewMapping.scale, previewMapping.offsetY + (spot.y - spot.radius * layer.radius) * previewMapping.scale, spot.radius * layer.radius * 2 * previewMapping.scale, spot.radius * layer.radius * 2 * previewMapping.scale), spot.radius * layer.radius * previewMapping.scale, spot.radius * layer.radius * previewMapping.scale))) : [], [edit.healSpots, previewMapping]);
+  const previewBrushStrokes = useMemo(() => {
+    if (!previewMapping) return [];
+    return edit.brushStrokes.map(stroke => {
+      const paths = BRUSH_FEATHER_LAYERS.map(layer => {
+        const pathValue = Skia.Path.Make();
+        addBrushDabs(pathValue, stroke.points, stroke.radius * layer.radius, previewMapping.scale, previewMapping.offsetX, previewMapping.offsetY);
+        return pathValue;
+      });
+      const effectMatrix = stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : stroke.tool === 'darkCircle' ? stroke.strength : 0);
+      return {stroke, paths, matrix: effectMatrix};
+    });
+  }, [edit.brushStrokes, matrix, previewMapping]);
+  useEffect(() => () => previewBrushStrokes.forEach(item => item.paths.forEach(brushPath => brushPath.dispose())), [previewBrushStrokes]);
   const previewFaceEffects = useMemo(() => {
     if (!previewMapping) return [];
     const regionClip = (region: FaceRegion, radius = .5) => {const rect = Skia.XYWHRect(previewMapping.offsetX + region.x * previewMapping.scale, previewMapping.offsetY + region.y * previewMapping.scale, region.width * previewMapping.scale, region.height * previewMapping.scale); return Skia.RRectXY(rect, rect.width * radius, rect.height * radius);};
     const mapPoints = (points: Array<{x: number; y: number}>) => points.map(point => ({x: previewMapping.offsetX + point.x * previewMapping.scale, y: previewMapping.offsetY + point.y * previewMapping.scale}));
     return retouchFaces.map((face, index) => {
-      const values = edit.retouchByFace[index] ?? initialRetouch;
+      const values = edit.oneTapEnabled ? edit.retouchByFace[index] ?? initialRetouch : initialRetouch;
       const mappedBounds = {x: previewMapping.offsetX + face.bounds.x * previewMapping.scale, y: previewMapping.offsetY + face.bounds.y * previewMapping.scale, width: face.bounds.width * previewMapping.scale, height: face.bounds.height * previewMapping.scale};
       const mask = skinMaskForFace(face);
       let clip: ReturnType<typeof Skia.RRectXY> | ReturnType<typeof Skia.Path.Make> = regionClip(face.bounds, .45);
@@ -126,10 +143,10 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       const mouth = boundsForPoints([...(face.contours.UPPER_LIP_TOP ?? []), ...(face.contours.LOWER_LIP_BOTTOM ?? [])]);
       return {values, clip, ownedPath, mappedBounds, underEyes, eyes, mouth: mouth ? regionClip(mouth, .48) : null, whiteningMatrix: localizedBrightnessMatrix(matrix, values.whitening * .72), rosyMatrix: localizedRosyMatrix(matrix, values.rosy), darkCircleMatrix: localizedBrightnessMatrix(matrix, values.darkCircle), brightEyesMatrix: localizedBrightnessMatrix(matrix, values.brightEyes * .7), teethMatrix: localizedBrightnessMatrix(matrix, values.teethWhitening * .85)};
     });
-  }, [edit.retouchByFace, matrix, previewMapping, retouchFaces]);
+  }, [edit.oneTapEnabled, edit.retouchByFace, matrix, previewMapping, retouchFaces]);
   useEffect(() => () => previewFaceEffects.forEach(effect => effect.ownedPath?.dispose()), [previewFaceEffects]);
-  const retouchSettings = useMemo<RetouchSettings>(() => ({healSpots: edit.healSpots, faces: retouchFaces.map((face, index) => {
-    const values = edit.retouchByFace[index] ?? initialRetouch;
+  const retouchSettings = useMemo<RetouchSettings>(() => ({healSpots: edit.healSpots, brushStrokes: edit.brushStrokes, warpStrokes: edit.warpStrokes, faces: retouchFaces.map((face, index) => {
+    const values = edit.oneTapEnabled ? edit.retouchByFace[index] ?? initialRetouch : initialRetouch;
     return {
       region: face.bounds,
       skinMask: skinMaskForFace(face) ?? undefined,
@@ -139,13 +156,21 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       underEyes: face.eyes.map(eye => ({x: eye.x - face.bounds.width * .13, y: eye.y + face.bounds.height * .025, width: face.bounds.width * .26, height: face.bounds.height * .105})),
       ...values,
     };
-  }).filter(face => face.smoothing > 0 || face.whitening > 0 || face.rosy > 0 || face.brightEyes > 0 || face.teethWhitening > 0 || face.darkCircle > 0 || face.slimFace > 0 || face.chin > 0 || face.largeEyes > 0 || face.smallNose > 0)}), [edit.healSpots, edit.retouchByFace, retouchFaces]);
+  }).filter(face => face.smoothing > 0 || face.whitening > 0 || face.rosy > 0 || face.brightEyes > 0 || face.teethWhitening > 0 || face.darkCircle > 0 || face.slimFace > 0 || face.chin > 0 || face.largeEyes > 0 || face.smallNose > 0)}), [edit.brushStrokes, edit.healSpots, edit.oneTapEnabled, edit.retouchByFace, edit.warpStrokes, retouchFaces]);
   const previewReshapeUniforms = useMemo(() => {
     if (!previewMapping) return faceReshapeUniforms([]);
     const mapRegion = (region: FaceRegion): FaceRegion => ({x: previewMapping.offsetX + region.x * previewMapping.scale, y: previewMapping.offsetY + region.y * previewMapping.scale, width: region.width * previewMapping.scale, height: region.height * previewMapping.scale});
-    return faceReshapeUniforms(retouchSettings.faces.map(face => ({...face, region: mapRegion(face.region), eyes: face.eyes.map(mapRegion), nose: face.nose ? mapRegion(face.nose) : undefined, mouth: face.mouth ? mapRegion(face.mouth) : undefined, underEyes: face.underEyes.map(mapRegion)})), PixelRatio.get());
-  }, [previewMapping, retouchSettings.faces]);
-  const hasPreviewReshape = Number(previewReshapeUniforms.faceCount) > 0;
+    const mapWarp = (stroke: ManualWarpStroke): ManualWarpStroke => ({...stroke, x: previewMapping.offsetX + stroke.x * previewMapping.scale, y: previewMapping.offsetY + stroke.y * previewMapping.scale, dx: stroke.dx * previewMapping.scale, dy: stroke.dy * previewMapping.scale, radius: stroke.radius * previewMapping.scale});
+    return faceReshapeUniforms(retouchSettings.faces.map(face => ({...face, region: mapRegion(face.region), eyes: face.eyes.map(mapRegion), nose: face.nose ? mapRegion(face.nose) : undefined, mouth: face.mouth ? mapRegion(face.mouth) : undefined, underEyes: face.underEyes.map(mapRegion)})), 1, [...retouchSettings.warpStrokes, ...(draftWarp ? [draftWarp] : [])].map(mapWarp));
+  }, [draftWarp, previewMapping, retouchSettings.faces, retouchSettings.warpStrokes]);
+  const hasPreviewReshape = Number(previewReshapeUniforms.faceCount) > 0 || Number(previewReshapeUniforms.manualWarpCount) > 0;
+  const previewDraftWarp = useMemo(() => !draftWarp || !previewMapping ? null : {
+    x: previewMapping.offsetX + draftWarp.x * previewMapping.scale,
+    y: previewMapping.offsetY + draftWarp.y * previewMapping.scale,
+    endX: previewMapping.offsetX + (draftWarp.x + draftWarp.dx) * previewMapping.scale,
+    endY: previewMapping.offsetY + (draftWarp.y + draftWarp.dy) * previewMapping.scale,
+    radius: draftWarp.radius * previewMapping.scale,
+  }, [draftWarp, previewMapping]);
   const commit = useCallback((next: EditState) => {setUndoStack(stack => [...stack, edit]); setRedoStack([]); setEdit(next);}, [edit]);
   const changeAdjustment = (key: AdjustmentKey, amount: number) => commit({...edit, adjustments: {...adjustments, [key]: Math.max(-1, Math.min(1, Math.round((adjustments[key] + amount) * 10) / 10))}});
   const undo = () => {const previous = undoStack[undoStack.length - 1]; if (!previous) return; setUndoStack(stack => stack.slice(0, -1)); setRedoStack(stack => [edit, ...stack]); setEdit(previous);};
@@ -157,10 +182,8 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     updateStrengthFromPosition(locationX);
   };
   const adjustStrength = (delta: number) => commit({...edit, strength: Math.max(0, Math.min(1, Math.round((strength + delta) * 20) / 20))});
-  const updateRetouch = (key: keyof FaceRetouchValues, locationX: number) => setEdit(current => ({...current, retouchByFace: {...current.retouchByFace, [selectedFaceIndex]: {...(current.retouchByFace[selectedFaceIndex] ?? initialRetouch), [key]: Math.max(0, Math.min(1, locationX / retouchBarWidth))}}}));
-  const beginRetouchDrag = (key: keyof FaceRetouchValues, locationX: number) => {setUndoStack(stack => [...stack, edit]); setRedoStack([]); updateRetouch(key, locationX);};
-  const adjustRetouch = (key: keyof FaceRetouchValues, delta: number) => commit({...edit, retouchByFace: {...edit.retouchByFace, [selectedFaceIndex]: {...selectedRetouch, [key]: Math.max(0, Math.min(1, Math.round((selectedRetouch[key] + delta) * 20) / 20))}}});
   const applyOneTapBeauty = () => {
+    if (edit.oneTapEnabled) {commit({...edit, oneTapEnabled: false}); return;}
     if (!retouchFaces.length) return;
     const retouchByFace = Object.fromEntries(retouchFaces.map((face, index) => [index, {
       ...(edit.retouchByFace[index] ?? initialRetouch),
@@ -171,43 +194,99 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       teethWhitening: face.contours.UPPER_LIP_TOP?.length && face.contours.LOWER_LIP_BOTTOM?.length ? .12 : 0,
       darkCircle: face.eyes.length === 2 ? .2 : 0,
     }])) as Record<number, FaceRetouchValues>;
-    commit({...edit, retouchByFace});
+    commit({...edit, retouchByFace, oneTapEnabled: true});
   };
-  const addHealSpot = useCallback((locationX: number, locationY: number) => {
-    if (!image || !previewMapping) return;
-    const x = Math.max(0, Math.min(image.width(), (locationX - previewMapping.offsetX) / previewMapping.scale));
-    const y = Math.max(0, Math.min(image.height(), (locationY - previewMapping.offsetY) / previewMapping.scale));
-    const radius = image.width() * healBrushSize;
-    const sourceX = x + radius * 2.4 <= image.width() ? x + radius * 2.4 : Math.max(0, x - radius * 2.4);
-    const sourceY = Math.max(radius, Math.min(image.height() - radius, y - radius * .35));
-    commit({...edit, healSpots: [...edit.healSpots, {x, y, sourceX, sourceY, radius, strength: .88}]});
-  }, [commit, edit, healBrushSize, image, previewMapping]);
+  const brushTool = (tool: RetouchTool): ManualBrushTool | null => tool === 'smooth' ? 'smoothing' : tool === 'whiten' ? 'whitening' : tool === 'rosy' ? 'rosy' : tool === 'brightEyes' ? 'brightEyes' : tool === 'teeth' ? 'teethWhitening' : tool === 'darkCircle' ? 'darkCircle' : null;
+  const warpTool = (tool: RetouchTool): ManualWarpTool | null => tool === 'slimFace' || tool === 'chin' || tool === 'largeEyes' || tool === 'smallNose' ? tool : null;
+  const screenToSource = useCallback((locationX: number, locationY: number): RetouchPoint | null => {
+    if (!image || !previewMapping) return null;
+    const screenX = (locationX - cropPreview.width / 2 - editPanRef.current.x) / editZoomRef.current;
+    const screenY = (locationY - cropPreview.height / 2 - editPanRef.current.y) / editZoomRef.current;
+    const angle = -geometry.rotation * Math.PI / 180;
+    const localX = screenX * Math.cos(angle) - screenY * Math.sin(angle);
+    const localY = screenX * Math.sin(angle) + screenY * Math.cos(angle);
+    const canvasX = (geometry.mirrored ? -localX : localX) + previewCanvasWidth / 2;
+    const canvasY = localY + previewCanvasHeight / 2;
+    return {x: Math.max(0, Math.min(image.width(), (canvasX - previewMapping.offsetX) / previewMapping.scale)), y: Math.max(0, Math.min(image.height(), (canvasY - previewMapping.offsetY) / previewMapping.scale))};
+  }, [cropPreview.height, cropPreview.width, geometry.mirrored, geometry.rotation, image, previewCanvasHeight, previewCanvasWidth, previewMapping]);
   const healGesture = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: event => {
       healGestureMoved.current = false;
-      panStart.current = editPanRef.current;
+      activeBrushIndex.current = -1; draftWarpRef.current = null; setDraftWarp(null);
       const touches = event.nativeEvent.touches;
-      if (touches.length >= 2) {const dx = touches[0].pageX - touches[1].pageX; const dy = touches[0].pageY - touches[1].pageY; pinchStart.current = {distance: Math.hypot(dx, dy), scale: editZoomRef.current};}
+      if (touches.length >= 2) {const dx = touches[0].pageX - touches[1].pageX; const dy = touches[0].pageY - touches[1].pageY; pinchStart.current = {distance: Math.hypot(dx, dy), scale: editZoomRef.current, centerX: (touches[0].pageX + touches[1].pageX) / 2, centerY: (touches[0].pageY + touches[1].pageY) / 2, panX: editPanRef.current.x, panY: editPanRef.current.y}; healGestureMoved.current = true; return;}
+      const point = screenToSource(event.nativeEvent.locationX, event.nativeEvent.locationY);
+      strokeStart.current = point;
+      const selectedBrush = brushTool(retouchTool);
+      if (point && selectedBrush && image) {setUndoStack(stack => [...stack, edit]); setRedoStack([]); activeBrushIndex.current = edit.brushStrokes.length; setEdit(current => ({...current, brushStrokes: [...current.brushStrokes, {tool: selectedBrush, points: [point], radius: image.width() * manualBrushSize, strength: manualStrength}]}));}
     },
     onPanResponderMove: (event, gesture) => {
       const touches = event.nativeEvent.touches;
-      if (touches.length >= 2) {const dx = touches[0].pageX - touches[1].pageX; const dy = touches[0].pageY - touches[1].pageY; if (pinchStart.current.distance > 0) setEditZoom(Math.max(1, Math.min(5, pinchStart.current.scale * Math.hypot(dx, dy) / pinchStart.current.distance))); healGestureMoved.current = true; return;}
-      if (editZoomRef.current > 1 && (Math.abs(gesture.dx) > 3 || Math.abs(gesture.dy) > 3)) {setEditPan({x: panStart.current.x + gesture.dx, y: panStart.current.y + gesture.dy}); healGestureMoved.current = true;}
-    },
-    onPanResponderRelease: event => {
+      if (touches.length >= 2 && draftWarpRef.current) {draftWarpRef.current = null; setDraftWarp(null);}
+      if (touches.length >= 2) {const dx = touches[0].pageX - touches[1].pageX; const dy = touches[0].pageY - touches[1].pageY; const distance = Math.hypot(dx, dy); const centerX = (touches[0].pageX + touches[1].pageX) / 2; const centerY = (touches[0].pageY + touches[1].pageY) / 2; if (pinchStart.current.distance <= 0) pinchStart.current = {distance, scale: editZoomRef.current, centerX, centerY, panX: editPanRef.current.x, panY: editPanRef.current.y}; const nextZoom = zoomFromPinch(pinchStart.current.scale, pinchStart.current.distance, distance); setEditZoom(nextZoom); setEditPan(clampEditorPan(pinchStart.current.panX + centerX - pinchStart.current.centerX, pinchStart.current.panY + centerY - pinchStart.current.centerY, nextZoom, previewCanvasWidth, previewCanvasHeight)); healGestureMoved.current = true; return;}
+      const point = screenToSource(event.nativeEvent.locationX, event.nativeEvent.locationY);
       if (healGestureMoved.current) return;
-      const centerX = previewCanvasWidth / 2; const centerY = previewCanvasHeight / 2;
-      const x = (event.nativeEvent.locationX - centerX - editPanRef.current.x) / editZoomRef.current + centerX;
-      const y = (event.nativeEvent.locationY - centerY - editPanRef.current.y) / editZoomRef.current + centerY;
-      addHealSpot(x, y);
+      const selectedWarp = warpTool(retouchTool);
+      if (selectedWarp && strokeStart.current && image && previewMapping) {
+        const end = warpEndFromDrag(strokeStart.current, gesture.dx, gesture.dy, previewMapping.scale, editZoomRef.current, geometry.rotation, geometry.mirrored);
+        const radius = Math.max(image.width() * manualBrushSize * 1.8, 36 / (previewMapping.scale * editZoomRef.current));
+        const next = makeWarpStroke(selectedWarp, strokeStart.current, end, radius, manualStrength);
+        draftWarpRef.current = next; setDraftWarp(next);
+      }
+      if (point && activeBrushIndex.current >= 0) setEdit(current => ({...current, brushStrokes: current.brushStrokes.map((stroke, index) => index === activeBrushIndex.current ? appendBrushPoint(stroke, point) : stroke)}));
     },
-  }), [addHealSpot, previewCanvasHeight, previewCanvasWidth]);
+    onPanResponderRelease: (event, gesture) => {
+      pinchStart.current.distance = 0;
+      setDraftWarp(null);
+      if (healGestureMoved.current) {activeBrushIndex.current = -1; strokeStart.current = null; return;}
+      const end = screenToSource(event.nativeEvent.locationX, event.nativeEvent.locationY);
+      const selectedWarp = warpTool(retouchTool);
+      if (strokeStart.current && selectedWarp && image && previewMapping) {
+        const dragEnd = warpEndFromDrag(strokeStart.current, gesture.dx, gesture.dy, previewMapping.scale, editZoomRef.current, geometry.rotation, geometry.mirrored);
+        const stroke = draftWarpRef.current ?? makeWarpStroke(selectedWarp, strokeStart.current, dragEnd, Math.max(image.width() * manualBrushSize * 1.8, 36 / (previewMapping.scale * editZoomRef.current)), manualStrength);
+        if (edit.warpStrokes.length < MAX_MANUAL_WARPS && (selectedWarp === 'largeEyes' || selectedWarp === 'smallNose' || Math.hypot(stroke.dx, stroke.dy) > 0)) commit({...edit, warpStrokes: [...edit.warpStrokes, stroke]});
+      }
+      else if (end && retouchTool === 'heal' && image) {
+        if (pickingHealSource || !healSource) {
+          const radius = image.width() * healBrushSize;
+          setHealSource({x: Math.max(radius, Math.min(image.width() - radius, end.x)), y: Math.max(radius, Math.min(image.height() - radius, end.y))});
+          setPickingHealSource(false);
+        }
+        else commit({...edit, healSpots: [...edit.healSpots, {...end, sourceX: healSource.x, sourceY: healSource.y, radius: image.width() * healBrushSize, strength: manualStrength}]});
+      }
+      activeBrushIndex.current = -1; strokeStart.current = null;
+    },
+    onPanResponderTerminate: () => {pinchStart.current.distance = 0; activeBrushIndex.current = -1; strokeStart.current = null; draftWarpRef.current = null; setDraftWarp(null);},
+    onPanResponderTerminationRequest: () => false,
+  }), [commit, edit, geometry.mirrored, geometry.rotation, healBrushSize, healSource, image, manualBrushSize, manualStrength, pickingHealSource, previewCanvasHeight, previewCanvasWidth, previewMapping, retouchTool, screenToSource]);
   const button = (label: string, onPress: () => void, selected = false, disabled = false) => <Pressable accessibilityRole="button" accessibilityState={{selected, disabled}} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></Pressable>;
   const editorTab = (label: string, Icon: LucideIcon, onPress: () => void, selected = false, disabled = false) => <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected, disabled}} disabled={disabled} onPress={onPress} style={[styles.editorTab, disabled && styles.disabled]}><Icon size={20} color={selected ? '#D7B978' : '#AAB2B9'} strokeWidth={1.8} /><Text style={[styles.editorTabLabel, selected && styles.editorTabLabelActive]}>{label}</Text>{selected && <View style={styles.editorIndicator} />}</Pressable>;
   const retouchToolCard = (tool: RetouchTool, label: string, description: string, enabled = true) => <Pressable accessibilityRole="button" accessibilityState={{selected: retouchTool === tool, disabled: !enabled}} accessibilityHint={enabled ? `選擇${label}工具` : `${label}需要更完整的臉部定位`} disabled={!enabled} onPress={() => setRetouchTool(tool)} style={[styles.retouchToolCard, retouchTool === tool && styles.retouchToolCardActive, !enabled && styles.disabled]}><Text style={[styles.retouchToolName, retouchTool === tool && styles.retouchToolNameActive]}>{label}</Text><Text style={styles.retouchToolDescription}>{enabled ? description : '目前照片不可用'}</Text></Pressable>;
-  const retouchSlider = (label: string, key: keyof FaceRetouchValues, value: number, enabled: boolean) => <View style={styles.retouchSlider}><View style={styles.sliderLabelRow}><Text style={styles.sliderLabel}>{label}</Text><View style={styles.sliderValueActions}><Text style={styles.sliderValue}>{Math.round(value * 100)}%</Text><Pressable accessibilityRole="button" accessibilityLabel={`重設${label}`} disabled={!enabled || value === 0} onPress={() => adjustRetouch(key, -value)} style={[styles.sliderReset, (!enabled || value === 0) && styles.disabled]}><Text style={styles.sliderResetText}>重設</Text></Pressable></View></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}強度`} accessibilityState={{disabled: !enabled}} accessibilityValue={{min: 0, max: 100, now: Math.round(value * 100), text: `${Math.round(value * 100)}%`}} accessibilityActions={[{name: 'increment', label: '增加 5%'}, {name: 'decrement', label: '減少 5%'}]} onAccessibilityAction={event => {if (!enabled) return; adjustRetouch(key, event.nativeEvent.actionName === 'increment' ? .05 : -.05);}} onLayout={event => setRetouchBarWidth(Math.max(1, event.nativeEvent.layout.width))} onStartShouldSetResponder={() => enabled} onMoveShouldSetResponder={() => enabled} onResponderGrant={event => beginRetouchDrag(key, event.nativeEvent.locationX)} onResponderMove={event => updateRetouch(key, event.nativeEvent.locationX)} style={[styles.strengthBar, !enabled && styles.disabled]}><View style={[styles.strengthFill, {width: `${value * 100}%`}]} /><View style={[styles.strengthThumb, {left: `${value * 100}%`}]} /></View></View>;
+  const activeManualCount = brushTool(retouchTool) ? edit.brushStrokes.filter(stroke => stroke.tool === brushTool(retouchTool)).length : warpTool(retouchTool) ? edit.warpStrokes.filter(stroke => stroke.tool === warpTool(retouchTool)).length : edit.healSpots.length;
+  const clearActiveTool = () => {const brush = brushTool(retouchTool); const warp = warpTool(retouchTool); commit({...edit, brushStrokes: brush ? edit.brushStrokes.filter(stroke => stroke.tool !== brush) : edit.brushStrokes, warpStrokes: warp ? edit.warpStrokes.filter(stroke => stroke.tool !== warp) : edit.warpStrokes, healSpots: retouchTool === 'heal' ? [] : edit.healSpots});};
+  const updateManualStrength = (locationX: number) => setManualStrength(Math.max(.1, Math.min(1, locationX / manualBarWidth)));
+  const activeBrushSize = retouchTool === 'heal' ? healBrushSize : manualBrushSize;
+  const updateBrushSize = (locationX: number) => {
+    const nextSize = .012 + Math.max(0, Math.min(1, locationX / brushSizeBarWidth)) * .063;
+    if (retouchTool === 'heal') setHealBrushSize(nextSize);
+    else setManualBrushSize(nextSize);
+  };
+  const brushSizePercent = (activeBrushSize - .012) / .063;
+  const brushSizePixels = image ? Math.round(image.width() * activeBrushSize) : 0;
+  const manualToolPanel = <View style={styles.healPanel}>
+    <View style={styles.sliderLabelRow}>
+      <Text style={styles.sliderLabel}>{retouchTool === 'slimFace' ? '從臉頰邊緣往內推，直接收窄輪廓' : retouchTool === 'chin' ? '從下巴位置向下或向內推拉' : retouchTool === 'largeEyes' ? '點按眼睛中心，直接放大局部' : retouchTool === 'smallNose' ? '點按鼻翼，直接縮小局部' : retouchTool === 'heal' ? pickingHealSource || !healSource ? '先點乾淨皮膚取樣' : '再點瑕疵修復；可重選取樣點' : '單指塗抹效果，雙指縮放移動'}</Text>
+    </View>
+    {retouchTool === 'heal' && <View style={styles.healActions}>{button('重新取樣', () => setPickingHealSource(true), pickingHealSource)}<Text style={styles.sliderLabel}>{healSource && !pickingHealSource ? '已選取乾淨皮膚' : '尚未選取來源'}</Text></View>}
+    {warpTool(retouchTool) && edit.warpStrokes.length >= MAX_MANUAL_WARPS && <Text style={styles.sliderLabel}>已達 {MAX_MANUAL_WARPS} 筆上限；請復原或清除推拉後繼續。</Text>}
+    <View style={styles.healActions}>{button('小筆刷', () => {setManualBrushSize(.02); setHealBrushSize(.018);}, manualBrushSize === .02)}{button('中筆刷', () => {setManualBrushSize(.035); setHealBrushSize(.028);}, manualBrushSize === .035)}{button('大筆刷', () => {setManualBrushSize(.055); setHealBrushSize(.042);}, manualBrushSize === .055)}{button(`清除 ${activeManualCount}`, clearActiveTool, false, !activeManualCount)}</View>
+    <View style={styles.sliderLabelRow}><Text style={styles.sliderLabel}>筆刷大小</Text><Text style={styles.sliderValue}>{brushSizePixels} px</Text></View>
+    <View accessibilityRole="adjustable" accessibilityLabel="筆刷大小" accessibilityValue={{min: 1, max: image ? Math.round(image.width() * .075) : 100, now: brushSizePixels, text: `${brushSizePixels} px`}} accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]} onAccessibilityAction={event => {const next = Math.max(.012, Math.min(.075, activeBrushSize + (event.nativeEvent.actionName === 'increment' ? .005 : -.005))); if (retouchTool === 'heal') setHealBrushSize(next); else setManualBrushSize(next);}} onLayout={event => setBrushSizeBarWidth(Math.max(1, event.nativeEvent.layout.width))} onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderGrant={event => updateBrushSize(event.nativeEvent.locationX)} onResponderMove={event => updateBrushSize(event.nativeEvent.locationX)} style={styles.strengthBar}><View style={[styles.strengthFill, {width: `${Math.max(0, Math.min(1, brushSizePercent)) * 100}%`}]} /><View style={[styles.strengthThumb, {left: `${Math.max(0, Math.min(1, brushSizePercent)) * 100}%`}]} /></View>
+    <View style={styles.sliderLabelRow}><Text style={styles.sliderLabel}>效果強度</Text><Text style={styles.sliderValue}>{Math.round(manualStrength * 100)}%</Text></View>
+    <View accessibilityRole="adjustable" accessibilityLabel="筆刷強度" accessibilityValue={{min: 10, max: 100, now: Math.round(manualStrength * 100)}} accessibilityActions={[{name: 'increment'}, {name: 'decrement'}]} onAccessibilityAction={event => setManualStrength(value => Math.max(.1, Math.min(1, value + (event.nativeEvent.actionName === 'increment' ? .1 : -.1))))} onLayout={event => setManualBarWidth(Math.max(1, event.nativeEvent.layout.width))} onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderGrant={event => updateManualStrength(event.nativeEvent.locationX)} onResponderMove={event => updateManualStrength(event.nativeEvent.locationX)} style={styles.strengthBar}><View style={[styles.strengthFill, {width: `${manualStrength * 100}%`}]} /><View style={[styles.strengthThumb, {left: `${manualStrength * 100}%`}]} /></View>
+  </View>;
 
   useEffect(() => {
     let active = true;
@@ -245,18 +324,25 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
         <ColorMatrix matrix={comparing ? identity : matrix} />
       </SkiaImage>}
       {image && !comparing && previewFaceEffects.map((effect, faceIndex) => <React.Fragment key={`face-effect-${faceIndex}`}>
-        {effect.values.smoothing > 0 && <Group clip={effect.clip} opacity={Math.min(.72, effect.values.smoothing * .72)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><Blur blur={Math.max(.5, effect.values.smoothing * 5)} mode="clamp" /><ColorMatrix matrix={matrix} /></SkiaImage></Group>}
+        {effect.values.smoothing > 0 && skinSmoothingEffect && <Group clip={effect.clip} layer={<Paint><RuntimeShader source={skinSmoothingEffect} uniforms={skinSmoothingUniforms(smoothingBlurRadius(image.width(), effect.values.smoothing) * previewMapping!.scale, effect.values.smoothing)} /></Paint>}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={matrix} /></SkiaImage></Group>}
         {effect.values.whitening > 0 && <Group clip={effect.clip} opacity={Math.min(.65, effect.values.whitening * .65)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.whiteningMatrix} /></SkiaImage></Group>}
         {effect.values.rosy > 0 && <Group clip={effect.clip} opacity={Math.min(.62, effect.values.rosy * .62)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.rosyMatrix} /></SkiaImage></Group>}
         {effect.values.darkCircle > 0 && effect.underEyes.map((clip, index) => <Group key={`dark-${index}`} clip={clip}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.darkCircleMatrix} /></SkiaImage></Group>)}
         {effect.values.brightEyes > 0 && effect.eyes.map((clip, index) => <Group key={`bright-${index}`} clip={clip} opacity={Math.min(.7, effect.values.brightEyes * .7)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.brightEyesMatrix} /></SkiaImage></Group>)}
         {effect.values.teethWhitening > 0 && effect.mouth && <Group clip={effect.mouth} opacity={Math.min(.55, effect.values.teethWhitening * .55)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.teethMatrix} /></SkiaImage></Group>}
       </React.Fragment>)}
-      {image && !comparing && healSpotClips.map((clip, index) => {const spot = edit.healSpots[index]; const scale = previewMapping?.scale ?? 1; return <Group key={`heal-${index}`} clip={clip} opacity={spot.strength}><SkiaImage image={image} x={(spot.x - spot.sourceX) * scale} y={(spot.y - spot.sourceY) * scale} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><Blur blur={Math.max(1, spot.radius * scale * .1)} mode="clamp" /><ColorMatrix matrix={matrix} /></SkiaImage></Group>;})}
+      {image && !comparing && previewBrushStrokes.map(({stroke, paths, matrix: strokeMatrix}, index) => paths.map((strokePath, layerIndex) => stroke.tool === 'smoothing' && skinSmoothingEffect ? <Group key={`brush-${index}-${layerIndex}`} clip={strokePath} opacity={BRUSH_FEATHER_LAYERS[layerIndex].opacity} layer={<Paint><RuntimeShader source={skinSmoothingEffect} uniforms={skinSmoothingUniforms(smoothingBlurRadius(image.width(), stroke.strength) * previewMapping!.scale, stroke.strength)} /></Paint>}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={matrix} /></SkiaImage></Group> : <Group key={`brush-${index}-${layerIndex}`} clip={strokePath} opacity={Math.min(.78, stroke.strength * .78) * BRUSH_FEATHER_LAYERS[layerIndex].opacity}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={strokeMatrix} /></SkiaImage></Group>))}
+      {image && !comparing && healSpotClips.map((clips, index) => {const spot = edit.healSpots[index]; const scale = previewMapping?.scale ?? 1; return clips.map((clip, layerIndex) => <Group key={`heal-${index}-${layerIndex}`} clip={clip} opacity={spot.strength * HEAL_FEATHER_LAYERS[layerIndex].opacity}><SkiaImage image={image} x={(spot.x - spot.sourceX) * scale} y={(spot.y - spot.sourceY) * scale} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={matrix} /></SkiaImage></Group>);})}
+      {section === 'retouch' && retouchTool === 'heal' && healSource && !comparing && previewMapping && <RoundedRect x={previewMapping.offsetX + healSource.x * previewMapping.scale - 6} y={previewMapping.offsetY + healSource.y * previewMapping.scale - 6} width={12} height={12} r={6} style="stroke" strokeWidth={2} color="#D7B978" />}
       </Group>
+      {section === 'retouch' && previewDraftWarp && <>
+        <Circle cx={previewDraftWarp.x} cy={previewDraftWarp.y} r={previewDraftWarp.radius} style="stroke" strokeWidth={1.5} color="rgba(255,240,207,.75)" />
+        <Line p1={{x: previewDraftWarp.x, y: previewDraftWarp.y}} p2={{x: previewDraftWarp.endX, y: previewDraftWarp.endY}} strokeWidth={2.5} color="#D7B978" />
+        <Circle cx={previewDraftWarp.endX} cy={previewDraftWarp.endY} r={4} color="#FFF0CF" />
+      </>}
       {section === 'retouch' && previewFaceEffects[selectedFaceIndex] && <RoundedRect x={previewFaceEffects[selectedFaceIndex].mappedBounds.x} y={previewFaceEffects[selectedFaceIndex].mappedBounds.y} width={previewFaceEffects[selectedFaceIndex].mappedBounds.width} height={previewFaceEffects[selectedFaceIndex].mappedBounds.height} r={16} style="stroke" strokeWidth={1.5} color="rgba(215,185,120,.85)" />}
     </Canvas>
-    {retouchTool === 'heal' && section === 'retouch' && <View accessibilityRole="adjustable" accessibilityLabel="局部修復筆，可點擊、拖曳或雙指縮放照片" style={StyleSheet.absoluteFill} {...healGesture.panHandlers} />}
+    {section === 'retouch' && <View accessibilityRole="adjustable" accessibilityLabel="手動修容畫布，單指使用工具，雙指縮放與移動" accessibilityValue={{min: 100, max: 500, now: Math.round(editZoom * 100), text: `${editZoom.toFixed(1)} 倍`}} accessibilityActions={[{name: 'increment', label: '放大'}, {name: 'decrement', label: '縮小'}]} onAccessibilityAction={event => setEditZoom(current => clampEditorZoom(current + (event.nativeEvent.actionName === 'increment' ? .5 : -.5)))} style={StyleSheet.absoluteFill} {...healGesture.panHandlers} />}
     </View>
     </View>
     <View style={styles.compareRow}>
@@ -299,21 +385,12 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       <Text style={styles.retouchMessage}>{faceAnalysis === 'detecting' ? '正在分析人臉輪廓與五官位置…' : faceAnalysis === 'ready' ? '效果只套用在目前選取的人臉' : faceAnalysis === 'empty' ? '請使用光線充足、臉部清楚的正面照片' : '人臉分析失敗，請重拍清晰正面照片'}</Text>
       {retouchFaces.length > 1 && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.faceSelector}>{retouchFaces.map((_, index) => button(`臉 ${index + 1}`, () => setSelectedFaceIndex(index), selectedFaceIndex === index))}</ScrollView>}
       {faceAnalysis === 'ready' && <Text style={styles.retouchStatus}>{retouchFaces[selectedFaceIndex]?.hasContours && retouchFaces[selectedFaceIndex]?.hasLandmarks ? '✓ 臉型與五官定位完成' : '僅取得臉部範圍，精細工具暫停使用'}</Text>}
-      <Pressable accessibilityRole="button" accessibilityLabel="一鍵美顏所有人臉" accessibilityState={{disabled: faceAnalysis !== 'ready'}} disabled={faceAnalysis !== 'ready'} onPress={applyOneTapBeauty} style={[styles.oneTapBeauty, faceAnalysis !== 'ready' && styles.disabled]}><View style={styles.oneTapIcon}><Sparkles size={19} color={colors.primarySoft} strokeWidth={1.9} /></View><View style={styles.oneTapCopy}><Text style={styles.oneTapTitle}>一鍵美顏</Text><Text style={styles.oneTapDescription}>自然磨皮、提亮膚色與眼神，一次套用所有人臉</Text></View><Text style={styles.oneTapAction}>套用</Text></Pressable>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.retouchToolList}>{retouchToolCard('heal', '修復筆', '點按祛痘', Boolean(image))}{retouchToolCard('smooth', '磨皮', '柔化膚質', faceAnalysis === 'ready')}{retouchToolCard('whiten', '美白', '提亮膚色', faceAnalysis === 'ready')}{retouchToolCard('rosy', '粉嫩', '自然紅潤', faceAnalysis === 'ready')}{retouchToolCard('brightEyes', '亮眼', '提亮眼神', selectedFace?.eyes.length === 2)}{retouchToolCard('teeth', '白牙', '笑容提亮', Boolean(mouthRegion))}{retouchToolCard('darkCircle', '黑眼圈', '局部淡化', selectedFace?.eyes.length === 2)}{retouchToolCard('slimFace', '瘦臉', '收窄臉頰', Boolean(faceReshapeEffect && selectedFace?.hasContours))}{retouchToolCard('chin', '下巴', '自然延長', Boolean(faceReshapeEffect && selectedFace?.hasContours))}{retouchToolCard('largeEyes', '大眼', '局部放大', Boolean(faceReshapeEffect && selectedFace?.eyes.length === 2))}{retouchToolCard('smallNose', '縮鼻', '精緻鼻型', Boolean(faceReshapeEffect && noseRegion))}</ScrollView>
-      {retouchTool === 'smooth' && retouchSlider('磨皮強度', 'smoothing', smoothing, faceAnalysis === 'ready')}
-      {retouchTool === 'whiten' && retouchSlider('美白強度', 'whitening', whitening, faceAnalysis === 'ready')}
-      {retouchTool === 'rosy' && retouchSlider('粉嫩強度', 'rosy', rosy, faceAnalysis === 'ready')}
-      {retouchTool === 'brightEyes' && retouchSlider('亮眼強度', 'brightEyes', brightEyes, selectedFace?.eyes.length === 2)}
-      {retouchTool === 'teeth' && retouchSlider('白牙強度', 'teethWhitening', teethWhitening, Boolean(mouthRegion))}
-      {retouchTool === 'darkCircle' && retouchSlider('淡化強度', 'darkCircle', darkCircle, selectedFace?.eyes.length === 2)}
-      {retouchTool === 'slimFace' && retouchSlider('瘦臉強度', 'slimFace', slimFace, Boolean(faceReshapeEffect && selectedFace?.hasContours))}
-      {retouchTool === 'chin' && retouchSlider('下巴強度', 'chin', chin, Boolean(faceReshapeEffect && selectedFace?.hasContours))}
-      {retouchTool === 'largeEyes' && retouchSlider('大眼強度', 'largeEyes', largeEyes, Boolean(faceReshapeEffect && selectedFace?.eyes.length === 2))}
-      {retouchTool === 'smallNose' && retouchSlider('縮鼻強度', 'smallNose', smallNose, Boolean(faceReshapeEffect && noseRegion))}
-      {retouchTool === 'heal' && <View style={styles.healPanel}><Text style={styles.sliderLabel}>點擊斑點修復 · 雙指縮放 · 單指拖曳</Text><Text style={styles.retouchMessage}>自動取樣周圍皮膚，每次點按都能復原。</Text><View style={styles.healActions}>{button('小筆刷', () => setHealBrushSize(.018), healBrushSize === .018)}{button('中筆刷', () => setHealBrushSize(.028), healBrushSize === .028)}{button('大筆刷', () => setHealBrushSize(.042), healBrushSize === .042)}{button('1×', () => {setEditZoom(1); setEditPan({x: 0, y: 0});}, editZoom === 1)}{button('2×', () => setEditZoom(2), editZoom === 2)}{button(`清除 ${edit.healSpots.length}`, () => commit({...edit, healSpots: []}), false, !edit.healSpots.length)}</View></View>}
+      <View style={styles.viewportControls}><Text style={styles.viewportHint}>單指使用工具 · 雙指縮放與移動畫面</Text><View style={styles.viewportActions}>{button('1×', () => {setEditZoom(1); setEditPan({x: 0, y: 0});}, editZoom === 1)}{button('2×', () => setEditZoom(2), editZoom === 2)}{button('3×', () => setEditZoom(3), editZoom === 3)}</View></View>
+      <Pressable accessibilityRole="switch" accessibilityLabel="一鍵美顏所有人臉" accessibilityState={{checked: edit.oneTapEnabled, disabled: faceAnalysis !== 'ready' && !edit.oneTapEnabled}} disabled={faceAnalysis !== 'ready' && !edit.oneTapEnabled} onPress={applyOneTapBeauty} style={[styles.oneTapBeauty, faceAnalysis !== 'ready' && !edit.oneTapEnabled && styles.disabled]}><View style={styles.oneTapIcon}><Sparkles size={19} color={colors.primarySoft} strokeWidth={1.9} /></View><View style={styles.oneTapCopy}><Text style={styles.oneTapTitle}>一鍵美顏</Text><Text style={styles.oneTapDescription}>{edit.oneTapEnabled ? '已開啟 · 關閉不影響手動畫筆與推拉' : '自然磨皮、提亮膚色與眼神，一次套用所有人臉'}</Text></View><Text style={styles.oneTapAction}>{edit.oneTapEnabled ? '開啟 ●' : '關閉 ○'}</Text></Pressable>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.retouchToolList}>{retouchToolCard('heal', '修復筆', '點按祛痘', Boolean(image))}{retouchToolCard('smooth', '磨皮', '手動畫膚質', Boolean(image))}{retouchToolCard('whiten', '美白', '手動提亮', Boolean(image))}{retouchToolCard('rosy', '粉嫩', '手動畫紅潤', Boolean(image))}{retouchToolCard('brightEyes', '亮眼', '手動畫眼神', Boolean(image))}{retouchToolCard('teeth', '白牙', '手動畫笑容', Boolean(image))}{retouchToolCard('darkCircle', '黑眼圈', '手動畫淡化', Boolean(image))}{retouchToolCard('slimFace', '瘦臉', '手指推拉', Boolean(image && faceReshapeEffect))}{retouchToolCard('chin', '下巴', '手指推拉', Boolean(image && faceReshapeEffect))}{retouchToolCard('largeEyes', '大眼', '點按局部放大', Boolean(image && faceReshapeEffect))}{retouchToolCard('smallNose', '縮鼻', '點按局部縮小', Boolean(image && faceReshapeEffect))}</ScrollView>
+      {manualToolPanel}
       {!faceReshapeEffect && <Text accessibilityRole="alert" style={styles.retouchWarning}>此裝置無法建立五官變形效果，其他修容工具仍可正常使用。</Text>}
-      <Text style={styles.retouchHint}>五官變形使用局部柔邊網格，每張臉可保留獨立設定。</Text>
+      <Text style={styles.retouchHint}>手動工具不會自動抓五官；只有「一鍵美顏」使用人臉定位。</Text>
     </ScrollView> : section === 'adjust' ? <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.adjustments}>{(Object.keys(adjustmentLabels) as AdjustmentKey[]).map(key => <View key={key} style={styles.adjustmentCard}><Text style={styles.adjustmentName}>{adjustmentLabels[key]}</Text><View style={styles.adjustRow}>{button('−', () => changeAdjustment(key, -.1), false, adjustments[key] <= -1)}<Text style={styles.adjustValue}>{Math.round(adjustments[key] * 100)}%</Text>{button('＋', () => changeAdjustment(key, .1), false, adjustments[key] >= 1)}</View></View>)}</ScrollView> : <View style={styles.cropTools}>
       {button('旋轉 90°', () => commit({...edit, geometry: {...geometry, rotation: ((geometry.rotation + 90) % 360) as PhotoGeometry['rotation']}}))}
       {button('水平翻轉', () => commit({...edit, geometry: {...geometry, mirrored: !geometry.mirrored}}), geometry.mirrored)}
@@ -378,6 +455,9 @@ const styles = StyleSheet.create({
   retouchOptions: {gap: 8, paddingHorizontal: 14},
   faceSelector: {gap: 8, paddingHorizontal: 14},
   retouchStatus: {color: '#D7B978', fontSize: 10, paddingHorizontal: 16},
+  viewportControls: {marginHorizontal: 12, paddingHorizontal: 11, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderRadius: 13, backgroundColor: 'rgba(255,255,255,.035)'},
+  viewportHint: {flex: 1, color: colors.textMuted, fontSize: 10},
+  viewportActions: {flexDirection: 'row', gap: 6},
   oneTapBeauty: {marginHorizontal: 12, minHeight: 66, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 17, borderWidth: 1, borderColor: 'rgba(215,185,120,.42)', backgroundColor: colors.primaryMuted},
   oneTapIcon: {width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(215,185,120,.38)', backgroundColor: 'rgba(215,185,120,.12)'},
   oneTapCopy: {flex: 1, marginHorizontal: 10},
