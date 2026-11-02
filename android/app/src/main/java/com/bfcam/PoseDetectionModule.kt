@@ -10,6 +10,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.pose.PoseLandmark
 import com.google.mlkit.vision.pose.PoseDetection
 import com.google.mlkit.vision.pose.defaults.PoseDetectorOptions
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 
 class PoseDetectionModule(private val context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
   override fun getName() = "PoseDetectorModule"
@@ -37,5 +39,24 @@ class PoseDetectionModule(private val context: ReactApplicationContext) : ReactC
         detector.close()
       }.addOnFailureListener { error -> detector.close(); promise.reject("POSE_DETECTION_FAILED", error) }
     } catch (error: Exception) { promise.reject("POSE_IMAGE_INVALID", error) }
+  }
+
+  @ReactMethod
+  fun detectLabels(uri: String, promise: Promise) {
+    try {
+      val image = InputImage.fromFilePath(context, Uri.parse(uri))
+      val options = ImageLabelerOptions.Builder().setConfidenceThreshold(0.5f).build()
+      val labeler = ImageLabeling.getClient(options)
+      labeler.process(image).addOnSuccessListener { labels ->
+        val result = Arguments.createArray()
+        labels.forEach { label -> result.pushMap(Arguments.createMap().apply {
+          putString("text", label.text)
+          putDouble("confidence", label.confidence.toDouble())
+          putInt("index", label.index)
+        }) }
+        labeler.close()
+        promise.resolve(result)
+      }.addOnFailureListener { error -> labeler.close(); promise.reject("IMAGE_LABELING_FAILED", error) }
+    } catch (error: Exception) { promise.reject("LABEL_IMAGE_INVALID", error) }
   }
 }

@@ -1,0 +1,1056 @@
+Starting a Gradle Daemon, 4 busy and 1 incompatible Daemons could not be reused, use --status for details
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar
+> Task :gradle-plugin:settings-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:processResources
+> Task :gradle-plugin:settings-plugin:classes
+> Task :gradle-plugin:settings-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+
+> Configure project :app
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+
+> Configure project :react-native-async-storage_async-storage
+WARNING: API 'libraryVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling libraryVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+
+> Configure project :react-native-nitro-image
+[NitroModules] 🔥 NitroImage is boosted by nitro!
+
+> Configure project :react-native-nitro-modules
+[NitroModules] 🔥 Your app is boosted by nitro modules!
+
+> Configure project :react-native-reanimated
+w: file:///C:/Workspace/BFCam/node_modules/react-native-reanimated/android/build.gradle.kts:174:1: 'fun Project.android(configure: Action<LibraryExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+
+> Configure project :react-native-worklets
+w: file:///C:/Workspace/BFCam/node_modules/react-native-worklets/android/build.gradle.kts:175:1: 'fun Project.android(configure: Action<LibraryExtension>): Unit' is deprecated. Replaced by com.android.build.api.dsl.LibraryExtension.
+This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.
+
+> Configure project :react-native-vision-camera
+[NitroModules] 🔥 VisionCamera is boosted by nitro!
+
+> Configure project :react-native-vision-camera-face-detector
+[NitroModules] 🔥 VisionCameraFaceDetector is boosted by nitro!
+
+> Configure project :react-native-vision-camera-worklets
+[NitroModules] 🔥 VisionCameraWorklets is boosted by nitro!
+
+> Configure project :shopify_react-native-skia
+react-native-skia: SK_GRAPHITE: false
+react-native-skia: Skia libs: C:\Workspace\BFCam\node_modules\react-native-skia-android/libs
+react-native-skia: node_modules/ found at: C:\Workspace\BFCam\node_modules
+react-native-skia: RN Version: 87 / 0.87.1
+react-native-skia: isSourceBuild: false
+react-native-skia: PrebuiltDir: C:\Workspace\BFCam\node_modules\@shopify\react-native-skia\android\build/react-native-0*/jni
+react-native-skia: buildType: release
+react-native-skia: buildDir: C:\Workspace\BFCam\node_modules\@shopify\react-native-skia\android\build
+react-native-skia: node_modules: C:\Workspace\BFCam\node_modules
+react-native-skia: Enable Prefab: true
+react-native-skia: aar state post 70, do nothing
+
+> Task :app:generateAutolinkingNewArchitectureFiles UP-TO-DATE
+> Task :app:generateAutolinkingPackageList UP-TO-DATE
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :app:generateReactNativeEntryPoint UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-async-storage_async-storage:preBuild UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:preBuild UP-TO-DATE
+> Task :react-native-gesture-handler:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-gesture-handler:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-gesture-handler:preBuild UP-TO-DATE
+> Task :react-native-nitro-image:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-nitro-image:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-nitro-image:prepareHeaders
+> Task :react-native-nitro-image:preBuild
+> Task :react-native-nitro-modules:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-nitro-modules:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-nitro-modules:prepareHeaders
+> Task :react-native-nitro-modules:preBuild
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask
+> Task :react-native-reanimated:assertWorkletsVersionTask
+> Task :react-native-reanimated:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-reanimated:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-reanimated:prepareReanimatedHeadersForPrefabs
+> Task :react-native-reanimated:preBuild
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-safe-area-context:preBuild UP-TO-DATE
+> Task :react-native-share:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-share:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-share:preBuild UP-TO-DATE
+> Task :react-native-svg:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-svg:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-svg:preBuild UP-TO-DATE
+> Task :react-native-vision-camera:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-vision-camera:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-vision-camera:prepareHeaders
+> Task :react-native-vision-camera:preBuild
+> Task :react-native-vision-camera-face-detector:preBuild UP-TO-DATE
+> Task :react-native-vision-camera-worklets:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-vision-camera-worklets:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-vision-camera-worklets:preBuild UP-TO-DATE
+> Task :react-native-worklets:assertMinimalReactNativeVersionTask
+> Task :react-native-worklets:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :react-native-worklets:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :react-native-worklets:prepareWorkletsHeadersForPrefabs
+> Task :react-native-worklets:preBuild
+> Task :shopify_react-native-skia:generateCodegenSchemaFromJavaScript UP-TO-DATE
+> Task :shopify_react-native-skia:generateCodegenArtifactsFromSchema UP-TO-DATE
+> Task :shopify_react-native-skia:prepareHeaders
+> Task :shopify_react-native-skia:preBuild
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :react-native-nitro-image:preReleaseBuild
+> Task :react-native-nitro-modules:preReleaseBuild
+> Task :react-native-nitro-modules:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-nitro-modules:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-nitro-modules:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-nitro-modules:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-nitro-modules:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-nitro-modules:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-nitro-modules:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-nitro-modules:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-nitro-modules:externalNativeBuildRelease
+> Task :react-native-nitro-modules:generateJsonModelRelease
+> Task :react-native-nitro-modules:prefabReleaseConfigurePackage
+> Task :react-native-nitro-image:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-nitro-modules:prefabReleasePackage UP-TO-DATE
+> Task :react-native-nitro-image:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-nitro-image:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-nitro-image:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-nitro-image:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-nitro-image:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-nitro-image:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-nitro-image:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-nitro-modules:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-nitro-modules:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-nitro-modules:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-nitro-image:externalNativeBuildRelease
+> Task :react-native-nitro-image:generateJsonModelRelease
+> Task :react-native-nitro-image:prefabReleaseConfigurePackage
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-worklets:preReleaseBuild
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[armeabi-v7a][worklets]
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[x86][worklets]
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[x86_64][worklets]
+> Task :react-native-worklets:externalNativeBuildRelease
+> Task :react-native-worklets:generateJsonModelRelease
+> Task :react-native-worklets:prefabReleaseConfigurePackage
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-reanimated:generateJsonModelRelease
+> Task :react-native-reanimated:prefabReleaseConfigurePackage UP-TO-DATE
+> Task :react-native-nitro-image:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-nitro-image:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-nitro-image:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-nitro-image:prefabReleasePackage UP-TO-DATE
+> Task :react-native-vision-camera:preReleaseBuild
+> Task :react-native-vision-camera:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-vision-camera:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: ninja: Entering directory `C:\Workspace\BFCam\node_modules\react-native-vision-camera\android\.cxx\RelWithDebInfo\44535667\arm64-v8a'
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridTapToFocusGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridZoomGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridCameraPreviewOutputSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+
+> Task :react-native-vision-camera:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-vision-camera:buildCMakeRelWithDebInfo[armeabi-v7a]
+C/C++: ninja: Entering directory `C:\Workspace\BFCam\node_modules\react-native-vision-camera\android\.cxx\RelWithDebInfo\44535667\armeabi-v7a'
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridTapToFocusGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridZoomGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridCameraPreviewOutputSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+
+> Task :react-native-vision-camera:configureCMakeRelWithDebInfo[x86]
+
+> Task :react-native-vision-camera:buildCMakeRelWithDebInfo[x86]
+C/C++: ninja: Entering directory `C:\Workspace\BFCam\node_modules\react-native-vision-camera\android\.cxx\RelWithDebInfo\44535667\x86'
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridZoomGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridTapToFocusGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridCameraPreviewOutputSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+
+> Task :react-native-vision-camera:configureCMakeRelWithDebInfo[x86_64]
+
+> Task :react-native-vision-camera:buildCMakeRelWithDebInfo[x86_64]
+C/C++: ninja: Entering directory `C:\Workspace\BFCam\node_modules\react-native-vision-camera\android\.cxx\RelWithDebInfo\44535667\x86_64'
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridTapToFocusGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridZoomGestureControllerSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+C/C++: C:/Workspace/BFCam/node_modules/react-native-vision-camera/nitrogen/generated/shared/c++/HybridCameraPreviewOutputSpec.cpp:17:41: warning: unused parameter 'prototype' [-Wunused-parameter]
+C/C++:    17 |     registerHybrids(this, [](Prototype& prototype) {
+C/C++:       |                                         ^
+C/C++: 1 warning generated.
+
+> Task :react-native-vision-camera:externalNativeBuildRelease
+> Task :react-native-vision-camera:generateJsonModelRelease
+> Task :react-native-vision-camera:prefabReleaseConfigurePackage
+> Task :shopify_react-native-skia:extractAARHeaders
+> Task :shopify_react-native-skia:extractJNIFiles
+> Task :shopify_react-native-skia:preReleaseBuild
+> Task :shopify_react-native-skia:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :shopify_react-native-skia:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :shopify_react-native-skia:configureCMakeRelWithDebInfo[x86]
+> Task :shopify_react-native-skia:configureCMakeRelWithDebInfo[x86_64]
+> Task :shopify_react-native-skia:generateJsonModelRelease
+> Task :shopify_react-native-skia:prefabReleaseConfigurePackage UP-TO-DATE
+> Task :app:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-worklets:prefabReleasePackage UP-TO-DATE
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[arm64-v8a][reanimated]
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[armeabi-v7a][reanimated]
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[x86][reanimated]
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[x86_64][reanimated]
+> Task :react-native-worklets:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-worklets:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-worklets:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-reanimated:externalNativeBuildRelease
+> Task :react-native-reanimated:prefabReleasePackage UP-TO-DATE
+> Task :react-native-vision-camera:prefabReleasePackage UP-TO-DATE
+> Task :shopify_react-native-skia:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :shopify_react-native-skia:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :shopify_react-native-skia:buildCMakeRelWithDebInfo[x86]
+> Task :shopify_react-native-skia:buildCMakeRelWithDebInfo[x86_64]
+> Task :shopify_react-native-skia:externalNativeBuildRelease
+> Task :shopify_react-native-skia:prefabReleasePackage
+> Task :app:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :app:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :app:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :app:configureCMakeRelWithDebInfo[x86]
+> Task :app:buildCMakeRelWithDebInfo[x86]
+> Task :app:configureCMakeRelWithDebInfo[x86_64]
+> Task :app:buildCMakeRelWithDebInfo[x86_64]
+> Task :app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-async-storage_async-storage:preReleaseBuild UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:preReleaseBuild UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-camera-roll_camera-roll:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-gesture-handler:preReleaseBuild UP-TO-DATE
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-gesture-handler:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-reanimated:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-reanimated:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-safe-area-context:preReleaseBuild UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-share:preReleaseBuild UP-TO-DATE
+> Task :react-native-share:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-share:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-share:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-svg:preReleaseBuild UP-TO-DATE
+> Task :react-native-svg:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-svg:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-svg:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :react-native-vision-camera:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-vision-camera:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-gesture-handler:copyReleaseJniLibsProjectOnly
+> Task :react-native-vision-camera-face-detector:preReleaseBuild UP-TO-DATE
+> Task :react-native-reanimated:copyReleaseJniLibsProjectOnly
+> Task :react-native-vision-camera-face-detector:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-vision-camera:copyReleaseJniLibsProjectOnly
+> Task :react-native-vision-camera-face-detector:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-vision-camera-face-detector:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-vision-camera-face-detector:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-vision-camera-face-detector:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-vision-camera-face-detector:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-vision-camera-face-detector:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-vision-camera-face-detector:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-vision-camera-face-detector:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:mergeReleaseNativeLibs UP-TO-DATE
+> Task :react-native-vision-camera-worklets:preReleaseBuild UP-TO-DATE
+> Task :react-native-vision-camera-worklets:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-vision-camera-face-detector:copyReleaseJniLibsProjectOnly
+> Task :react-native-vision-camera-worklets:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-vision-camera-worklets:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-vision-camera-worklets:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-vision-camera-worklets:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-vision-camera-worklets:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-vision-camera-worklets:configureCMakeRelWithDebInfo[x86_64]
+> Task :react-native-vision-camera-worklets:buildCMakeRelWithDebInfo[x86_64]
+> Task :react-native-vision-camera-worklets:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-vision-camera-worklets:mergeReleaseNativeLibs UP-TO-DATE
+> Task :shopify_react-native-skia:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :react-native-async-storage_async-storage:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-async-storage_async-storage:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-vision-camera-worklets:copyReleaseJniLibsProjectOnly
+> Task :react-native-async-storage_async-storage:generateReleaseResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:packageReleaseResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateReleaseRFile UP-TO-DATE
+> Task :react-native-async-storage_async-storage:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-gesture-handler:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-gesture-handler:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-gesture-handler:generateReleaseResources UP-TO-DATE
+> Task :react-native-gesture-handler:packageReleaseResources UP-TO-DATE
+> Task :react-native-gesture-handler:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-gesture-handler:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-gesture-handler:generateReleaseRFile UP-TO-DATE
+> Task :react-native-reanimated:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-reanimated:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-reanimated:generateReleaseResources UP-TO-DATE
+> Task :react-native-reanimated:packageReleaseResources UP-TO-DATE
+> Task :react-native-reanimated:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-reanimated:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-reanimated:generateReleaseRFile UP-TO-DATE
+> Task :react-native-worklets:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-worklets:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-worklets:generateReleaseResources UP-TO-DATE
+> Task :react-native-worklets:packageReleaseResources UP-TO-DATE
+> Task :react-native-worklets:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-worklets:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-worklets:generateReleaseRFile UP-TO-DATE
+> Task :shopify_react-native-skia:mergeReleaseNativeLibs
+> Task :react-native-worklets:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-worklets:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-worklets:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-worklets:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-reanimated:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-reanimated:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-reanimated:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-reanimated:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-svg:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-svg:generateReleaseResources UP-TO-DATE
+> Task :react-native-svg:packageReleaseResources UP-TO-DATE
+> Task :react-native-svg:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-svg:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-svg:generateReleaseRFile UP-TO-DATE
+> Task :react-native-svg:javaPreCompileRelease UP-TO-DATE
+> Task :shopify_react-native-skia:copyReleaseJniLibsProjectOnly
+> Task :react-native-async-storage_async-storage:kspReleaseKotlin
+
+> Task :react-native-svg:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :react-native-async-storage_async-storage:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-async-storage_async-storage:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-gesture-handler:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-nitro-modules:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-nitro-modules:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-nitro-modules:generateReleaseResources UP-TO-DATE
+> Task :react-native-nitro-modules:packageReleaseResources UP-TO-DATE
+> Task :react-native-nitro-modules:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-nitro-modules:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-nitro-modules:generateReleaseRFile UP-TO-DATE
+> Task :react-native-nitro-modules:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-nitro-modules:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-nitro-modules:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-nitro-modules:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-nitro-image:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-nitro-image:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-nitro-image:generateReleaseResources UP-TO-DATE
+> Task :react-native-svg:bundleLibCompileToJarRelease
+> Task :react-native-nitro-image:packageReleaseResources UP-TO-DATE
+> Task :react-native-nitro-image:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-nitro-image:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-nitro-image:generateReleaseRFile UP-TO-DATE
+> Task :react-native-nitro-image:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-nitro-image:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-nitro-image:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-nitro-image:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-vision-camera:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-vision-camera:generateReleaseResources UP-TO-DATE
+> Task :react-native-vision-camera:packageReleaseResources UP-TO-DATE
+> Task :react-native-vision-camera:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-vision-camera:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-vision-camera:generateReleaseRFile UP-TO-DATE
+> Task :react-native-vision-camera:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-vision-camera:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-vision-camera:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-vision-camera:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-vision-camera-worklets:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-vision-camera-worklets:generateReleaseResources UP-TO-DATE
+> Task :react-native-vision-camera-worklets:packageReleaseResources UP-TO-DATE
+> Task :react-native-vision-camera-worklets:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-vision-camera-worklets:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-vision-camera-worklets:generateReleaseRFile UP-TO-DATE
+> Task :react-native-vision-camera-worklets:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-vision-camera-worklets:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-vision-camera-worklets:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-vision-camera:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-nitro-image:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-nitro-modules:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-reanimated:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-safe-area-context:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-safe-area-context:generateReleaseResources UP-TO-DATE
+> Task :react-native-safe-area-context:packageReleaseResources UP-TO-DATE
+> Task :react-native-safe-area-context:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-safe-area-context:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-safe-area-context:generateReleaseRFile UP-TO-DATE
+> Task :react-native-safe-area-context:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-safe-area-context:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-safe-area-context:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-safe-area-context:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-vision-camera-face-detector:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:generateReleaseResources UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:packageReleaseResources UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:generateReleaseRFile UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:compileReleaseKotlin UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-worklets:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateReleaseResources UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:packageReleaseResources UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateReleaseRFile UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-gesture-handler:compileReleaseKotlin
+
+> Task :react-native-camera-roll_camera-roll:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: C:\Workspace\BFCam\node_modules\@react-native-camera-roll\camera-roll\android\src\main\java\com\reactnativecommunity\cameraroll\CameraRollPackage.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :react-native-gesture-handler:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :react-native-gesture-handler:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :shopify_react-native-skia:generateReleaseBuildConfig UP-TO-DATE
+> Task :shopify_react-native-skia:generateReleaseResources UP-TO-DATE
+> Task :shopify_react-native-skia:packageReleaseResources UP-TO-DATE
+> Task :shopify_react-native-skia:processReleaseNavigationResources UP-TO-DATE
+> Task :shopify_react-native-skia:parseReleaseLocalResources UP-TO-DATE
+> Task :shopify_react-native-skia:generateReleaseRFile UP-TO-DATE
+> Task :shopify_react-native-skia:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:bundleLibRuntimeToDirRelease
+
+> Task :shopify_react-native-skia:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :react-native-share:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-share:generateReleaseResources UP-TO-DATE
+> Task :react-native-share:packageReleaseResources UP-TO-DATE
+> Task :react-native-share:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-share:parseReleaseLocalResources UP-TO-DATE
+> Task :react-native-share:generateReleaseRFile UP-TO-DATE
+> Task :react-native-share:javaPreCompileRelease UP-TO-DATE
+> Task :shopify_react-native-skia:bundleLibRuntimeToDirRelease
+
+> Task :react-native-share:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :react-native-share:bundleLibRuntimeToDirRelease
+> Task :app:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateReleaseBuildConfig UP-TO-DATE
+> Task :react-native-svg:bundleLibRuntimeToDirRelease
+> Task :app:mergeReleaseNativeLibs
+
+> Task :app:createBundleReleaseJsAndAssets
+
+                        ▒▒▓▓▓▓▒▒
+                     ▒▓▓▓▒▒░░▒▒▓▓▓▒
+                  ▒▓▓▓▓░░░▒▒▒▒░░░▓▓▓▓▒
+                 ▓▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒▓▓
+                 ▓▓░░░░░▒▓▓▓▓▓▓▒░░░░░▓▓
+                 ▓▓░░▓▓▒░░░▒▒░░░▒▓▒░░▓▓
+                 ▓▓░░▓▓▓▓▓▒▒▒▒▓▓▓▓▒░░▓▓
+                 ▓▓░░▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░▓▓
+                 ▓▓▒░░▒▒▓▓▓▓▓▓▓▓▒░░░▒▓▓
+                  ▒▓▓▓▒░░░▒▓▓▒░░░▒▓▓▓▒
+                     ▒▓▓▓▒░░░░▒▓▓▓▒
+                        ▒▒▓▓▓▓▒▒
+
+
+ WARN  the transform cache was reset.
+                Welcome to Metro v0.87.1
+              Fast - Scalable - Integrated
+
+
+transform[stderr]: (node:8676) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:33904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:37020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:36760) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:5580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:20836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:35304) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+transform[stderr]: (node:4456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+transform[stderr]: (Use `node --trace-warnings ...` to show where the warning was created)
+ WARN  Attempted to import the module "C:\Workspace\BFCam\node_modules\react-native\src\private\featureflags\ReactNativeFeatureFlags" which is not listed in the "exports" of "C:\Workspace\BFCam\node_modules\react-native" under the requested subpath "./src/private/featureflags/ReactNativeFeatureFlags". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API.
+LOG:Writing bundle output to: android\app\build\generated\assets\react\release\index.android.bundle
+LOG:Writing sourcemap output to: android\app\build\intermediates\sourcemaps\react\release\index.android.bundle.packager.map
+LOG:Done writing bundle output
+LOG:Done writing sourcemap output
+
+> Task :app:generateReleaseResValues
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources
+> Task :app:processReleaseNavigationResources UP-TO-DATE
+> Task :react-native-async-storage_async-storage:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-gesture-handler:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-safe-area-context:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :react-native-async-storage_async-storage:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-gesture-handler:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-nitro-image:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-nitro-modules:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-reanimated:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-safe-area-context:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-share:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-svg:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-vision-camera:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-vision-camera-worklets:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-worklets:writeReleaseAarMetadata UP-TO-DATE
+> Task :shopify_react-native-skia:writeReleaseAarMetadata UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:bundleLibCompileToJarRelease
+> Task :app:parseReleaseLocalResources
+> Task :react-native-share:bundleLibCompileToJarRelease
+> Task :shopify_react-native-skia:bundleLibCompileToJarRelease
+> Task :app:stripReleaseDebugSymbols
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:generateReleaseRFile UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:compileReleaseNavigationResources UP-TO-DATE
+> Task :app:compileReleaseKotlin
+> Task :app:extractReleaseNativeSymbolTables
+> Task :app:mergeReleaseNativeDebugMetadata UP-TO-DATE
+> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-async-storage_async-storage:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-async-storage_async-storage:processReleaseManifest UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:processReleaseManifest UP-TO-DATE
+> Task :react-native-gesture-handler:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-gesture-handler:processReleaseManifest UP-TO-DATE
+> Task :react-native-nitro-image:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-nitro-image:processReleaseManifest UP-TO-DATE
+> Task :react-native-nitro-modules:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-nitro-modules:processReleaseManifest UP-TO-DATE
+> Task :react-native-reanimated:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-reanimated:processReleaseManifest UP-TO-DATE
+> Task :react-native-safe-area-context:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-safe-area-context:processReleaseManifest UP-TO-DATE
+> Task :react-native-share:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-share:processReleaseManifest UP-TO-DATE
+> Task :react-native-svg:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-svg:processReleaseManifest UP-TO-DATE
+> Task :react-native-vision-camera:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-vision-camera:processReleaseManifest UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:processReleaseManifest UP-TO-DATE
+> Task :react-native-vision-camera-worklets:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:processReleaseManifest UP-TO-DATE
+> Task :react-native-worklets:extractDeepLinksRelease UP-TO-DATE
+> Task :react-native-worklets:processReleaseManifest UP-TO-DATE
+> Task :shopify_react-native-skia:extractDeepLinksRelease UP-TO-DATE
+> Task :shopify_react-native-skia:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseMainManifest UP-TO-DATE
+> Task :app:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseManifestForPackage UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-async-storage_async-storage:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-gesture-handler:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-gesture-handler:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-nitro-image:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-nitro-image:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-nitro-modules:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-nitro-modules:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-reanimated:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-reanimated:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-safe-area-context:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-safe-area-context:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-share:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-share:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-svg:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-svg:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-vision-camera:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-vision-camera:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-vision-camera-worklets:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-vision-camera-worklets:compileReleaseLibraryResources UP-TO-DATE
+> Task :react-native-worklets:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :react-native-worklets:compileReleaseLibraryResources UP-TO-DATE
+> Task :shopify_react-native-skia:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :shopify_react-native-skia:compileReleaseLibraryResources UP-TO-DATE
+> Task :app:desugarReleaseFileDependencies UP-TO-DATE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:mergeReleaseResources
+> Task :app:mergeExtDexRelease UP-TO-DATE
+> Task :react-native-async-storage_async-storage:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-gesture-handler:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-nitro-image:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-nitro-modules:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-reanimated:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-safe-area-context:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-share:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-svg:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-vision-camera:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-vision-camera-worklets:prepareReleaseArtProfile UP-TO-DATE
+> Task :react-native-worklets:prepareReleaseArtProfile UP-TO-DATE
+> Task :shopify_react-native-skia:prepareReleaseArtProfile UP-TO-DATE
+> Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-gesture-handler:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-nitro-image:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-nitro-modules:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-reanimated:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-safe-area-context:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :react-native-worklets:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateReleaseAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateReleaseAssets UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:generateReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-nitro-image:generateReleaseAssets UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:bundleLibRuntimeToJarRelease
+> Task :react-native-nitro-image:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-nitro-modules:generateReleaseAssets UP-TO-DATE
+> Task :react-native-nitro-modules:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-reanimated:generateReleaseAssets UP-TO-DATE
+> Task :shopify_react-native-skia:bundleLibRuntimeToJarRelease
+> Task :react-native-reanimated:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-safe-area-context:generateReleaseAssets UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-share:generateReleaseAssets UP-TO-DATE
+> Task :react-native-share:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-svg:generateReleaseAssets UP-TO-DATE
+> Task :react-native-svg:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-share:bundleLibRuntimeToJarRelease
+> Task :react-native-vision-camera:generateReleaseAssets UP-TO-DATE
+> Task :react-native-vision-camera:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:generateReleaseAssets UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-vision-camera-worklets:generateReleaseAssets UP-TO-DATE
+> Task :react-native-vision-camera-worklets:mergeReleaseAssets UP-TO-DATE
+> Task :react-native-worklets:generateReleaseAssets UP-TO-DATE
+> Task :react-native-worklets:mergeReleaseAssets UP-TO-DATE
+> Task :shopify_react-native-skia:generateReleaseAssets UP-TO-DATE
+> Task :shopify_react-native-skia:mergeReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:compressReleaseAssets
+> Task :react-native-async-storage_async-storage:processReleaseJavaRes
+> Task :react-native-async-storage_async-storage:createFullJarRelease UP-TO-DATE
+> Task :react-native-async-storage_async-storage:extractProguardFiles UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-async-storage_async-storage:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:processReleaseJavaRes NO-SOURCE
+> Task :react-native-svg:bundleLibRuntimeToJarRelease
+> Task :react-native-camera-roll_camera-roll:createFullJarRelease
+> Task :react-native-camera-roll_camera-roll:extractProguardFiles UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:generateReleaseLintModel
+> Task :react-native-camera-roll_camera-roll:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-gesture-handler:processReleaseJavaRes
+> Task :react-native-gesture-handler:createFullJarRelease UP-TO-DATE
+> Task :react-native-gesture-handler:extractProguardFiles UP-TO-DATE
+> Task :react-native-reanimated:processReleaseJavaRes
+> Task :react-native-reanimated:createFullJarRelease UP-TO-DATE
+> Task :react-native-reanimated:extractProguardFiles UP-TO-DATE
+> Task :react-native-worklets:processReleaseJavaRes
+> Task :react-native-worklets:createFullJarRelease UP-TO-DATE
+> Task :react-native-worklets:extractProguardFiles UP-TO-DATE
+> Task :react-native-worklets:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-worklets:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-reanimated:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-reanimated:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-svg:processReleaseJavaRes NO-SOURCE
+> Task :react-native-svg:createFullJarRelease
+> Task :react-native-svg:extractProguardFiles UP-TO-DATE
+> Task :react-native-svg:generateReleaseLintModel
+> Task :react-native-svg:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-gesture-handler:generateReleaseLintModel
+> Task :react-native-gesture-handler:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-nitro-image:processReleaseJavaRes
+> Task :react-native-nitro-image:createFullJarRelease UP-TO-DATE
+> Task :react-native-nitro-image:extractProguardFiles UP-TO-DATE
+> Task :react-native-nitro-modules:processReleaseJavaRes
+> Task :react-native-nitro-modules:createFullJarRelease UP-TO-DATE
+> Task :react-native-nitro-modules:extractProguardFiles UP-TO-DATE
+> Task :react-native-nitro-modules:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-nitro-modules:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-nitro-image:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-nitro-image:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-safe-area-context:processReleaseJavaRes
+> Task :react-native-safe-area-context:createFullJarRelease UP-TO-DATE
+> Task :react-native-safe-area-context:extractProguardFiles UP-TO-DATE
+> Task :react-native-safe-area-context:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-safe-area-context:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-share:processReleaseJavaRes NO-SOURCE
+> Task :react-native-share:createFullJarRelease
+> Task :react-native-share:extractProguardFiles UP-TO-DATE
+> Task :react-native-share:generateReleaseLintModel
+> Task :react-native-share:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-vision-camera:processReleaseJavaRes
+> Task :react-native-vision-camera:createFullJarRelease UP-TO-DATE
+> Task :react-native-vision-camera:extractProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-vision-camera:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:processReleaseJavaRes
+> Task :react-native-vision-camera-face-detector:createFullJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:extractProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:prepareLintJarForPublish UP-TO-DATE
+> Task :react-native-vision-camera-worklets:processReleaseJavaRes
+> Task :react-native-vision-camera-worklets:createFullJarRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:extractProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera-worklets:generateReleaseLintModel UP-TO-DATE
+> Task :react-native-vision-camera-worklets:prepareLintJarForPublish UP-TO-DATE
+> Task :shopify_react-native-skia:processReleaseJavaRes NO-SOURCE
+> Task :shopify_react-native-skia:createFullJarRelease
+> Task :shopify_react-native-skia:extractProguardFiles UP-TO-DATE
+> Task :shopify_react-native-skia:generateReleaseLintModel
+> Task :shopify_react-native-skia:prepareLintJarForPublish UP-TO-DATE
+> Task :app:generateReleaseLintVitalReportModel
+> Task :react-native-async-storage_async-storage:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-async-storage_async-storage:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-async-storage_async-storage:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-async-storage_async-storage:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-async-storage_async-storage:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-async-storage_async-storage:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-async-storage_async-storage:bundleReleaseLocalLintAar
+> Task :react-native-gesture-handler:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-gesture-handler:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-gesture-handler:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-gesture-handler:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-gesture-handler:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-gesture-handler:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-gesture-handler:bundleReleaseLocalLintAar
+> Task :react-native-vision-camera-worklets:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-vision-camera-worklets:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-vision-camera-worklets:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-vision-camera-worklets:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-vision-camera-worklets:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-vision-camera-worklets:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera-worklets:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera-worklets:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-vision-camera-worklets:syncReleaseLibJars UP-TO-DATE
+> Task :app:processReleaseResources
+> Task :react-native-vision-camera-worklets:bundleReleaseLocalLintAar
+> Task :app:dexBuilderRelease UP-TO-DATE
+> Task :app:mergeReleaseGlobalSynthetics UP-TO-DATE
+> Task :react-native-vision-camera:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-vision-camera:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-vision-camera:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-vision-camera:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-vision-camera:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-vision-camera:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-vision-camera:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-vision-camera:bundleReleaseLocalLintAar
+> Task :react-native-nitro-image:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-nitro-image:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-nitro-image:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-nitro-image:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-nitro-image:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-nitro-image:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-nitro-image:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-nitro-image:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-nitro-image:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-nitro-image:bundleReleaseLocalLintAar
+> Task :react-native-nitro-modules:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-nitro-modules:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-nitro-modules:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-nitro-modules:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-nitro-modules:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-nitro-modules:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-nitro-modules:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-nitro-modules:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-nitro-modules:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-nitro-modules:bundleReleaseLocalLintAar
+> Task :react-native-reanimated:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-reanimated:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-reanimated:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-reanimated:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-reanimated:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-reanimated:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-reanimated:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-reanimated:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-reanimated:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-reanimated:bundleReleaseLocalLintAar
+> Task :react-native-safe-area-context:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-safe-area-context:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-safe-area-context:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-safe-area-context:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-safe-area-context:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-safe-area-context:bundleReleaseLocalLintAar
+> Task :react-native-vision-camera-face-detector:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-worklets:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-worklets:stripReleaseDebugSymbols UP-TO-DATE
+> Task :react-native-worklets:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-worklets:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-worklets:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-worklets:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-worklets:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-worklets:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-worklets:syncReleaseLibJars UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:stripReleaseDebugSymbols
+> Task :react-native-worklets:bundleReleaseLocalLintAar
+> Task :react-native-camera-roll_camera-roll:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-camera-roll_camera-roll:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-camera-roll_camera-roll:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:copyReleaseJniLibsProjectAndLocalJars
+> Task :react-native-camera-roll_camera-roll:syncReleaseLibJars
+> Task :react-native-vision-camera-face-detector:bundleReleaseLocalLintAar
+> Task :react-native-camera-roll_camera-roll:bundleReleaseLocalLintAar
+> Task :shopify_react-native-skia:checkReleaseAarMetadata UP-TO-DATE
+> Task :shopify_react-native-skia:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :shopify_react-native-skia:extractReleaseAnnotations UP-TO-DATE
+> Task :shopify_react-native-skia:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :shopify_react-native-skia:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :shopify_react-native-skia:mergeReleaseJavaResource UP-TO-DATE
+> Task :shopify_react-native-skia:syncReleaseLibJars
+> Task :react-native-share:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-share:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-share:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-share:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-share:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-share:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-share:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-share:mergeReleaseJavaResource UP-TO-DATE
+> Task :react-native-share:syncReleaseLibJars
+> Task :react-native-share:bundleReleaseLocalLintAar
+> Task :react-native-svg:checkReleaseAarMetadata UP-TO-DATE
+> Task :react-native-svg:stripReleaseDebugSymbols NO-SOURCE
+> Task :react-native-svg:copyReleaseJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :react-native-svg:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :react-native-svg:extractReleaseAnnotations UP-TO-DATE
+> Task :react-native-svg:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :react-native-svg:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :react-native-svg:mergeReleaseJavaResource UP-TO-DATE
+> Task :shopify_react-native-skia:stripReleaseDebugSymbols
+> Task :react-native-svg:syncReleaseLibJars
+> Task :react-native-svg:bundleReleaseLocalLintAar
+> Task :react-native-async-storage_async-storage:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :shopify_react-native-skia:copyReleaseJniLibsProjectAndLocalJars
+> Task :app:mergeDexRelease
+> Task :shopify_react-native-skia:bundleReleaseLocalLintAar
+> Task :react-native-camera-roll_camera-roll:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-reanimated:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-svg:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-worklets:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-gesture-handler:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-nitro-modules:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-nitro-image:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-safe-area-context:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-share:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-vision-camera:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-vision-camera-face-detector:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-vision-camera-worklets:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :shopify_react-native-skia:writeReleaseLintModelMetadata UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateReleaseLintVitalModel
+> Task :react-native-camera-roll_camera-roll:generateReleaseLintVitalModel
+> Task :react-native-gesture-handler:generateReleaseLintVitalModel
+> Task :react-native-nitro-image:generateReleaseLintVitalModel
+> Task :app:compileReleaseArtProfile
+> Task :react-native-nitro-modules:generateReleaseLintVitalModel
+> Task :react-native-reanimated:generateReleaseLintVitalModel
+> Task :react-native-safe-area-context:generateReleaseLintVitalModel
+> Task :react-native-share:generateReleaseLintVitalModel
+> Task :react-native-svg:generateReleaseLintVitalModel
+> Task :react-native-camera-roll_camera-roll:lintVitalAnalyzeRelease
+> Task :react-native-vision-camera:generateReleaseLintVitalModel
+> Task :react-native-vision-camera-face-detector:generateReleaseLintVitalModel
+> Task :react-native-vision-camera-worklets:generateReleaseLintVitalModel
+> Task :react-native-worklets:generateReleaseLintVitalModel
+> Task :shopify_react-native-skia:generateReleaseLintVitalModel
+> Task :app:processReleaseJavaRes
+> Task :app:mergeReleaseJavaResource UP-TO-DATE
+> Task :app:collectReleaseDependencies UP-TO-DATE
+> Task :app:sdkReleaseDependencyData UP-TO-DATE
+> Task :app:validateSigningRelease UP-TO-DATE
+> Task :app:writeReleaseAppMetadata UP-TO-DATE
+> Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :app:optimizeReleaseResources
+> Task :react-native-async-storage_async-storage:lintVitalAnalyzeRelease
+> Task :react-native-nitro-image:lintVitalAnalyzeRelease
+> Task :react-native-reanimated:lintVitalAnalyzeRelease SKIPPED
+> Task :react-native-nitro-modules:lintVitalAnalyzeRelease
+> Task :react-native-share:lintVitalAnalyzeRelease
+> Task :react-native-safe-area-context:lintVitalAnalyzeRelease
+The Daemon will expire after the build after running out of JVM Metaspace.
+The project memory settings are likely not configured or are configured to an insufficient value.
+The daemon will restart for the next build, which may increase subsequent build times.
+These settings can be adjusted by setting 'org.gradle.jvmargs' in 'gradle.properties'.
+The currently configured max heap space is '2 GiB' and the configured max metaspace is '512 MiB'.
+For more information on how to set these values, please refer to https://docs.gradle.org/9.4.1/userguide/build_environment.html#sec:configuring_jvm_memory in the Gradle documentation.
+To disable this warning, set 'org.gradle.daemon.performance.disable-logging=true'.
+Daemon will be stopped at the end of the build after running out of JVM Metaspace
+> Task :react-native-svg:lintVitalAnalyzeRelease
+> Task :react-native-vision-camera-face-detector:lintVitalAnalyzeRelease
+> Task :react-native-vision-camera-worklets:lintVitalAnalyzeRelease
+> Task :react-native-worklets:lintVitalAnalyzeRelease SKIPPED
+> Task :react-native-gesture-handler:lintVitalAnalyzeRelease
+> Task :shopify_react-native-skia:lintVitalAnalyzeRelease
+> Task :react-native-vision-camera:lintVitalAnalyzeRelease
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleRelease
+
+[Incubating] Problems report is available at: file:///C:/Workspace/BFCam/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 44m 53s
+743 actionable tasks: 220 executed, 523 up-to-date

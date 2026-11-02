@@ -71,7 +71,9 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const strokeStart = useRef<RetouchPoint | null>(null);
   const draftWarpRef = useRef<ManualWarpStroke | null>(null);
   const [draftWarp, setDraftWarp] = useState<ManualWarpStroke | null>(null);
-  const activeBrushIndex = useRef(-1);
+  const draftBrushRef = useRef<ManualBrushStroke | null>(null);
+  const [draftBrush, setDraftBrush] = useState<ManualBrushStroke | null>(null);
+  const [brushCursor, setBrushCursor] = useState<{point: RetouchPoint; radius: number; color: string} | null>(null);
   const healGestureMoved = useRef(false);
   const faceDetectorOptions = useMemo(() => ({performanceMode: 'accurate' as const, runLandmarks: true, runContours: true, minFaceSize: 0.08}), []);
   const faceDetector = useImageFaceDetector(faceDetectorOptions);
@@ -116,7 +118,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const healSpotClips = useMemo(() => previewMapping ? edit.healSpots.map(spot => HEAL_FEATHER_LAYERS.map(layer => Skia.RRectXY(Skia.XYWHRect(previewMapping.offsetX + (spot.x - spot.radius * layer.radius) * previewMapping.scale, previewMapping.offsetY + (spot.y - spot.radius * layer.radius) * previewMapping.scale, spot.radius * layer.radius * 2 * previewMapping.scale, spot.radius * layer.radius * 2 * previewMapping.scale), spot.radius * layer.radius * previewMapping.scale, spot.radius * layer.radius * previewMapping.scale))) : [], [edit.healSpots, previewMapping]);
   const previewBrushStrokes = useMemo(() => {
     if (!previewMapping) return [];
-    return edit.brushStrokes.map(stroke => {
+    return [...edit.brushStrokes, ...(draftBrush ? [draftBrush] : [])].map(stroke => {
       const paths = BRUSH_FEATHER_LAYERS.map(layer => {
         const pathValue = Skia.Path.Make();
         addBrushDabs(pathValue, stroke.points, stroke.radius * layer.radius, previewMapping.scale, previewMapping.offsetX, previewMapping.offsetY);
@@ -125,7 +127,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       const effectMatrix = stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : stroke.tool === 'darkCircle' ? stroke.strength : 0);
       return {stroke, paths, matrix: effectMatrix};
     });
-  }, [edit.brushStrokes, matrix, previewMapping]);
+  }, [draftBrush, edit.brushStrokes, matrix, previewMapping]);
   useEffect(() => () => previewBrushStrokes.forEach(item => item.paths.forEach(brushPath => brushPath.dispose())), [previewBrushStrokes]);
   const previewFaceEffects = useMemo(() => {
     if (!previewMapping) return [];
@@ -171,6 +173,12 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     endY: previewMapping.offsetY + (draftWarp.y + draftWarp.dy) * previewMapping.scale,
     radius: draftWarp.radius * previewMapping.scale,
   }, [draftWarp, previewMapping]);
+  const previewBrushCursor = useMemo(() => !brushCursor || !previewMapping ? null : ({
+    x: previewMapping.offsetX + brushCursor.point.x * previewMapping.scale,
+    y: previewMapping.offsetY + brushCursor.point.y * previewMapping.scale,
+    radius: brushCursor.radius * previewMapping.scale,
+    color: brushCursor.color,
+  }), [brushCursor, previewMapping]);
   const commit = useCallback((next: EditState) => {setUndoStack(stack => [...stack, edit]); setRedoStack([]); setEdit(next);}, [edit]);
   const changeAdjustment = (key: AdjustmentKey, amount: number) => commit({...edit, adjustments: {...adjustments, [key]: Math.max(-1, Math.min(1, Math.round((adjustments[key] + amount) * 10) / 10))}});
   const undo = () => {const previous = undoStack[undoStack.length - 1]; if (!previous) return; setUndoStack(stack => stack.slice(0, -1)); setRedoStack(stack => [edit, ...stack]); setEdit(previous);};
@@ -214,20 +222,35 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: event => {
       healGestureMoved.current = false;
-      activeBrushIndex.current = -1; draftWarpRef.current = null; setDraftWarp(null);
+      draftBrushRef.current = null; setDraftBrush(null); draftWarpRef.current = null; setDraftWarp(null);
       const touches = event.nativeEvent.touches;
       if (touches.length >= 2) {const dx = touches[0].pageX - touches[1].pageX; const dy = touches[0].pageY - touches[1].pageY; pinchStart.current = {distance: Math.hypot(dx, dy), scale: editZoomRef.current, centerX: (touches[0].pageX + touches[1].pageX) / 2, centerY: (touches[0].pageY + touches[1].pageY) / 2, panX: editPanRef.current.x, panY: editPanRef.current.y}; healGestureMoved.current = true; return;}
       const point = screenToSource(event.nativeEvent.locationX, event.nativeEvent.locationY);
       strokeStart.current = point;
       const selectedBrush = brushTool(retouchTool);
-      if (point && selectedBrush && image) {setUndoStack(stack => [...stack, edit]); setRedoStack([]); activeBrushIndex.current = edit.brushStrokes.length; setEdit(current => ({...current, brushStrokes: [...current.brushStrokes, {tool: selectedBrush, points: [point], radius: image.width() * manualBrushSize, strength: manualStrength}]}));}
+      if (point && image && previewMapping) {
+        const radius = warpTool(retouchTool)
+          ? Math.max(image.width() * manualBrushSize * 1.8, 36 / (previewMapping.scale * editZoomRef.current))
+          : image.width() * (retouchTool === 'heal' ? healBrushSize : manualBrushSize);
+        setBrushCursor({point, radius, color: retouchTool === 'heal' ? '#7ED9D1' : warpTool(retouchTool) ? '#D7B978' : '#FFF0CF'});
+      }
+      if (point && selectedBrush && image) {
+        const stroke = {tool: selectedBrush, points: [point], radius: image.width() * manualBrushSize, strength: manualStrength};
+        draftBrushRef.current = stroke;
+        setDraftBrush(stroke);
+      }
     },
     onPanResponderMove: (event, gesture) => {
       const touches = event.nativeEvent.touches;
-      if (touches.length >= 2 && draftWarpRef.current) {draftWarpRef.current = null; setDraftWarp(null);}
+      if (touches.length >= 2) {
+        setBrushCursor(null);
+        draftBrushRef.current = null; setDraftBrush(null);
+        draftWarpRef.current = null; setDraftWarp(null);
+      }
       if (touches.length >= 2) {const dx = touches[0].pageX - touches[1].pageX; const dy = touches[0].pageY - touches[1].pageY; const distance = Math.hypot(dx, dy); const centerX = (touches[0].pageX + touches[1].pageX) / 2; const centerY = (touches[0].pageY + touches[1].pageY) / 2; if (pinchStart.current.distance <= 0) pinchStart.current = {distance, scale: editZoomRef.current, centerX, centerY, panX: editPanRef.current.x, panY: editPanRef.current.y}; const nextZoom = zoomFromPinch(pinchStart.current.scale, pinchStart.current.distance, distance); setEditZoom(nextZoom); setEditPan(clampEditorPan(pinchStart.current.panX + centerX - pinchStart.current.centerX, pinchStart.current.panY + centerY - pinchStart.current.centerY, nextZoom, previewCanvasWidth, previewCanvasHeight)); healGestureMoved.current = true; return;}
       const point = screenToSource(event.nativeEvent.locationX, event.nativeEvent.locationY);
       if (healGestureMoved.current) return;
+      if (point) setBrushCursor(current => current ? {...current, point} : current);
       const selectedWarp = warpTool(retouchTool);
       if (selectedWarp && strokeStart.current && image && previewMapping) {
         const end = warpEndFromDrag(strokeStart.current, gesture.dx, gesture.dy, previewMapping.scale, editZoomRef.current, geometry.rotation, geometry.mirrored);
@@ -235,15 +258,26 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
         const next = makeWarpStroke(selectedWarp, strokeStart.current, end, radius, manualStrength);
         draftWarpRef.current = next; setDraftWarp(next);
       }
-      if (point && activeBrushIndex.current >= 0) setEdit(current => ({...current, brushStrokes: current.brushStrokes.map((stroke, index) => index === activeBrushIndex.current ? appendBrushPoint(stroke, point) : stroke)}));
+      if (point && draftBrushRef.current) {
+        const next = appendBrushPoint(draftBrushRef.current, point);
+        if (next !== draftBrushRef.current) {
+          draftBrushRef.current = next;
+          setDraftBrush(next);
+        }
+      }
     },
     onPanResponderRelease: (event, gesture) => {
       pinchStart.current.distance = 0;
+      setBrushCursor(null);
       setDraftWarp(null);
-      if (healGestureMoved.current) {activeBrushIndex.current = -1; strokeStart.current = null; return;}
+      if (healGestureMoved.current) {draftBrushRef.current = null; setDraftBrush(null); strokeStart.current = null; return;}
       const end = screenToSource(event.nativeEvent.locationX, event.nativeEvent.locationY);
       const selectedWarp = warpTool(retouchTool);
-      if (strokeStart.current && selectedWarp && image && previewMapping) {
+      const completedBrush = draftBrushRef.current;
+      if (completedBrush) {
+        commit({...edit, brushStrokes: [...edit.brushStrokes, completedBrush]});
+      }
+      else if (strokeStart.current && selectedWarp && image && previewMapping) {
         const dragEnd = warpEndFromDrag(strokeStart.current, gesture.dx, gesture.dy, previewMapping.scale, editZoomRef.current, geometry.rotation, geometry.mirrored);
         const stroke = draftWarpRef.current ?? makeWarpStroke(selectedWarp, strokeStart.current, dragEnd, Math.max(image.width() * manualBrushSize * 1.8, 36 / (previewMapping.scale * editZoomRef.current)), manualStrength);
         if (edit.warpStrokes.length < MAX_MANUAL_WARPS && (selectedWarp === 'largeEyes' || selectedWarp === 'smallNose' || Math.hypot(stroke.dx, stroke.dy) > 0)) commit({...edit, warpStrokes: [...edit.warpStrokes, stroke]});
@@ -256,9 +290,9 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
         }
         else commit({...edit, healSpots: [...edit.healSpots, {...end, sourceX: healSource.x, sourceY: healSource.y, radius: image.width() * healBrushSize, strength: manualStrength}]});
       }
-      activeBrushIndex.current = -1; strokeStart.current = null;
+      draftBrushRef.current = null; setDraftBrush(null); strokeStart.current = null;
     },
-    onPanResponderTerminate: () => {pinchStart.current.distance = 0; activeBrushIndex.current = -1; strokeStart.current = null; draftWarpRef.current = null; setDraftWarp(null);},
+    onPanResponderTerminate: () => {pinchStart.current.distance = 0; setBrushCursor(null); draftBrushRef.current = null; setDraftBrush(null); strokeStart.current = null; draftWarpRef.current = null; setDraftWarp(null);},
     onPanResponderTerminationRequest: () => false,
   }), [commit, edit, geometry.mirrored, geometry.rotation, healBrushSize, healSource, image, manualBrushSize, manualStrength, pickingHealSource, previewCanvasHeight, previewCanvasWidth, previewMapping, retouchTool, screenToSource]);
   const button = (label: string, onPress: () => void, selected = false, disabled = false) => <Pressable accessibilityRole="button" accessibilityState={{selected, disabled}} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></Pressable>;
@@ -339,6 +373,11 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
         <Circle cx={previewDraftWarp.x} cy={previewDraftWarp.y} r={previewDraftWarp.radius} style="stroke" strokeWidth={1.5} color="rgba(255,240,207,.75)" />
         <Line p1={{x: previewDraftWarp.x, y: previewDraftWarp.y}} p2={{x: previewDraftWarp.endX, y: previewDraftWarp.endY}} strokeWidth={2.5} color="#D7B978" />
         <Circle cx={previewDraftWarp.endX} cy={previewDraftWarp.endY} r={4} color="#FFF0CF" />
+      </>}
+      {section === 'retouch' && previewBrushCursor && !comparing && <>
+        <Circle cx={previewBrushCursor.x} cy={previewBrushCursor.y} r={previewBrushCursor.radius} color={`${previewBrushCursor.color}22`} />
+        <Circle cx={previewBrushCursor.x} cy={previewBrushCursor.y} r={previewBrushCursor.radius} style="stroke" strokeWidth={1.5 / editZoom} color={previewBrushCursor.color} />
+        <Circle cx={previewBrushCursor.x} cy={previewBrushCursor.y} r={2.5 / editZoom} color={previewBrushCursor.color} />
       </>}
       {section === 'retouch' && previewFaceEffects[selectedFaceIndex] && <RoundedRect x={previewFaceEffects[selectedFaceIndex].mappedBounds.x} y={previewFaceEffects[selectedFaceIndex].mappedBounds.y} width={previewFaceEffects[selectedFaceIndex].mappedBounds.width} height={previewFaceEffects[selectedFaceIndex].mappedBounds.height} r={16} style="stroke" strokeWidth={1.5} color="rgba(215,185,120,.85)" />}
     </Canvas>

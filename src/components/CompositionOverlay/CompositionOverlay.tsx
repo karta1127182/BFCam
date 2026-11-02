@@ -38,6 +38,7 @@ export function CompositionOverlay(props: Props) {
       <CompositionScoreBadge score={score} />
       {props.silhouetteVisible && size.width > 0 && (
         <Silhouette
+          key={props.template.silhouette.variant}
           definition={props.template.silhouette}
           containerWidth={size.width}
           containerHeight={size.height}

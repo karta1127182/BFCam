@@ -52,9 +52,13 @@ import {
   saveCameraPreferences,
 } from '../../store/cameraPreferences';
 import {
+  detectImageLabels,
   detectPose,
   type NormalizedPose,
 } from '../../utils/poseDetection';
+import {chooseSceneComposition, chooseSceneSilhouette, planSubjectPlacement, compositionGuidance, mirrorFaceBounds} from '../../utils/sceneComposition';
+import {SmartCompositionHint} from '../../components/SmartCompositionHint/SmartCompositionHint';
+import {createSmartCompositionResetState, createSmartCompositionRuntime, resetSmartCompositionRuntime} from '../../utils/smartCompositionState';
 
 export function CameraScreen() {
   const [preferencesHydrated, setPreferencesHydrated] = useState(false);
@@ -122,6 +126,7 @@ export function CameraScreen() {
     x: compositionTemplates[0].silhouette.x,
     y: compositionTemplates[0].silhouette.y,
   }));
+  const [smartSilhouetteSize, setSmartSilhouetteSize] = useState<{width: number; height: number} | null>(null);
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -143,9 +148,44 @@ export function CameraScreen() {
 
   const [recommendations, setRecommendations] =
     useState<CompositionRecommendation[]>([]);
+  const [smartHint, setSmartHint] = useState('');
+  const [sceneDetectionNotice, setSceneDetectionNotice] = useState('');
+  const smartCompositionRuntimeRef = useRef(createSmartCompositionRuntime());
+
+  const resetSmartComposition = useCallback(() => {
+    resetSmartCompositionRuntime(smartCompositionRuntimeRef.current);
+    const reset = createSmartCompositionResetState();
+    setSmartCompositionActive(reset.smartCompositionActive);
+    setDetectedFaces(reset.detectedFaces);
+    setDetectedPose(reset.detectedPose);
+    setRecommendations(reset.recommendations);
+    setSmartHint(reset.smartHint);
+    setSceneDetectionNotice(reset.sceneDetectionNotice);
+    setSmartSilhouetteSize(reset.smartSilhouetteSize);
+    setSilhouetteLocked(reset.silhouetteLocked);
+  }, []);
 
   const [pendingPhotoPath, setPendingPhotoPath] =
     useState<string | null>(null);
+
+  const handleLiveFacesDetected = useCallback((faces: NormalizedFaceBounds[]) => {
+    if (!smartCompositionActive || !smartCompositionRuntimeRef.current.faceTracking) return;
+    const now = Date.now();
+    const runtime = smartCompositionRuntimeRef.current;
+    if (now - runtime.lastLiveFaceUpdate < 180) return;
+    runtime.lastLiveFaceUpdate = now;
+
+    const displayFaces = position === 'front' ? mirrorFaceBounds(faces) : faces;
+    const nextHint = compositionGuidance(displayFaces, null, runtime.liveSilhouette ?? undefined);
+    const history = [...runtime.hintHistory, nextHint].slice(-3);
+    runtime.hintHistory = history;
+
+    setDetectedFaces(faces);
+    setDetectedPose(null);
+    if (history.length < 2 || history.filter(value => value === nextHint).length >= 2) {
+      setSmartHint(nextHint);
+    }
+  }, [position, smartCompositionActive]);
 
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isSharingEdit, setIsSharingEdit] = useState(false);
@@ -232,10 +272,7 @@ export function CameraScreen() {
          * 智慧構圖狀態不保存。
          * 每次重新進相機，都視為沒有正在使用智慧構圖。
          */
-        setSmartCompositionActive(false);
-        setDetectedFaces([]);
-        setDetectedPose(null);
-        setRecommendations([]);
+        resetSmartComposition();
 
         setSilhouetteResetKey(value => value + 1);
       })
@@ -249,7 +286,7 @@ export function CameraScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [resetSmartComposition]);
 
   /**
    * 儲存相機設定
@@ -354,8 +391,8 @@ export function CameraScreen() {
       x: silhouetteAnchor.x,
       y: silhouetteAnchor.y,
 
-      height: selectedPose.height,
-      width: selectedPose.width,
+      height: smartSilhouetteSize?.height ?? selectedPose.height,
+      width: smartSilhouetteSize?.width ?? selectedPose.width,
 
       rotation: normalizeRotation(
         (baseTemplate.silhouette.rotation ?? 0) +
@@ -587,12 +624,16 @@ export function CameraScreen() {
           const [
             facesResult,
             poseResult,
+            labelsResult,
           ] = await Promise.allSettled([
             imageFaceDetector.detectFaces(
               `file://${path}`,
             ),
 
             detectPose(
+              `file://${path}`,
+            ),
+            detectImageLabels(
               `file://${path}`,
             ),
           ]);
@@ -605,31 +646,75 @@ export function CameraScreen() {
           const bounds =
             faces.map(face => face.bounds);
 
-          const nextRecommendations =
-            recommendFaceCompositions(
-              bounds,
-              oriented.width,
-              oriented.height,
-            );
-
           const nextPose =
             poseResult.status === 'fulfilled'
               ? poseResult.value
               : null;
 
-          setDetectedFaces(
-            normalizeFaceBounds(
+          const labelDetection = labelsResult.status === 'fulfilled'
+            ? labelsResult.value
+            : {status: 'failed' as const, labels: [], message: '場景辨識失敗，人物智慧構圖仍可使用'};
+          const labels = labelDetection.labels;
+          setSceneDetectionNotice(labelDetection.status === 'available' ? '' : labelDetection.message);
+          const sceneDecision = chooseSceneComposition(labels, bounds.length || (nextPose ? 1 : 0));
+
+          let nextRecommendations =
+            recommendFaceCompositions(
               bounds,
               oriented.width,
               oriented.height,
-            ),
+              nextPose,
+              position === 'front',
+            );
+          if (!nextRecommendations.length && sceneDecision.scene !== 'unknown') {
+            nextRecommendations = [{
+              templateIndex: sceneDecision.templateIndex,
+              pose: chooseSceneSilhouette(sceneDecision.scene, labels),
+              title: sceneDecision.title,
+              reason: sceneDecision.reason,
+            }];
+          }
+
+          nextRecommendations = planSubjectPlacement(
+            nextRecommendations, labels, bounds.length || (nextPose ? 1 : 0),
           );
 
+          const normalizedFaces = normalizeFaceBounds(
+              bounds,
+              oriented.width,
+              oriented.height,
+            );
+          smartCompositionRuntimeRef.current.faceTracking = normalizedFaces.length > 0;
+          setDetectedFaces(normalizedFaces);
+
           setDetectedPose(nextPose);
+          const displayFaces = position === 'front' ? mirrorFaceBounds(normalizedFaces) : normalizedFaces;
+          setSmartHint(compositionGuidance(displayFaces, nextPose, nextRecommendations[0]?.silhouette));
+          smartCompositionRuntimeRef.current.hintHistory = [];
 
           setRecommendations(
             nextRecommendations,
           );
+
+          const best = nextRecommendations[0];
+          if (best) {
+            setTemplateIndex(best.templateIndex);
+            setPose(best.pose);
+            const bestTemplate = compositionTemplates[best.templateIndex];
+            setSilhouetteAnchor({x: bestTemplate.silhouette.x, y: bestTemplate.silhouette.y});
+            setSmartSilhouetteSize(null);
+            if (best.silhouette) {
+              setSilhouetteAnchor({x: best.silhouette.x, y: best.silhouette.y});
+              setSmartSilhouetteSize({width: best.silhouette.width, height: best.silhouette.height});
+              smartCompositionRuntimeRef.current.liveSilhouette = best.silhouette;
+            } else {
+              smartCompositionRuntimeRef.current.liveSilhouette = null;
+            }
+            setSilhouetteRotationOffset(0);
+            setGuideVisible(true);
+            setSilhouetteVisible(true);
+            setSilhouetteResetKey(value => value + 1);
+          }
 
           /**
            * 完全沒偵測到人物
@@ -638,15 +723,11 @@ export function CameraScreen() {
             !nextRecommendations.length &&
             !nextPose
           ) {
-            setSmartCompositionActive(false);
-
-            setDetectedFaces([]);
-            setDetectedPose(null);
-            setRecommendations([]);
+            resetSmartComposition();
 
             Alert.alert(
-              '未偵測到人物',
-              '請讓臉部與身體清楚出現在畫面中，避免逆光或距離過遠，再重新偵測。',
+              '尚未辨識拍攝主題',
+              '請讓人物、風景或其他主體清楚出現在畫面中，再重新分析；也可以手動選擇構圖。',
             );
 
             return;
@@ -656,6 +737,7 @@ export function CameraScreen() {
            * 有偵測到人物，
            * 進入智慧構圖模式。
            */
+          setSilhouetteLocked(true);
           setSmartCompositionActive(true);
         } finally {
           oriented.dispose();
@@ -664,7 +746,7 @@ export function CameraScreen() {
         photo.dispose();
       }
     } catch (error) {
-      setSmartCompositionActive(false);
+      resetSmartComposition();
 
       Alert.alert(
         '無法偵測',
@@ -677,6 +759,8 @@ export function CameraScreen() {
   }, [
     imageFaceDetector,
     photoOutput,
+    position,
+    resetSmartComposition,
   ]);
 
   /**
@@ -686,12 +770,7 @@ export function CameraScreen() {
    */
   const clearSmartComposition =
     useCallback(() => {
-      setSmartCompositionActive(false);
-
-      // 清除智慧辨識資料
-      setDetectedFaces([]);
-      setDetectedPose(null);
-      setRecommendations([]);
+      resetSmartComposition();
 
       // 隱藏構圖框線
       setGuideVisible(false);
@@ -712,7 +791,15 @@ export function CameraScreen() {
       setSilhouetteResetKey(
         value => value + 1,
       );
-    }, []);
+    }, [resetSmartComposition]);
+
+  const handleLiveFaceDetectionError = useCallback((error: Error) => {
+    clearSmartComposition();
+    Alert.alert(
+      '即時追蹤已停止',
+      friendlyCameraError(error, '請點選「智慧構圖」重新偵測。'),
+    );
+  }, [clearSmartComposition]);
 
   /**
    * 套用情境
@@ -729,6 +816,7 @@ export function CameraScreen() {
       );
       const scenarioTemplate = compositionTemplates[resolved.templateIndex];
       setSilhouetteAnchor({x: scenarioTemplate.silhouette.x, y: scenarioTemplate.silhouette.y});
+      resetSmartComposition();
 
       setPose(resolved.pose);
 
@@ -753,18 +841,11 @@ export function CameraScreen() {
       setGuideVisible(true);
       setSilhouetteVisible(true);
 
-      // 手動選情境 = 離開智慧構圖
-      setSmartCompositionActive(false);
-
-      setDetectedFaces([]);
-      setDetectedPose(null);
-      setRecommendations([]);
-
       setSilhouetteResetKey(
         value => value + 1,
       );
     },
-    [],
+    [resetSmartComposition],
   );
 
   /**
@@ -786,6 +867,7 @@ export function CameraScreen() {
         x: nextTemplate.silhouette.x,
         y: nextTemplate.silhouette.y,
       });
+      resetSmartComposition();
 
       setActiveScenarioId(null);
 
@@ -793,14 +875,8 @@ export function CameraScreen() {
        * 手動切換構圖後，
        * 不再視為智慧構圖。
        */
-      setSmartCompositionActive(false);
-
-      setDetectedFaces([]);
-      setDetectedPose(null);
-      setRecommendations([]);
-
     },
-    [],
+    [resetSmartComposition],
   );
 
   /**
@@ -880,6 +956,9 @@ export function CameraScreen() {
             onStopped={markStopped}
             onError={handleCameraError}
             onZoomCapabilities={setZoomCapabilities}
+            onLiveFacesDetected={handleLiveFacesDetected}
+            onLiveFaceDetectionError={handleLiveFaceDetectionError}
+            liveFaceDetectionEnabled={smartCompositionActive && smartCompositionRuntimeRef.current.faceTracking}
             device={device}
             photoOutput={photoOutput}
             pinchGesture={pinchGesture}
@@ -894,7 +973,7 @@ export function CameraScreen() {
           guidesVisible={guideVisible}
           silhouetteVisible={silhouetteVisible}
           silhouetteOpacity={overlayOpacity}
-          silhouetteLocked={silhouetteLocked}
+          silhouetteLocked={smartCompositionActive || silhouetteLocked}
           silhouetteResetKey={silhouetteResetKey}
           detectedFaces={detectedFaces}
           detectedPose={detectedPose}
@@ -912,17 +991,24 @@ export function CameraScreen() {
            * 關閉智慧構圖推薦時，
            * 同時清除偵測框。
            */
-          setRecommendations([]);
-          setDetectedFaces([]);
-          setDetectedPose(null);
-          setSmartCompositionActive(false);
+          resetSmartComposition();
         }}
         onApply={recommendation => {
           setTemplateIndex(
             recommendation.templateIndex,
           );
+          smartCompositionRuntimeRef.current.liveSilhouette = recommendation.silhouette ?? null;
+          smartCompositionRuntimeRef.current.hintHistory = [];
+          setSilhouetteLocked(true);
+          setSmartHint('已套用建議，請依輪廓安排主體');
           const recommendedTemplate = compositionTemplates[recommendation.templateIndex];
           setSilhouetteAnchor({x: recommendedTemplate.silhouette.x, y: recommendedTemplate.silhouette.y});
+          if (recommendation.silhouette) {
+            setSilhouetteAnchor({x: recommendation.silhouette.x, y: recommendation.silhouette.y});
+            setSmartSilhouetteSize({width: recommendation.silhouette.width, height: recommendation.silhouette.height});
+          } else {
+            setSmartSilhouetteSize(null);
+          }
 
           setPose(
             recommendation.pose,
@@ -949,12 +1035,18 @@ export function CameraScreen() {
            * 保持智慧構圖模式，
            * 讓底部按鈕變成「清除構圖」。
            */
+          setSilhouetteLocked(true);
           setSmartCompositionActive(true);
 
           setSilhouetteResetKey(
             value => value + 1,
           );
         }}
+        />
+
+        <SmartCompositionHint
+          text={smartCompositionActive ? smartHint : ''}
+          notice={smartCompositionActive ? sceneDetectionNotice : ''}
         />
       </View>
 
@@ -1002,7 +1094,7 @@ export function CameraScreen() {
         onToggleUltraWide={position === 'back' && separateUltraWide && separateUltraWide.id !== preferredDevice?.id && (useSeparateUltraWide || minimumZoom * zoomDisplayFactor >= .9) ? () => {
           if (captureLock.current || !readyRef.current) return;
           markStopped(); setFlashEnabled(false); setCameraError('');
-          setSmartCompositionActive(false); setDetectedFaces([]); setDetectedPose(null); setRecommendations([]);
+          resetSmartComposition();
           setUseSeparateUltraWide(value => !value);
         } : undefined}
         template={template}
@@ -1026,6 +1118,7 @@ export function CameraScreen() {
         }
         onSelectPose={value => {
           setPose(value);
+          resetSmartComposition();
 
           setSilhouetteRotationOffset(
             0,
@@ -1037,11 +1130,6 @@ export function CameraScreen() {
            * 手動改輪廓後，
            * 離開智慧構圖模式。
            */
-          setSmartCompositionActive(false);
-
-          setDetectedFaces([]);
-          setDetectedPose(null);
-          setRecommendations([]);
         }}
         onApplyScenario={
           applyScenario
@@ -1063,10 +1151,7 @@ export function CameraScreen() {
           /**
            * 翻轉鏡頭後清除智慧偵測。
            */
-          setSmartCompositionActive(false);
-          setDetectedFaces([]);
-          setDetectedPose(null);
-          setRecommendations([]);
+          resetSmartComposition();
 
           setPosition(value =>
             value === 'back'

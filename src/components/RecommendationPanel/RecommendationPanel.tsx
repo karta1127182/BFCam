@@ -8,11 +8,11 @@ type Props = {recommendations: CompositionRecommendation[]; onApply: (recommenda
 export function RecommendationPanel({recommendations, onApply, onDismiss}: Props) {
   if (!recommendations.length) return null;
   return <View style={styles.panel}>
-    <View style={styles.header}><View><Text style={styles.eyebrow}>智慧構圖推薦</Text><Text style={styles.title}>選擇想套用的構圖</Text></View><Pressable accessibilityRole="button" accessibilityLabel="關閉構圖推薦" onPress={onDismiss} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>
+    <View style={styles.header}><View><Text style={styles.eyebrow}>智慧構圖推薦</Text><Text style={styles.title}>最佳構圖已自動套用</Text></View><Pressable accessibilityRole="button" accessibilityLabel="關閉構圖推薦" onPress={onDismiss} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>
     {recommendations.map((recommendation, index) => <Pressable key={`${recommendation.templateIndex}-${recommendation.title}`} accessibilityRole="button" onPress={() => onApply(recommendation)} style={[styles.option, index === 0 && styles.best]}>
       <View style={styles.rank}><Text style={styles.rankText}>{index + 1}</Text></View>
       <View style={styles.copy}><Text style={styles.optionTitle}>{recommendation.title}{index === 0 ? ' · 最適合' : ''}</Text><Text numberOfLines={2} style={styles.reason}>{recommendation.reason}</Text></View>
-      <Text style={styles.apply}>套用</Text>
+      <Text style={styles.apply}>{index === 0 ? '已套用' : '改用'}</Text>
     </Pressable>)}
   </View>;
 }

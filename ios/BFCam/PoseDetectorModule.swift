@@ -4,6 +4,7 @@ import React
 import MLKitPoseDetection
 import MLKitPoseDetectionCommon
 import MLKitVision
+import MLKitImageLabeling
 
 @objc(PoseDetectorModule)
 final class PoseDetectorModule: NSObject, RCTBridgeModule {
@@ -29,6 +30,19 @@ final class PoseDetectorModule: NSObject, RCTBridgeModule {
         return ["name": name, "x": point.position.x, "y": point.position.y, "z": point.position.z, "confidence": point.inFrameLikelihood]
       }
       resolve(["width": image.size.width * image.scale, "height": image.size.height * image.scale, "landmarks": landmarks])
+    }
+  }
+
+  @objc(detectLabels:resolver:rejecter:)
+  func detectLabels(_ uri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+    let path = uri.hasPrefix("file://") ? String(uri.dropFirst(7)) : uri
+    guard let image = UIImage(contentsOfFile: path) else { reject("LABEL_IMAGE_INVALID", "Unable to read image", nil); return }
+    let options = ImageLabelerOptions(); options.confidenceThreshold = 0.5
+    let labeler = ImageLabeler.imageLabeler(options: options)
+    let visionImage = VisionImage(image: image); visionImage.orientation = image.imageOrientation
+    labeler.process(visionImage) { labels, error in
+      if let error = error { reject("IMAGE_LABELING_FAILED", error.localizedDescription, error); return }
+      resolve((labels ?? []).map { ["text": $0.text, "confidence": $0.confidence, "index": $0.index] })
     }
   }
 }

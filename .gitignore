@@ -56,8 +56,9 @@ yarn-error.log
 # Bundle artifact
 *.jsbundle
 
-# Local source archives are delivery artifacts, not repository content.
+# Build and delivery artifacts are not repository content.
 *.zip
+*.apk
 
 # Signing keys must remain local.
 *.keystore
