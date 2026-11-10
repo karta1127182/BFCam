@@ -1,3 +1,5 @@
+import type {ReferencePoseId} from '../silhouettes/referencePoses';
+
 export type LineGuide = {
   type: 'line';
   startX: number;
@@ -32,7 +34,7 @@ export type Guide = LineGuide | RectGuide | CubicPathGuide;
 
 export type SilhouetteDefinition = {
   id: string;
-  variant:
+  variant: ReferencePoseId
     | 'full-body' | 'half-body' | 'bust' | 'headshot' | 'side' | 'hand-on-hip' | 'looking-back' | 'sitting'
     | 'walking' | 'arms-crossed' | 'waving' | 'kneeling' | 'selfie' | 'street-coat'
     | 'male-suit' | 'male-pocket' | 'male-lean' | 'female-dress' | 'female-cross-leg' | 'female-street-side'
@@ -41,9 +43,9 @@ export type SilhouetteDefinition = {
     | 'mountain-view' | 'city-skyline' | 'architecture'
     | 'dog' | 'cat' | 'product' | 'bottle'
     | 'male-seated' | 'male-backpack' | 'male-long-coat'
-    | 'female-seated' | 'female-handbag' | 'female-umbrella'
+    | 'female-seated' | 'female-handbag' | 'female-umbrella' | 'female-prone'
     | 'group-three' | 'family-three'
-    | 'dog-front' | 'dog-sitting' | 'cat-resting';
+    | 'dog-front' | 'dog-sitting' | 'cat-resting' | 'person-with-dog' | 'person-with-cat';
   x: number;
   y: number;
   width: number;

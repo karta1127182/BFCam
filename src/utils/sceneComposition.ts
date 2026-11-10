@@ -64,23 +64,17 @@ export function planSubjectPlacement(
   const first = recommendations[0];
   if (!first?.silhouette || !personCount) return recommendations;
   const background = classifyScene(labels, 0);
-  const group = personCount > 1;
+  const group = personCount >= 3;
   const environmental = background === 'landscape' || background === 'architecture';
-  const x = group || !environmental ? .5 : 2 / 3;
-  const height = environmental && !group ? Math.min(first.silhouette.height, .55) : first.silhouette.height;
-  const ratio = height / first.silhouette.height;
-  const width = first.silhouette.width * ratio;
-  const silhouette = {
-    x: Math.max(width / 2, Math.min(1 - width / 2, x)),
-    y: Math.max(height / 2, Math.min(1 - height / 2, first.silhouette.y)),
-    width, height,
-  };
+  // The detector already aligned this outline to the actual subject. Scene labels have no
+  // location data, so moving or shrinking it here makes an otherwise accurate outline drift.
+  const silhouette = first.silhouette;
   const backgroundName = background === 'landscape' ? '風景' : '建築';
   return [{
     ...first, silhouette,
     templateIndex: environmental && !group ? 0 : 1,
-    title: group ? '合照・置中排列' : environmental ? `人物＋${backgroundName}・三分法` : '人物・置中構圖',
-    reason: (environmental && !group
+    title: first.pose === 'person-with-cat' || first.pose === 'person-with-dog' ? first.title : group ? '合照・置中排列' : environmental ? `${personCount === 2 ? '雙人' : '人物'}＋${backgroundName}・三分法` : personCount === 2 ? '雙人・置中構圖' : '人物・置中構圖',
+    reason: (first.pose === 'person-with-cat' || first.pose === 'person-with-dog' ? first.reason + ' ' : '') + (environmental && !group
       ? `辨識到${backgroundName}背景，建議人物靠右三分線並保留環境空間。背景標籤無法定位物件，請確認沒有遮住景物。`
       : group ? '先將合照人物安排在中央，保留兩側空間。' : '以人物為主體，先安排在畫面中央。')
       + '輪廓已鎖定，請依建議位置安排主體。',
@@ -95,9 +89,17 @@ export function compositionGuidance(faces: NormalizedFaceBounds[], pose: Normali
   const top = faces.length ? Math.min(...faces.map(face => face.y)) : Math.min(...points.map(point => point.y));
   const bottom = points.length ? Math.max(...points.map(point => point.y)) : Math.max(...faces.map(face => face.y + face.height));
   const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
   if (right - left > .72 || bottom - top > .88 || left < .025 || right > .975) return '退後一點';
   const targetX = target?.x ?? .5;
   if (centerX > targetX + .08) return '往左一點';
   if (centerX < targetX - .08) return '往右一點';
+  if (target && points.length >= 3) {
+    const subjectHeight = bottom - top;
+    if (subjectHeight > target.height * 1.18) return '退後一點';
+    if (subjectHeight < target.height * .72) return '靠近一點';
+    if (centerY > target.y + .08) return '往上一點';
+    if (centerY < target.y - .08) return '往下一點';
+  }
   return '保持不動';
 }

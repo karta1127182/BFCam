@@ -74,6 +74,26 @@ test('smooths live silhouette movement and ignores detector jitter', () => {
   });
 });
 
+test('ignores a single edge landmark and keeps the outline wide enough for the detected body', () => {
+  const pose = {
+    complete: true, score: 90, hint: '',
+    landmarks: [
+      {name: 'nose' as const, x: .5, y: .1, z: 0, confidence: .9},
+      {name: 'leftShoulder' as const, x: .38, y: .25, z: 0, confidence: .9},
+      {name: 'rightShoulder' as const, x: .62, y: .25, z: 0, confidence: .9},
+      {name: 'leftHip' as const, x: .4, y: .5, z: 0, confidence: .9},
+      {name: 'rightHip' as const, x: .6, y: .5, z: 0, confidence: .9},
+      {name: 'leftAnkle' as const, x: .42, y: .92, z: 0, confidence: .9},
+      {name: 'rightAnkle' as const, x: .58, y: .92, z: 0, confidence: .9},
+      {name: 'leftWrist' as const, x: .99, y: .45, z: 0, confidence: .9},
+    ],
+  };
+  const result = calculateSmartSilhouette([], 1000, 1000, pose);
+  expect(result?.silhouette?.x).toBeCloseTo(.5, 1);
+  expect(result?.silhouette?.width).toBeGreaterThanOrEqual(.24);
+  expect(result?.silhouette?.width).toBeLessThan(.6);
+});
+
 // Changing the recommended guide must not turn a couple/group back into one person.
 test.each([1, 2, 3])('preserves the detected subject silhouette across all recommendations (%i faces)', count => {
   const faces = Array.from({length: count}, (_, index) => ({x: 100 + index * 220, y: 180, width: 140, height: 180}));

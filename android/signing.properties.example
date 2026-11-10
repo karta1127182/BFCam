@@ -1,0 +1,7 @@
+# Copy to signing.local.properties and set your actual local values.
+# Paths are relative to the android directory. Never commit passwords.
+storeFile=signing/bfcam-upload.p12
+storeType=PKCS12
+keyAlias=bfcam-upload
+storePassword=REPLACE_LOCALLY
+keyPassword=REPLACE_LOCALLY

@@ -1,3 +1,4 @@
+import {oneTapBeautyValues, type BeautyLevel} from '../../utils/oneTapBeauty';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View} from 'react-native';
 import {Canvas, Circle, ColorMatrix, FillType, Group, Image as SkiaImage, Line, Paint, RoundedRect, RuntimeShader, Skia, useImage} from '@shopify/react-native-skia';
@@ -18,13 +19,15 @@ type Props = {
   initialFilterIndex: number;
   initialFilterStrength: number;
   onCancel: () => void;
-  onSave: (matrix: number[], geometry: PhotoGeometry, retouch: RetouchSettings) => void;
-  onShare: (matrix: number[], geometry: PhotoGeometry, retouch: RetouchSettings) => void;
+  onRequestPremium?: () => boolean;
+  trialPanel?: React.ReactNode;
+  onSave: (matrix: number[], geometry: PhotoGeometry, retouch: RetouchSettings, oneTapEnabled: boolean) => void;
+  onShare: (matrix: number[], geometry: PhotoGeometry, retouch: RetouchSettings, oneTapEnabled: boolean) => void;
 };
 
 type AdjustmentKey = keyof PhotoAdjustments;
 type FaceRetouchValues = {smoothing: number; whitening: number; rosy: number; brightEyes: number; teethWhitening: number; darkCircle: number; slimFace: number; chin: number; largeEyes: number; smallNose: number};
-type EditState = {filterIndex: number; strength: number; adjustments: PhotoAdjustments; geometry: PhotoGeometry; oneTapEnabled: boolean; retouchByFace: Record<number, FaceRetouchValues>; healSpots: HealSpot[]; brushStrokes: ManualBrushStroke[]; warpStrokes: ManualWarpStroke[]};
+type EditState = {filterIndex: number; strength: number; adjustments: PhotoAdjustments; geometry: PhotoGeometry; oneTapEnabled: boolean; beautyLevel: BeautyLevel; retouchByFace: Record<number, FaceRetouchValues>; healSpots: HealSpot[]; brushStrokes: ManualBrushStroke[]; warpStrokes: ManualWarpStroke[]};
 type RetouchTool = 'smooth' | 'whiten' | 'rosy' | 'brightEyes' | 'teeth' | 'darkCircle' | 'slimFace' | 'chin' | 'largeEyes' | 'smallNose' | 'heal';
 type RetouchContourKey = 'FACE' | 'LEFT_EYE' | 'RIGHT_EYE' | 'LEFT_EYEBROW_TOP' | 'LEFT_EYEBROW_BOTTOM' | 'RIGHT_EYEBROW_TOP' | 'RIGHT_EYEBROW_BOTTOM' | 'UPPER_LIP_TOP' | 'UPPER_LIP_BOTTOM' | 'LOWER_LIP_TOP' | 'LOWER_LIP_BOTTOM' | 'NOSE_BRIDGE' | 'NOSE_BOTTOM';
 type RetouchFace = {bounds: FaceRegion; eyes: Array<{x: number; y: number}>; contours: Partial<Record<RetouchContourKey, Array<{x: number; y: number}>>>; hasLandmarks: boolean; hasContours: boolean};
@@ -43,11 +46,11 @@ const boundsForPoints = (points: Array<{x: number; y: number}>): FaceRegion | un
   return {x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y};
 };
 
-export function EditorScreen({path, saving, sharing, initialFilterIndex, initialFilterStrength, onCancel, onSave, onShare}: Props) {
+export function EditorScreen({path, saving, sharing, initialFilterIndex, initialFilterStrength, onCancel, onSave, onShare, onRequestPremium, trialPanel}: Props) {
   const insets = useSafeAreaInsets();
   const {width, height} = useWindowDimensions();
   const image = useImage(`file://${path}`);
-  const initialState = useMemo<EditState>(() => ({filterIndex: initialFilterIndex, strength: initialFilterStrength, adjustments: initialAdjustments, geometry: initialGeometry, oneTapEnabled: false, retouchByFace: {}, healSpots: [], brushStrokes: [], warpStrokes: []}), [initialFilterIndex, initialFilterStrength]);
+  const initialState = useMemo<EditState>(() => ({filterIndex: initialFilterIndex, strength: initialFilterStrength, adjustments: initialAdjustments, geometry: initialGeometry, oneTapEnabled: false, beautyLevel: 'natural', retouchByFace: {}, healSpots: [], brushStrokes: [], warpStrokes: []}), [initialFilterIndex, initialFilterStrength]);
   const [edit, setEdit] = useState(initialState);
   const [undoStack, setUndoStack] = useState<EditState[]>([]);
   const [redoStack, setRedoStack] = useState<EditState[]>([]);
@@ -102,7 +105,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   useEffect(() => {if (editZoom <= 1) setEditPan({x: 0, y: 0});}, [editZoom]);
   const {filterIndex, strength, adjustments, geometry} = edit;
   const matrix = useMemo(() => editMatrix(filterIndex, strength, adjustments), [adjustments, filterIndex, strength]);
-  const previewHeight = Math.max(190, height - 370 - insets.top - insets.bottom);
+  const previewHeight = Math.max(190, height - 370 - insets.top - insets.bottom - (trialPanel ? 41 : 0));
   const sourceAspect = image ? image.width() / image.height() : width / previewHeight;
   const rotatedSourceAspect = geometry.rotation % 180 === 0 ? sourceAspect : 1 / sourceAspect;
   const cropPreview = fitAspectWithin(Math.max(0, width - 20), Math.max(0, previewHeight - 12), cropAspectRatio(geometry.cropAspect, rotatedSourceAspect));
@@ -192,17 +195,20 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const adjustStrength = (delta: number) => commit({...edit, strength: Math.max(0, Math.min(1, Math.round((strength + delta) * 20) / 20))});
   const applyOneTapBeauty = () => {
     if (edit.oneTapEnabled) {commit({...edit, oneTapEnabled: false}); return;}
-    if (!retouchFaces.length) return;
+    if (!retouchFaces.length || (onRequestPremium && !onRequestPremium())) return;
+    setBeautyLevel(edit.beautyLevel);
+  };
+  const setBeautyLevel = (level: BeautyLevel) => {
+    if (!retouchFaces.length || (onRequestPremium && !onRequestPremium())) return;
     const retouchByFace = Object.fromEntries(retouchFaces.map((face, index) => [index, {
       ...(edit.retouchByFace[index] ?? initialRetouch),
-      smoothing: .32,
-      whitening: .14,
-      rosy: .12,
-      brightEyes: face.eyes.length === 2 ? .16 : 0,
-      teethWhitening: face.contours.UPPER_LIP_TOP?.length && face.contours.LOWER_LIP_BOTTOM?.length ? .12 : 0,
-      darkCircle: face.eyes.length === 2 ? .2 : 0,
+      ...oneTapBeautyValues(level, {
+        eyes: face.eyes.length === 2,
+        mouth: !!(face.contours.UPPER_LIP_TOP?.length && face.contours.LOWER_LIP_BOTTOM?.length),
+        detailedSkin: face.hasContours,
+      }),
     }])) as Record<number, FaceRetouchValues>;
-    commit({...edit, retouchByFace, oneTapEnabled: true});
+    commit({...edit, beautyLevel: level, retouchByFace, oneTapEnabled: true});
   };
   const brushTool = (tool: RetouchTool): ManualBrushTool | null => tool === 'smooth' ? 'smoothing' : tool === 'whiten' ? 'whitening' : tool === 'rosy' ? 'rosy' : tool === 'brightEyes' ? 'brightEyes' : tool === 'teeth' ? 'teethWhitening' : tool === 'darkCircle' ? 'darkCircle' : null;
   const warpTool = (tool: RetouchTool): ManualWarpTool | null => tool === 'slimFace' || tool === 'chin' || tool === 'largeEyes' || tool === 'smallNose' ? tool : null;
@@ -346,10 +352,11 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       {button('重拍', onCancel, false, saving || sharing)}
       <View style={styles.headerTitle}><Text style={styles.headerEyebrow}>BFCAM STUDIO</Text><Text style={styles.title}>編輯照片</Text></View>
       <View style={styles.headerActions}>
-        {button(sharing ? '準備中…' : '分享', () => onShare(matrix, geometry, retouchSettings), false, saving || sharing || !image)}
-        {button(saving ? '儲存中…' : '儲存', () => onSave(matrix, geometry, retouchSettings), true, saving || sharing || !image)}
+        {button(sharing ? '準備中…' : '分享', () => onShare(matrix, geometry, retouchSettings, edit.oneTapEnabled), false, saving || sharing || !image)}
+        {button(saving ? '儲存中…' : '儲存', () => onSave(matrix, geometry, retouchSettings, edit.oneTapEnabled), true, saving || sharing || !image)}
       </View>
     </View>
+    {trialPanel}
     <View style={[styles.preview, {width, height: previewHeight}]}>
     <View style={[styles.cropPreview, {width: cropPreview.width, height: cropPreview.height}]}>
     <Canvas style={{width: previewCanvasWidth, height: previewCanvasHeight, transform: [{translateX: editPan.x}, {translateY: editPan.y}, {scale: editZoom}, {rotate: `${geometry.rotation}deg`}, {scaleX: geometry.mirrored ? -1 : 1}]}}>
@@ -429,6 +436,10 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.retouchToolList}>{retouchToolCard('heal', '修復筆', '點按祛痘', Boolean(image))}{retouchToolCard('smooth', '磨皮', '手動畫膚質', Boolean(image))}{retouchToolCard('whiten', '美白', '手動提亮', Boolean(image))}{retouchToolCard('rosy', '粉嫩', '手動畫紅潤', Boolean(image))}{retouchToolCard('brightEyes', '亮眼', '手動畫眼神', Boolean(image))}{retouchToolCard('teeth', '白牙', '手動畫笑容', Boolean(image))}{retouchToolCard('darkCircle', '黑眼圈', '手動畫淡化', Boolean(image))}{retouchToolCard('slimFace', '瘦臉', '手指推拉', Boolean(image && faceReshapeEffect))}{retouchToolCard('chin', '下巴', '手指推拉', Boolean(image && faceReshapeEffect))}{retouchToolCard('largeEyes', '大眼', '點按局部放大', Boolean(image && faceReshapeEffect))}{retouchToolCard('smallNose', '縮鼻', '點按局部縮小', Boolean(image && faceReshapeEffect))}</ScrollView>
       {manualToolPanel}
       {!faceReshapeEffect && <Text accessibilityRole="alert" style={styles.retouchWarning}>此裝置無法建立五官變形效果，其他修容工具仍可正常使用。</Text>}
+      <View style={styles.healActions}>{(['soft', 'natural', 'bright'] as BeautyLevel[]).map(level => button(
+        level === 'soft' ? '輕柔美顏' : level === 'natural' ? '自然美顏' : '明亮美顏',
+        () => setBeautyLevel(level), edit.oneTapEnabled && edit.beautyLevel === level, faceAnalysis !== 'ready',
+      ))}</View>
       <Text style={styles.retouchHint}>手動工具不會自動抓五官；只有「一鍵美顏」使用人臉定位。</Text>
     </ScrollView> : section === 'adjust' ? <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.adjustments}>{(Object.keys(adjustmentLabels) as AdjustmentKey[]).map(key => <View key={key} style={styles.adjustmentCard}><Text style={styles.adjustmentName}>{adjustmentLabels[key]}</Text><View style={styles.adjustRow}>{button('−', () => changeAdjustment(key, -.1), false, adjustments[key] <= -1)}<Text style={styles.adjustValue}>{Math.round(adjustments[key] * 100)}%</Text>{button('＋', () => changeAdjustment(key, .1), false, adjustments[key] >= 1)}</View></View>)}</ScrollView> : <View style={styles.cropTools}>
       {button('旋轉 90°', () => commit({...edit, geometry: {...geometry, rotation: ((geometry.rotation + 90) % 360) as PhotoGeometry['rotation']}}))}

@@ -5,11 +5,45 @@ import MLKitPoseDetection
 import MLKitPoseDetectionCommon
 import MLKitVision
 import MLKitImageLabeling
+import MLKitObjectDetection
+import ImageIO
 
 @objc(PoseDetectorModule)
-final class PoseDetectorModule: NSObject, RCTBridgeModule {
-  static func moduleName() -> String! { "PoseDetectorModule" }
-  static func requiresMainQueueSetup() -> Bool { false }
+final class PoseDetectorModule: NSObject {
+  @objc static func requiresMainQueueSetup() -> Bool { false }
+
+  @objc(detectObjects:resolver:rejecter:)
+  func detectObjects(_ uri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+    DispatchQueue.global(qos: .userInitiated).async {
+      let path = uri.hasPrefix("file://") ? String(uri.dropFirst(7)) : uri
+      guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
+        let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+          kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceThumbnailMaxPixelSize: 1600] as CFDictionary)
+      else { reject("OBJECT_IMAGE_INVALID", "Unable to read image", nil); return }
+      let image = UIImage(cgImage: cgImage)
+      let options = ObjectDetectorOptions(); options.detectorMode = .singleImage; options.shouldEnableMultipleObjects = true
+      let detector = ObjectDetector.objectDetector(options: options)
+      let labelOptions = ImageLabelerOptions(); labelOptions.confidenceThreshold = 0.55
+      let labeler = ImageLabeler.imageLabeler(options: labelOptions)
+      detector.process(VisionImage(image: image)) { objects, error in
+        if let error = error { reject("OBJECT_DETECTION_FAILED", error.localizedDescription, error); return }
+        let group = DispatchGroup(); let lock = NSLock()
+        var results: [Int: [String: Any]] = [:]
+        for (index, object) in (objects ?? []).prefix(5).enumerated() {
+          let rect = object.frame.intersection(CGRect(x: 0, y: 0, width: CGFloat(cgImage.width), height: CGFloat(cgImage.height))).integral
+          guard !rect.isEmpty, !rect.isNull, let crop = cgImage.cropping(to: rect) else { continue }
+          group.enter()
+          labeler.process(VisionImage(image: UIImage(cgImage: crop))) { labels, _ in
+            let result: [String: Any] = ["x": rect.minX / CGFloat(cgImage.width), "y": rect.minY / CGFloat(cgImage.height),
+              "width": rect.width / CGFloat(cgImage.width), "height": rect.height / CGFloat(cgImage.height),
+              "labels": (labels ?? []).map { ["text": $0.text, "confidence": $0.confidence] }]
+            lock.lock(); results[index] = result; lock.unlock(); group.leave()
+          }
+        }
+        group.notify(queue: .main) { resolve(results.keys.sorted().compactMap { results[$0] }) }
+      }
+    }
+  }
 
   @objc(detect:resolver:rejecter:)
   func detect(_ uri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {

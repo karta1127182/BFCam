@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {
+  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,10 +13,13 @@ import {compositionTemplates} from '../../templates';
 import {GuideRenderer} from '../GuideRenderer/GuideRenderer';
 import {PoseDrawing} from '../Silhouette/Silhouette';
 import {
-  poseCatalog,
+  selectablePoseCatalog,
   silhouetteCategories,
   matchesSilhouetteCategory,
+  matchesSilhouettePoseGroup,
+  silhouettePoseGroups,
   type SilhouetteCategory,
+  type SilhouettePoseGroup,
 } from '../../silhouettes/catalog';
 import {filters} from '../../filters';
 import {
@@ -146,16 +150,27 @@ export function CameraControls(
     setFilterCategory,
   ] = useState('全部');
 
+  const [silhouettePoseGroup, setSilhouettePoseGroup] =
+    useState<SilhouettePoseGroup | null>(null);
+
   const insets =
     useSafeAreaInsets();
 
-  const visibleSilhouettes =
+  const categorySilhouettes =
     silhouetteCategory === '全部'
-      ? poseCatalog
-      : poseCatalog.filter(
+      ? selectablePoseCatalog
+      : selectablePoseCatalog.filter(
           item =>
             matchesSilhouetteCategory(item, silhouetteCategory),
         );
+
+  const visibleSilhouettes = silhouettePoseGroup
+    ? categorySilhouettes.filter(item => matchesSilhouettePoseGroup(item, silhouettePoseGroup))
+    : categorySilhouettes;
+
+  const visiblePoseGroups = silhouetteCategory === '男' || silhouetteCategory === '女' || silhouetteCategory === '多人'
+    ? silhouettePoseGroups[silhouetteCategory]
+    : [];
 
   const filterCategories = [
     '全部',
@@ -680,11 +695,16 @@ export function CameraControls(
                         silhouetteCategory ===
                         category,
                     }}
-                    onPress={() =>
-                      setSilhouetteCategory(
-                        category,
-                      )
-                    }
+                    onPress={() => {
+                      setSilhouetteCategory(category);
+                      setSilhouettePoseGroup(
+                        category === '男' || category === '女'
+                          ? '坐姿'
+                          : category === '多人'
+                            ? '情侶'
+                            : null,
+                      );
+                    }}
                     style={[
                       styles.categoryTab,
 
@@ -707,16 +727,40 @@ export function CameraControls(
               )}
             </ScrollView>
 
-            <ScrollView
+            {visiblePoseGroups.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryTabs}>
+                {visiblePoseGroups.map(group => (
+                  <Pressable
+                    key={group}
+                    accessibilityRole="tab"
+                    accessibilityLabel={`${silhouetteCategory}${group}輪廓`}
+                    accessibilityState={{selected: silhouettePoseGroup === group}}
+                    onPress={() => setSilhouettePoseGroup(group)}
+                    style={[styles.categoryTab, silhouettePoseGroup === group && styles.activeCategoryTab]}>
+                    <Text style={[styles.categoryTabLabel, silhouettePoseGroup === group && styles.activeCategoryTabLabel]}>
+                      {group}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+
+            <FlatList
+              key={`${silhouetteCategory}:${silhouettePoseGroup ?? 'all'}`}
               horizontal
-              showsHorizontalScrollIndicator={
-                false
-              }
-              contentContainerStyle={
-                styles.choices
-              }>
-              {visibleSilhouettes.map(
-                pose => (
+              data={visibleSilhouettes}
+              extraData={props.template.silhouette.variant}
+              keyExtractor={pose => pose.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.choices}
+              initialNumToRender={6}
+              maxToRenderPerBatch={6}
+              windowSize={3}
+              removeClippedSubviews={false}
+              renderItem={({item: pose}) => (
                   <Pressable
                     key={pose.id}
                     accessibilityRole="button"
@@ -780,9 +824,8 @@ export function CameraControls(
                       ]}
                     />
                   </Pressable>
-                ),
               )}
-            </ScrollView>
+            />
           </View>
         )}
 

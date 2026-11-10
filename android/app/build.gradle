@@ -57,6 +57,8 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
+// Native React Native modules in this app are not yet covered by complete R8 keep rules.
+// Keep production builds unminified to avoid release-only startup crashes.
 def enableProguardInReleaseBuilds = false
 
 /**
@@ -72,6 +74,54 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// Keep private signing material out of source control and command-line arguments.
+def uploadProperties = new Properties()
+def uploadPropertiesFile = rootProject.file('signing.local.properties')
+if (uploadPropertiesFile.exists()) {
+    uploadPropertiesFile.withInputStream { uploadProperties.load(it) }
+}
+def uploadSetting = { String propertyName, String environmentName ->
+    providers.environmentVariable(environmentName).orNull ?: uploadProperties.getProperty(propertyName)
+}
+def uploadStorePath = uploadSetting('storeFile', 'BFCAM_UPLOAD_STORE_FILE')
+def uploadStorePassword = uploadSetting('storePassword', 'BFCAM_UPLOAD_STORE_PASSWORD')
+def uploadKeyAlias = uploadSetting('keyAlias', 'BFCAM_UPLOAD_KEY_ALIAS')
+def uploadKeyPassword = uploadSetting('keyPassword', 'BFCAM_UPLOAD_KEY_PASSWORD')
+def uploadStoreType = uploadSetting('storeType', 'BFCAM_UPLOAD_STORE_TYPE') ?: 'PKCS12'
+
+tasks.register('validateUploadSigning') {
+    group = 'verification'
+    description = 'Require a private upload key for release builds; never fall back to the debug key.'
+    doLast {
+        if (![uploadStorePath, uploadStorePassword, uploadKeyAlias, uploadKeyPassword].every { it?.trim() }) {
+            throw new GradleException('Release signing is not configured. See ANDROID_RELEASE.md; configure android/signing.local.properties or BFCAM_UPLOAD_* environment variables.')
+        }
+        if (!rootProject.file(uploadStorePath).isFile()) {
+            throw new GradleException('Release upload keystore file does not exist. Check the private signing configuration.')
+        }
+        if (uploadKeyAlias == 'androiddebugkey' || rootProject.file(uploadStorePath).canonicalFile == file('debug.keystore').canonicalFile) {
+            throw new GradleException('Release builds cannot use the Android debug key.')
+        }
+        try {
+            def uploadKeyStore = java.security.KeyStore.getInstance(uploadStoreType)
+            rootProject.file(uploadStorePath).withInputStream { uploadKeyStore.load(it, uploadStorePassword.toCharArray()) }
+            def certificate = uploadKeyStore.getCertificate(uploadKeyAlias)
+            if (!uploadKeyStore.isKeyEntry(uploadKeyAlias) || !uploadKeyStore.getKey(uploadKeyAlias, uploadKeyPassword.toCharArray()) || !certificate) {
+                throw new IllegalStateException('Missing private key entry')
+            }
+            certificate.checkValidity()
+            if (certificate.subjectX500Principal.name.contains('CN=Android Debug')) {
+                throw new IllegalStateException('Debug certificate')
+            }
+        } catch (Exception ignored) {
+            throw new GradleException('The upload key is invalid, expired, uses a debug certificate, or cannot be opened. Check the private signing configuration.')
+        }
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+    dependsOn('validateUploadSigning')
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -82,10 +132,17 @@ android {
         applicationId "com.bfcam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "1.0.4"
     }
     signingConfigs {
+        release {
+            if (uploadStorePath) storeFile rootProject.file(uploadStorePath)
+            if (uploadStorePassword) storePassword uploadStorePassword
+            if (uploadKeyAlias) keyAlias uploadKeyAlias
+            if (uploadKeyPassword) keyPassword uploadKeyPassword
+            storeType uploadStoreType
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -98,10 +155,9 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
@@ -110,6 +166,7 @@ android {
 dependencies {
     implementation("com.google.mlkit:pose-detection:18.0.0-beta5")
     implementation("com.google.mlkit:image-labeling:17.0.9")
+    implementation("com.google.mlkit:object-detection:17.0.2")
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 

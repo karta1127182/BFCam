@@ -34,13 +34,14 @@ import {CompositionOverlay} from '../../components/CompositionOverlay/Compositio
 import {RecommendationPanel} from '../../components/RecommendationPanel/RecommendationPanel';
 import {EditorScreen} from '../EditorScreen/EditorScreen';
 import {useCameraZoom} from '../../hooks/useCameraZoom';
+import {usePremiumTrial} from '../../hooks/usePremiumTrial';
+import {PremiumTrialPanel} from '../../components/PremiumTrialPanel';
 import {compositionTemplates} from '../../templates';
 import {poseCatalog} from '../../silhouettes/catalog';
 import {resolveScenario, type ScenarioPreset} from '../../scenarios';
 import type {SilhouetteDefinition} from '../../types/composition';
 import {
   normalizeFaceBounds,
-  recommendFaceCompositions,
   type CompositionRecommendation,
   type NormalizedFaceBounds,
 } from '../../utils/compositionRecommender';
@@ -53,14 +54,23 @@ import {
 } from '../../store/cameraPreferences';
 import {
   detectImageLabels,
+  detectSceneObjects,
   detectPose,
   type NormalizedPose,
 } from '../../utils/poseDetection';
-import {chooseSceneComposition, chooseSceneSilhouette, planSubjectPlacement, compositionGuidance, mirrorFaceBounds} from '../../utils/sceneComposition';
+import {compositionGuidance, mirrorFaceBounds} from '../../utils/sceneComposition';
+import {buildSubjectRecommendations} from '../../utils/subjectComposition';
 import {SmartCompositionHint} from '../../components/SmartCompositionHint/SmartCompositionHint';
 import {createSmartCompositionResetState, createSmartCompositionRuntime, resetSmartCompositionRuntime} from '../../utils/smartCompositionState';
+import {compositionPlacementForPose} from '../../utils/posePlacement';
 
 export function CameraScreen() {
+  const trial = usePremiumTrial();
+  const {requireAccess, recordExport} = trial;
+  const pendingSmartPhoto = useRef(false);
+  const exportedTrialPhoto = useRef<string | null>(null);
+
+
   const [preferencesHydrated, setPreferencesHydrated] = useState(false);
 
   const readyRef = useRef(false);
@@ -150,9 +160,11 @@ export function CameraScreen() {
     useState<CompositionRecommendation[]>([]);
   const [smartHint, setSmartHint] = useState('');
   const [sceneDetectionNotice, setSceneDetectionNotice] = useState('');
+  const smartAnalysisRequestRef = useRef(0);
   const smartCompositionRuntimeRef = useRef(createSmartCompositionRuntime());
 
   const resetSmartComposition = useCallback(() => {
+    smartAnalysisRequestRef.current++;
     resetSmartCompositionRuntime(smartCompositionRuntimeRef.current);
     const reset = createSmartCompositionResetState();
     setSmartCompositionActive(reset.smartCompositionActive);
@@ -167,6 +179,10 @@ export function CameraScreen() {
 
   const [pendingPhotoPath, setPendingPhotoPath] =
     useState<string | null>(null);
+
+  const trialPanel = <PremiumTrialPanel billing={trial.billing} topInset={!pendingPhotoPath} remaining={trial.remaining} status={trial.status}
+    visible={trial.plansVisible} onOpen={() => {trial.setPlansVisible(true); trial.billing.refresh();}}
+    onClose={() => trial.setPlansVisible(false)} onRetry={trial.reload} />;
 
   const handleLiveFacesDetected = useCallback((faces: NormalizedFaceBounds[]) => {
     if (!smartCompositionActive || !smartCompositionRuntimeRef.current.faceTracking) return;
@@ -343,6 +359,7 @@ export function CameraScreen() {
       const active = state === 'active';
       setAppActive(active);
       if (!active) {
+        smartAnalysisRequestRef.current++;
         readyRef.current = false;
         setCameraReady(false);
         setFlashEnabled(false);
@@ -407,6 +424,7 @@ export function CameraScreen() {
    * 拍照
    */
   const capture = useCallback(async () => {
+    if (smartCompositionActive && !requireAccess()) return;
     if (!readyRef.current || captureLock.current) {
       return;
     }
@@ -455,6 +473,8 @@ export function CameraScreen() {
           await photo.toImageAsync();
 
         try {
+          pendingSmartPhoto.current = smartCompositionActive;
+          exportedTrialPhoto.current = null;
           setPendingPhotoPath(
             await oriented.saveToTemporaryFileAsync(
               'jpg',
@@ -477,6 +497,8 @@ export function CameraScreen() {
       setIsCapturing(false);
     }
   }, [
+    smartCompositionActive,
+    requireAccess,
     device?.hasFlash,
     flashEnabled,
     photoOutput,
@@ -490,6 +512,7 @@ export function CameraScreen() {
       edit: number[],
       geometry: PhotoGeometry,
       retouch: RetouchSettings,
+      oneTapEnabled: boolean,
     ) => {
       if (
         !pendingPhotoPath ||
@@ -499,6 +522,8 @@ export function CameraScreen() {
         return;
       }
 
+      const usesPremium = pendingSmartPhoto.current || oneTapEnabled;
+      if (usesPremium && !requireAccess(pendingPhotoPath)) return;
       editExportLock.current = true;
       setIsSavingEdit(true);
 
@@ -519,11 +544,18 @@ export function CameraScreen() {
           },
         );
 
+        let trialRecordFailed = false;
+        if (usesPremium && exportedTrialPhoto.current !== pendingPhotoPath) {
+          exportedTrialPhoto.current = pendingPhotoPath;
+          try { await recordExport(pendingPhotoPath); }
+          catch { trialRecordFailed = true; }
+        }
+        pendingSmartPhoto.current = false;
         setPendingPhotoPath(null);
 
         Alert.alert(
           '拍攝完成',
-          '編輯後的照片已儲存到 BFCam 相簿。',
+          trialRecordFailed ? '照片已儲存到 BFCam 相簿，但體驗紀錄未能保存；請重新讀取紀錄後再使用 Pro 功能。' : '編輯後的照片已儲存到 BFCam 相簿。',
         );
       } catch (error) {
         Alert.alert(
@@ -535,7 +567,7 @@ export function CameraScreen() {
         setIsSavingEdit(false);
       }
     },
-    [isSavingEdit, pendingPhotoPath],
+    [isSavingEdit, pendingPhotoPath, requireAccess, recordExport],
   );
 
   /**
@@ -546,6 +578,7 @@ export function CameraScreen() {
       edit: number[],
       geometry: PhotoGeometry,
       retouch: RetouchSettings,
+      oneTapEnabled: boolean,
     ) => {
       if (
         !pendingPhotoPath ||
@@ -555,6 +588,8 @@ export function CameraScreen() {
         return;
       }
 
+      const usesPremium = pendingSmartPhoto.current || oneTapEnabled;
+      if (usesPremium && !requireAccess(pendingPhotoPath)) return;
       editExportLock.current = true;
       setIsSharingEdit(true);
 
@@ -567,12 +602,17 @@ export function CameraScreen() {
             retouch,
           );
 
-        await Share.open({
+        const result = await Share.open({
           title: '分享 BFCam 照片',
           url: `file://${outputPath}`,
           type: 'image/jpeg',
           failOnCancel: false,
         });
+        if (result.success && !result.dismissedAction && usesPremium && exportedTrialPhoto.current !== pendingPhotoPath) {
+          exportedTrialPhoto.current = pendingPhotoPath;
+          try { await recordExport(pendingPhotoPath); }
+          catch { Alert.alert('分享已完成', '體驗紀錄未能保存，請重新讀取紀錄後再使用 Pro 功能。'); }
+        }
       } catch (error) {
         Alert.alert(
           '無法分享',
@@ -583,13 +623,14 @@ export function CameraScreen() {
         setIsSharingEdit(false);
       }
     },
-    [isSharingEdit, pendingPhotoPath],
+    [isSharingEdit, pendingPhotoPath, requireAccess, recordExport],
   );
 
   /**
    * 智慧構圖偵測
    */
   const detectComposition = useCallback(async () => {
+    if (!requireAccess()) return;
     if (
       !readyRef.current ||
       captureLock.current
@@ -597,6 +638,7 @@ export function CameraScreen() {
       return;
     }
 
+    const requestId = ++smartAnalysisRequestRef.current;
     captureLock.current = true;
 
     setIsDetecting(true);
@@ -621,10 +663,12 @@ export function CameraScreen() {
               90,
             );
 
+          if (requestId !== smartAnalysisRequestRef.current) return;
           const [
             facesResult,
             poseResult,
             labelsResult,
+            objectsResult,
           ] = await Promise.allSettled([
             imageFaceDetector.detectFaces(
               `file://${path}`,
@@ -636,8 +680,10 @@ export function CameraScreen() {
             detectImageLabels(
               `file://${path}`,
             ),
+            detectSceneObjects(`file://${path}`),
           ]);
 
+          if (requestId !== smartAnalysisRequestRef.current) return;
           const faces =
             facesResult.status === 'fulfilled'
               ? facesResult.value
@@ -655,41 +701,30 @@ export function CameraScreen() {
             ? labelsResult.value
             : {status: 'failed' as const, labels: [], message: '場景辨識失敗，人物智慧構圖仍可使用'};
           const labels = labelDetection.labels;
-          setSceneDetectionNotice(labelDetection.status === 'available' ? '' : labelDetection.message);
-          const sceneDecision = chooseSceneComposition(labels, bounds.length || (nextPose ? 1 : 0));
-
-          let nextRecommendations =
-            recommendFaceCompositions(
-              bounds,
-              oriented.width,
-              oriented.height,
-              nextPose,
-              position === 'front',
-            );
-          if (!nextRecommendations.length && sceneDecision.scene !== 'unknown') {
-            nextRecommendations = [{
-              templateIndex: sceneDecision.templateIndex,
-              pose: chooseSceneSilhouette(sceneDecision.scene, labels),
-              title: sceneDecision.title,
-              reason: sceneDecision.reason,
-            }];
-          }
-
-          nextRecommendations = planSubjectPlacement(
-            nextRecommendations, labels, bounds.length || (nextPose ? 1 : 0),
-          );
+          const objectDetection = objectsResult.status === 'fulfilled' ? objectsResult.value : {status: 'failed', objects: []};
+          setSceneDetectionNotice([
+            labelDetection.status === 'available' ? '' : labelDetection.message,
+            objectDetection.status === 'available' ? '' : '景物位置辨識暫不可用，本次提供基本構圖建議',
+          ].filter(Boolean).join('；'));
+          const nextRecommendations = buildSubjectRecommendations({
+            faces: bounds, width: oriented.width, height: oriented.height,
+            pose: nextPose, labels, objects: objectDetection.objects, mirrored: position === 'front',
+          });
 
           const normalizedFaces = normalizeFaceBounds(
               bounds,
               oriented.width,
               oriented.height,
             );
-          smartCompositionRuntimeRef.current.faceTracking = normalizedFaces.length > 0;
+          smartCompositionRuntimeRef.current.faceTracking = normalizedFaces.length > 0
+            && !nextRecommendations[0]?.pose.startsWith('person-with-');
           setDetectedFaces(normalizedFaces);
 
           setDetectedPose(nextPose);
           const displayFaces = position === 'front' ? mirrorFaceBounds(normalizedFaces) : normalizedFaces;
-          setSmartHint(compositionGuidance(displayFaces, nextPose, nextRecommendations[0]?.silhouette));
+          setSmartHint(normalizedFaces.length || nextPose
+            ? nextRecommendations[0]?.pose.startsWith('person-with-') ? '人物與寵物依輪廓並排入鏡，確認兩者都完整可見' : compositionGuidance(displayFaces, nextPose, nextRecommendations[0]?.silhouette)
+            : '已套用主題輪廓，請依輪廓安排主體後拍攝');
           smartCompositionRuntimeRef.current.hintHistory = [];
 
           setRecommendations(
@@ -746,6 +781,7 @@ export function CameraScreen() {
         photo.dispose();
       }
     } catch (error) {
+      if (requestId !== smartAnalysisRequestRef.current) return;
       resetSmartComposition();
 
       Alert.alert(
@@ -760,6 +796,7 @@ export function CameraScreen() {
     imageFaceDetector,
     photoOutput,
     position,
+    requireAccess,
     resetSmartComposition,
   ]);
 
@@ -895,6 +932,8 @@ export function CameraScreen() {
         onCancel={() =>
           setPendingPhotoPath(null)
         }
+        trialPanel={trialPanel}
+        onRequestPremium={() => requireAccess(pendingPhotoPath)}
         onSave={saveEdit}
         onShare={shareEdit}
       />
@@ -941,6 +980,7 @@ export function CameraScreen() {
 
   return (
     <View style={styles.container}>
+      {trialPanel}
       <View style={styles.viewfinder}>
         <View
           style={styles.cameraFill}
@@ -1045,7 +1085,7 @@ export function CameraScreen() {
         />
 
         <SmartCompositionHint
-          text={smartCompositionActive ? smartHint : ''}
+          text={smartCompositionActive ? `${selectedPose.name} · ${smartHint}` : ''}
           notice={smartCompositionActive ? sceneDetectionNotice : ''}
         />
       </View>
@@ -1117,11 +1157,34 @@ export function CameraScreen() {
           selectTemplate
         }
         onSelectPose={value => {
-          setPose(value);
+          const nextPose =
+            poseCatalog.find(item => item.id === value) ??
+            poseCatalog[0];
+
+          setPose(nextPose.id);
           resetSmartComposition();
+          // Selecting a pose also restores an overlay hidden manually or by
+          // clearing smart composition (including live-tracking failures).
+          setSilhouetteVisible(true);
+
+          setSilhouetteAnchor(
+            compositionPlacementForPose(
+              nextPose,
+              {
+                x: baseTemplate.silhouette.x,
+                y: baseTemplate.silhouette.y,
+              },
+            ),
+          );
+
+          setSmartSilhouetteSize(null);
 
           setSilhouetteRotationOffset(
             0,
+          );
+
+          setSilhouetteResetKey(
+            current => current + 1,
           );
 
           setActiveScenarioId(null);

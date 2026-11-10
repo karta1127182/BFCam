@@ -30,6 +30,19 @@ test('asks for a subject when a pose contains no confident landmarks', () => {
   })).toBe('請將主體放入畫面');
 });
 
+test('compares detected pose size and vertical position with the fixed composition target', () => {
+  const pose = (ys: number[]) => ({
+    complete: false, score: 70, hint: '',
+    landmarks: ys.map((y, index) => ({
+      name: (['nose', 'leftShoulder', 'leftHip'] as const)[index], x: .5, y, z: 0, confidence: .9,
+    })),
+  });
+  const target = {x: .5, y: .45, width: .3, height: .6};
+  expect(compositionGuidance([], pose([.3, .4, .5]), target)).toBe('靠近一點');
+  expect(compositionGuidance([], pose([.3, .55, .8]), target)).toBe('往上一點');
+  expect(compositionGuidance([], pose([.1, .3, .6]), target)).toBe('往下一點');
+});
+
 test('mirrors normalized face bounds for front-camera guidance', () => {
   expect(mirrorFaceBounds([{x: .1, y: .2, width: .2, height: .3}]))
     .toEqual([{x: .7, y: .2, width: .2, height: .3}]);
@@ -45,15 +58,14 @@ test('recognizes people as subject while retaining scenery as background for pla
   expect(classifyScene(labels, 1)).toBe('person');
   const [planned] = planSubjectPlacement([personRecommendation], labels, 1);
   expect(planned.templateIndex).toBe(0);
-  expect(planned.silhouette?.x).toBeCloseTo(2 / 3);
-  expect(planned.silhouette?.height).toBe(.55);
+  expect(planned.silhouette).toEqual(personRecommendation.silhouette);
   expect(personRecommendation.silhouette.x).toBe(.25);
-  expect(compositionGuidance([{x: .6, y: .2, width: .13, height: .15}], null, planned.silhouette)).toBe('保持不動');
-  expect(compositionGuidance([{x: .43, y: .2, width: .14, height: .15}], null, planned.silhouette)).toBe('往右一點');
+  expect(compositionGuidance([{x: .2, y: .2, width: .13, height: .15}], null, planned.silhouette)).toBe('保持不動');
+  expect(compositionGuidance([{x: .43, y: .2, width: .14, height: .15}], null, planned.silhouette)).toBe('往左一點');
 });
 
-test('keeps groups centered and does not turn scenery-only recommendations into portraits', () => {
-  expect(planSubjectPlacement([personRecommendation], [{text: 'Building', confidence: .9}], 3)[0].silhouette?.x).toBe(.5);
+test('keeps detected group placement and does not turn scenery-only recommendations into portraits', () => {
+  expect(planSubjectPlacement([personRecommendation], [{text: 'Building', confidence: .9}], 3)[0].silhouette?.x).toBe(.25);
   const scenery = [{templateIndex: 3, pose: 'mountain-view' as const, title: '風景', reason: ''}];
   expect(planSubjectPlacement(scenery, [{text: 'Mountain', confidence: .9}], 0)).toBe(scenery);
 });

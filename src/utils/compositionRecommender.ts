@@ -14,6 +14,14 @@ export type CompositionRecommendation = {
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
+function robustRange(values: number[]): [number, number] {
+  const valid = values.filter(value => Number.isFinite(value) && value >= 0 && value <= 1).sort((a, b) => a - b);
+  if (!valid.length) return [0, 0];
+  // ML Kit 偶爾會把單一關節丟到畫面邊緣；關節足夠時去掉兩端各一個異常值。
+  const trimmed = valid.length >= 7 ? valid.slice(1, -1) : valid;
+  return [trimmed[0], trimmed[trimmed.length - 1]];
+}
+
 export function smoothSmartSilhouette(
   previous: SmartSilhouetteBounds | null,
   next: SmartSilhouetteBounds,
@@ -42,13 +50,13 @@ function personBounds(faces: FaceBounds[], imageWidth: number, imageHeight: numb
   const normalizedFaces = normalizeFaceBounds(faces, imageWidth, imageHeight);
   const points = pose?.landmarks.filter(point => point.confidence >= .55) ?? [];
   if (faces.length <= 1 && points.length >= 3) {
-    const xs = points.map(point => point.x);
-    const ys = points.map(point => point.y);
+    const [poseLeft, poseRight] = robustRange(points.map(point => point.x));
+    const [poseTop, poseBottom] = robustRange(points.map(point => point.y));
     const face = normalizedFaces[0];
-    const left = Math.min(...xs, ...(face ? [face.x] : []));
-    const right = Math.max(...xs, ...(face ? [face.x + face.width] : []));
-    const top = Math.min(...ys, ...(face ? [face.y] : []));
-    const bottom = Math.max(...ys, ...(face ? [face.y + face.height] : []));
+    const left = Math.min(poseLeft, ...(face ? [face.x] : []));
+    const right = Math.max(poseRight, ...(face ? [face.x + face.width] : []));
+    const top = Math.min(poseTop, ...(face ? [face.y] : []));
+    const bottom = Math.max(poseBottom, ...(face ? [face.y + face.height] : []));
     return {x: left, y: top, width: right - left, height: bottom - top, poseComplete: pose?.complete ?? false};
   }
   const left = Math.min(...normalizedFaces.map(face => face.x));
@@ -73,7 +81,7 @@ export function calculateSmartSilhouette(
   const faceHeight = faces.length ? Math.max(...faces.map(face => face.height / imageHeight)) : clamp(shoulderWidth * 1.1, .08, .2);
   let variant: SilhouetteDefinition['variant'];
   if (faces.length >= 3) variant = 'group-three';
-  else if (faces.length === 2) variant = 'couple-side-by-side';
+  else if (faces.length === 2) variant = Math.abs((faces[0].y + faces[0].height / 2) - (faces[1].y + faces[1].height / 2)) / imageHeight > .12 ? 'couple-staggered' : 'couple-side-by-side';
   else if (bounds.poseComplete && bounds.height >= .62) variant = 'full-body';
   else if (bounds.height >= .42 || faceHeight < .13) variant = 'half-body';
   else if (faceHeight >= .28) variant = 'headshot';
@@ -86,9 +94,10 @@ export function calculateSmartSilhouette(
         : variant === 'bust' ? clamp(faceHeight * 2.35, .25, .55)
           : clamp(faceHeight * 1.65, .22, .48);
   const aspect = variant === 'headshot' || variant === 'bust' ? .72
-    : variant === 'couple-side-by-side' ? 1.05
+    : variant.startsWith('couple-') ? 1.05
       : variant === 'group-three' ? 1.12 : .48;
-  const centerX = clamp(bounds.x + bounds.width / 2, .08, .92);
+  const overlayWidth = clamp(Math.max(estimatedHeight * aspect, bounds.width * 1.12), .16, .88);
+  const centerX = clamp(bounds.x + bounds.width / 2, overlayWidth / 2, 1 - overlayWidth / 2);
   const centerY = variant === 'full-body' && bounds.poseComplete
     ? clamp(bounds.y + bounds.height / 2, estimatedHeight / 2, 1 - estimatedHeight / 2)
     : clamp(bounds.y + bounds.height / 2 + Math.max(0, estimatedHeight - bounds.height) * .28, estimatedHeight / 2, 1 - estimatedHeight / 2);
@@ -97,7 +106,7 @@ export function calculateSmartSilhouette(
     silhouette: {
       x: mirrored ? 1 - centerX : centerX,
       y: centerY,
-      width: clamp(estimatedHeight * aspect, .16, .88),
+      width: overlayWidth,
       height: estimatedHeight,
     },
   };

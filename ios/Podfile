@@ -18,6 +18,7 @@ end
 target 'BFCam' do
   pod 'GoogleMLKit/PoseDetection', '8.0.0'
   pod 'GoogleMLKit/ImageLabeling', '8.0.0'
+  pod 'GoogleMLKit/ObjectDetection', '8.0.0'
   config = use_native_modules!
 
   use_react_native!(

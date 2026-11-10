@@ -11,7 +11,7 @@ export function SmartCompositionHint({text, notice}: {text: string; notice?: str
 }
 
 const styles = StyleSheet.create({
-  container: {position: 'absolute', zIndex: 25, alignSelf: 'center', bottom: 18, paddingHorizontal: 18, paddingVertical: 10, borderRadius: radii.pill, backgroundColor: 'rgba(12,16,20,.88)', borderWidth: 1, borderColor: colors.primary},
+  container: {position: 'absolute', zIndex: 25, alignSelf: 'center', maxWidth: '92%', bottom: 18, paddingHorizontal: 18, paddingVertical: 10, borderRadius: radii.pill, backgroundColor: 'rgba(12,16,20,.88)', borderWidth: 1, borderColor: colors.primary},
   notice: {color: '#F4D58D', fontSize: 12, fontWeight: '700', textAlign: 'center', marginBottom: 3},
-  text: {color: colors.primarySoft, fontSize: 15, fontWeight: '900'},
+  text: {color: colors.primarySoft, fontSize: 15, fontWeight: '900', textAlign: 'center'},
 });

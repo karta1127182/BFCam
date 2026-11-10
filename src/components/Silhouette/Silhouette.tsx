@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {StyleSheet} from 'react-native';
+import {Image, StyleSheet, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import type {SharedValue} from 'react-native-reanimated';
@@ -7,6 +7,8 @@ import Svg, {Path} from 'react-native-svg';
 import type {SilhouetteDefinition} from '../../types/composition';
 import {clampOverlayTranslation, overlayScaleForZoom} from '../../utils/zoom';
 import {extraPosePaths} from '../../silhouettes/extraPoses';
+import {getReferencePose, isReferencePose} from '../../silhouettes/referencePoses';
+import type {ReferencePoseId} from '../../silhouettes/referencePoses';
 
 type Props = {
   definition: SilhouetteDefinition;
@@ -20,14 +22,35 @@ type Props = {
 };
 
 const silhouetteStroke = {
-  fill: 'rgba(255,241,211,0.09)',
-  stroke: '#fff0cf',
-  strokeWidth: 1.8,
+  fill: 'rgba(55,227,118,0.10)',
+  stroke: '#37E376',
+  strokeWidth: 2.4,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
 };
 
-const silhouettePaths: Record<SilhouetteDefinition['variant'], string> = {
+const coupleVariants = new Set<SilhouetteDefinition['variant']>([
+  'couple-side-by-side', 'couple-staggered', 'couple-facing', 'couple-sit-stand',
+  'couple-holding-hands',
+]);
+
+const lowPoseFragments = ['sit', 'seat', 'chair', 'crouch', 'kneel', 'floor', 'bench', 'lounge', 'stool', 'bed', 'prone'];
+
+export function poseGuidePath(variant: SilhouetteDefinition['variant']) {
+  if (!humanVariants.has(variant)) return null;
+  if (coupleVariants.has(variant)) {
+    return 'M30 48 C28 78 29 111 31 142 M70 48 C72 78 71 111 69 142 M18 66 C38 58 62 58 82 66 M22 132 C40 126 60 126 78 132 M31 142 L25 210 M31 142 L43 210 M69 142 L57 210 M69 142 L76 210';
+  }
+  if (lowPoseFragments.some(fragment => variant.includes(fragment)) || variant === 'sitting' || variant === 'kneeling') {
+    return 'M50 45 C48 72 49 98 52 121 M28 69 C41 62 59 62 73 70 M51 121 C39 136 29 151 20 171 M52 121 C67 135 80 151 91 171 M20 171 L43 195 M91 171 L67 198';
+  }
+  if (variant === 'half-body' || variant === 'bust' || variant === 'headshot' || variant.includes('half')) {
+    return 'M50 46 C49 70 49 94 50 119 M27 69 C42 62 58 62 73 69 M31 83 L20 132 M69 83 L82 132 M37 119 C46 124 55 124 64 119';
+  }
+  return 'M50 44 C48 75 49 108 50 139 M28 66 C42 59 58 59 72 66 M31 76 L20 119 M69 76 L81 119 M35 137 C45 132 56 132 66 137 M43 139 L36 211 M57 139 L66 211';
+}
+
+const silhouettePaths: Record<Exclude<SilhouetteDefinition['variant'], ReferencePoseId | 'person-with-dog' | 'person-with-cat'>, string> = {
   ...extraPosePaths,
   'street-coat': 'M47 2 C39 3 35 9 35 18 L32 21 L33 28 L37 31 L37 39 L31 39 L26 47 L19 51 C13 56 10 68 8 82 L3 122 C2 137 5 149 10 157 L16 165 L20 163 L23 168 L28 165 L29 176 L28 199 L25 221 L29 227 L25 233 L23 241 L31 245 L39 241 L41 233 L45 217 L49 181 L51 181 L55 217 L59 233 L61 242 L70 246 L78 243 L77 237 L72 228 L76 222 L73 198 L72 176 L73 165 L78 168 L82 165 L86 162 L92 149 L97 139 L97 91 C96 78 91 66 85 56 L77 48 L68 44 L63 36 L62 30 C65 26 65 18 63 11 C60 5 55 2 47 2 Z',
   'male-suit': 'M50 3 C41 3 36 10 36 20 C36 29 41 35 46 38 L45 44 L34 48 L25 56 L20 91 L15 126 C14 134 23 137 27 129 L35 91 L37 134 L34 177 L29 224 L25 231 L30 236 L42 233 L46 220 L50 158 L55 220 L59 233 L71 236 L76 231 L71 224 L67 177 L64 134 L66 91 L74 129 C78 137 87 134 86 126 L81 91 L76 56 L65 48 L55 44 L54 38 C60 34 65 29 65 20 C65 10 59 3 50 3 Z M46 45 L50 58 L54 45 L59 61 L51 75 L42 61 Z',
@@ -137,7 +160,7 @@ const silhouettePaths: Record<SilhouetteDefinition['variant'], string> = {
   bottle: 'M40 7 L60 7 L60 20 L65 26 L68 88 L32 88 L35 26 L40 20 Z M39 39 L61 39 L62 70 L38 70 Z M40 14 L60 14',
 };
 
-const silhouetteViewBoxes: Partial<Record<SilhouetteDefinition['variant'], string>> = {
+const silhouetteViewBoxes: Partial<Record<Exclude<SilhouetteDefinition['variant'], ReferencePoseId | 'person-with-dog' | 'person-with-cat'>, string>> = {
   'dog-front': '0 0 100 100', 'dog-sitting': '0 0 100 100', 'cat-resting': '0 0 100 100',
   'street-coat': '0 0 100 248',
   'half-body': '0 0 100 175',
@@ -158,6 +181,7 @@ const silhouetteViewBoxes: Partial<Record<SilhouetteDefinition['variant'], strin
 
 const humanVariants = new Set<SilhouetteDefinition['variant']>([
   'male-seated', 'male-backpack', 'male-long-coat', 'female-seated', 'female-handbag', 'female-umbrella', 'group-three', 'family-three',
+  'female-prone',
   'full-body', 'half-body', 'bust', 'headshot', 'side', 'hand-on-hip', 'looking-back', 'sitting',
   'walking', 'arms-crossed', 'waving', 'kneeling', 'selfie', 'street-coat',
   'male-suit', 'male-pocket', 'male-lean', 'female-dress', 'female-cross-leg', 'female-street-side',
@@ -165,9 +189,19 @@ const humanVariants = new Set<SilhouetteDefinition['variant']>([
 ]);
 
 export function PoseDrawing({variant}: {variant: SilhouetteDefinition['variant']}) {
+  if (isReferencePose(variant)) {
+    const referencePose = getReferencePose(variant)!;
+    return <Image key={variant} source={referencePose.source} resizeMode="contain" resizeMethod="resize" fadeDuration={0} style={styles.referencePose} />;
+  }
+  if (variant === 'person-with-dog' || variant === 'person-with-cat') return <View style={styles.composite}>
+    <View style={styles.compositePerson}><PoseDrawing variant="full-body" /></View>
+    <View style={styles.compositePet}><PoseDrawing variant={variant === 'person-with-cat' ? 'cat' : 'dog'} /></View>
+  </View>;
+
   return <Svg viewBox={silhouetteViewBoxes[variant] ?? '0 0 100 240'} width="100%" height="100%">
-    <Path d={silhouettePaths[variant]} fill="none" stroke="rgba(15,21,26,0.55)" strokeWidth={3.5} strokeLinejoin="round" />
+    <Path d={silhouettePaths[variant]} fill="none" stroke="rgba(4,35,18,0.72)" strokeWidth={4.8} strokeLinejoin="round" />
     <Path d={silhouettePaths[variant]} {...silhouetteStroke} fill={humanVariants.has(variant) ? 'rgba(11,15,18,0.58)' : silhouetteStroke.fill} fillRule="evenodd" />
+    {poseGuidePath(variant) && <Path d={poseGuidePath(variant)!} fill="none" stroke="#37E376" strokeWidth={2.2} strokeDasharray="6 5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
   </Svg>;
 }
 
@@ -243,5 +277,9 @@ export function Silhouette({definition, containerWidth, containerHeight, opacity
 }
 
 const styles = StyleSheet.create({
+  composite: {flex: 1, flexDirection: 'row', alignItems: 'flex-end'},
+  compositePerson: {width: '52%', height: '100%'},
+  compositePet: {width: '48%', height: '42%'},
   container: {position: 'absolute'},
+  referencePose: {width: '100%', height: '100%'},
 });

@@ -8,6 +8,7 @@ export const extraPosePaths = {
   'female-seated': 'M44 7 C32 7 28 17 30 31 L28 47 L40 49 L39 55 C25 58 18 68 19 85 L18 121 L27 125 L30 87 L34 118 L66 133 L76 165 L86 166 L85 155 L76 123 L55 109 L55 82 L66 102 L78 108 L82 100 L71 91 L62 63 L52 55 L51 47 L62 46 L59 31 C61 16 56 7 44 7 Z M32 125 L58 139 L57 177 L50 211 L42 217 L44 222 L58 222 L63 211 L70 174 L72 136 Z M71 137 L79 174 L84 211 L79 217 L84 223 L98 222 L95 211 L89 171 L81 139 Z',
   'female-handbag': 'M50 7 C39 7 33 17 34 29 L30 49 L44 50 L43 55 L31 60 L25 74 L18 119 L22 133 L29 130 L33 94 L37 109 L28 163 L40 169 L36 219 L30 229 L36 233 L46 229 L51 178 L57 218 L55 229 L65 234 L74 231 L69 220 L63 169 L74 164 L64 109 L66 90 L75 122 L80 124 L87 113 L82 74 L70 60 L56 55 L55 50 L70 49 L65 29 C67 16 61 7 50 7 Z M16 129 Q25 116 34 129 L39 158 L11 158 Z M19 129 Q25 122 31 129',
   'female-umbrella': 'M12 45 Q27 5 56 8 Q85 8 98 45 Q88 37 77 45 Q65 36 55 45 Q43 36 32 45 Q22 36 12 45 Z M55 10 L55 88 Q55 96 62 93 M45 58 C36 58 31 65 32 75 C32 83 36 88 40 90 L39 95 L27 101 L22 115 L16 150 L23 153 L31 126 L33 147 L23 187 L36 191 L33 222 L27 231 L37 235 L43 227 L46 195 L51 225 L50 232 L60 236 L68 232 L61 221 L57 191 L68 187 L56 147 L55 126 L62 113 L64 91 L57 87 L55 105 L49 99 L48 91 C55 87 59 79 58 72 C58 63 53 58 45 58 Z',
+  'female-prone': 'M16 116 C11 104 17 91 29 87 L35 79 C28 70 30 57 39 51 C49 44 61 49 65 59 C68 67 65 75 58 80 L61 88 C73 90 82 97 88 108 L98 128 L90 134 L78 116 L72 131 L55 142 L73 154 L91 169 L85 178 L61 164 L44 151 L28 158 L10 172 L4 164 L24 143 L12 134 Z M38 83 L28 101 L20 122 L30 127 L42 106 L51 91 Z M55 142 L49 166 L40 190 L51 195 L64 169 L69 148 Z',
   'group-three': 'M18 33 C6 33 5 53 15 59 L14 65 L5 72 L1 115 L7 118 L11 87 L12 139 L8 223 L19 226 L24 161 L29 223 L39 225 L35 139 L35 88 L40 117 L46 114 L39 73 L29 65 L28 59 C39 51 33 33 18 33 Z M49 9 C36 9 34 30 46 36 L45 43 L36 51 L32 100 L38 104 L42 68 L43 128 L39 220 L49 224 L54 150 L59 220 L69 224 L65 128 L66 68 L72 104 L78 100 L72 51 L62 43 L60 36 C72 29 65 9 49 9 Z M80 37 C68 37 66 57 77 63 L76 70 L68 77 L62 119 L69 122 L74 94 L74 142 L69 225 L80 228 L85 164 L90 225 L99 226 L95 143 L95 94 L99 117 L99 79 L91 70 L89 63 C100 55 96 37 80 37 Z',
   'family-three': 'M20 12 C8 12 6 33 17 39 L16 46 L6 55 L1 113 L8 116 L13 78 L14 137 L9 225 L21 229 L26 160 L31 225 L43 229 L38 137 L38 78 L46 124 L53 123 L43 56 L32 46 L30 39 C43 31 36 12 20 12 Z M79 15 C66 15 64 35 76 41 L75 48 L65 57 L60 109 L67 113 L70 80 L69 120 L59 167 L73 172 L70 222 L66 229 L78 232 L83 179 L88 225 L85 231 L98 232 L94 221 L91 172 L99 167 L91 121 L94 80 L99 106 L99 60 L89 48 L87 41 C99 34 94 15 79 15 Z M50 101 C40 101 37 116 46 123 L45 129 L35 138 L28 128 L23 132 L36 149 L40 144 L40 177 L38 223 L47 226 L52 190 L56 223 L65 226 L62 177 L62 145 L72 131 L67 127 L58 137 L55 129 L55 123 C65 116 62 101 50 101 Z',
   'dog-front': 'M30 31 L14 18 L8 43 L20 63 L29 52 Q32 66 40 70 L34 87 L45 90 L50 75 L55 90 L67 87 L60 70 Q71 64 73 52 L81 63 L93 42 L85 18 L69 31 Q50 21 30 31 Z M39 46 L41 46 M60 46 L62 46 M45 58 Q50 65 56 58',
@@ -16,12 +17,13 @@ export const extraPosePaths = {
 };
 
 export const extraPoses: SilhouetteCatalogItem[] = [
-  {id: 'male-seated', name: '男生坐姿', category: '人物', width: .44, height: .56, hint: '坐直並讓膝蓋錯開，完整保留鞋型。'},
-  {id: 'male-backpack', name: '男生背包背影', category: '人物', width: .36, height: .7, hint: '背對鏡頭，讓背包與肩線保持完整。'},
-  {id: 'male-long-coat', name: '男生長風衣', category: '人物', width: .4, height: .7, hint: '保留風衣下襬，肩膀放鬆。'},
-  {id: 'female-seated', name: '女生側坐', category: '人物', width: .46, height: .56, hint: '膝蓋朝側面，背部自然挺直。'},
-  {id: 'female-handbag', name: '女生拿包', category: '人物', width: .4, height: .7, hint: '包包與身體留出空隙，避免切掉提把。'},
-  {id: 'female-umbrella', name: '女生撐傘', category: '人物', width: .52, height: .7, hint: '完整保留傘面，臉部不要被傘柄遮住。'},
+  {id: 'male-seated', name: '男生坐姿', category: '人物', width: .52, height: .58, hint: '坐穩並放鬆肩膀，保留完整膝蓋與腳部輪廓。'},
+  {id: 'male-backpack', name: '男生背包站姿', category: '人物', width: .42, height: .7, hint: '背包與肩線完整入鏡，雙腳自然分開。'},
+  {id: 'male-long-coat', name: '男生長外套', category: '人物', width: .44, height: .7, hint: '保留外套下襬及完整鞋型，身體微微側轉。'},
+  {id: 'female-seated', name: '女生坐姿', category: '人物', width: .54, height: .58, hint: '背部伸展、腿部自然錯開，完整保留腳部。'},
+  {id: 'female-handbag', name: '女生手提包', category: '人物', width: .46, height: .7, hint: '手提包與手臂分開，裙襬和鞋型完整入鏡。'},
+  {id: 'female-umbrella', name: '女生撐傘', category: '人物', width: .5, height: .72, hint: '雨傘、手臂及腳部全部保留在輪廓內。'},
+  {id: 'female-prone', name: '女生趴姿', category: '人物', width: .72, height: .46, hint: '身體與腿部曲線完整入鏡，避免裁切手肘和腳尖。'},
   {id: 'group-three', name: '三人錯落合照', category: '人物', width: .76, height: .7, hint: '中間略高，左右錯開，三張臉不要互相遮擋。'},
   {id: 'family-three', name: '親子三人牽手', category: '人物', width: .78, height: .7, hint: '孩子站中央，手牽手並保留所有人的腳底。'},
   {id: 'dog-front', name: '狗狗正面', category: '寵物', width: .48, height: .42, hint: '蹲低至眼睛高度，耳朵完整入鏡。'},

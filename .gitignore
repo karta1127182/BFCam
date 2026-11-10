@@ -62,6 +62,14 @@ yarn-error.log
 
 # Signing keys must remain local.
 *.keystore
+*.jks
+*.p12
+/android/signing/
+/android/signing.local.properties
+
+# Store upload bundles and local delivery copies.
+*.aab
+/artifacts/
 
 # Ruby / CocoaPods
 **/Pods/

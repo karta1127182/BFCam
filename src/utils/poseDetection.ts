@@ -1,5 +1,26 @@
 import {NativeModules} from 'react-native';
 export type ImageLabel = {text: string; confidence: number; index?: number};
+export type SceneObject = {x: number; y: number; width: number; height: number; labels: ImageLabel[]};
+export type SceneObjectResult = {status: 'available' | 'unavailable' | 'failed'; objects: SceneObject[]};
+
+export function normalizeSceneObjects(value: unknown): SceneObject[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 5).flatMap(item => {
+    if (!item || ![item.x, item.y, item.width, item.height].every(Number.isFinite) || item.width <= 0 || item.height <= 0) return [];
+    const x = Math.max(0, item.x); const y = Math.max(0, item.y);
+    const width = Math.min(1, item.x + item.width) - x; const height = Math.min(1, item.y + item.height) - y;
+    if (width <= 0 || height <= 0) return [];
+    const labels = Array.isArray(item.labels) ? item.labels.filter((label: ImageLabel) => label && typeof label.text === 'string' && Number.isFinite(label.confidence) && label.confidence >= .55 && label.confidence <= 1) : [];
+    return [{x, y, width, height, labels}];
+  });
+}
+
+export async function detectSceneObjects(uri: string): Promise<SceneObjectResult> {
+  const detector = NativeModules.PoseDetectorModule as {detectObjects?: (path: string) => Promise<unknown>} | undefined;
+  if (!detector?.detectObjects) return {status: 'unavailable', objects: []};
+  try {return {status: 'available', objects: normalizeSceneObjects(await detector.detectObjects(uri))};}
+  catch {return {status: 'failed', objects: []};}
+}
 export type ImageLabelDetectionResult =
   | {status: 'available'; labels: ImageLabel[]}
   | {status: 'unavailable' | 'failed'; labels: []; message: string};
@@ -23,7 +44,7 @@ export function normalizePose(result: NativePoseResult): NormalizedPose | null {
   const confidentRatio = confidentLandmarks.length / landmarks.length;
   const margin = Math.min(...confidentLandmarks.flatMap(point => [point.x, point.y, 1 - point.x, 1 - point.y]));
   const score = Math.round(clamp(confidentRatio * .7 + clamp(margin / .08) * .3) * 100);
-  let hint = '姿勢完整，可以依輪廓微調後拍攝。';
+  let hint = '姿勢完整，請依輪廓安排站位後拍攝。';
   if (!visible.get('nose')) hint = '請讓臉部清楚入鏡。';
   else if (!visible.get('leftAnkle') || !visible.get('rightAnkle')) hint = '腳部接近或超出畫面，請稍微拉遠。';
   else if (!complete) hint = '部分身體關節未完整入鏡，請調整站位。';
