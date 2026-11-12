@@ -15,6 +15,8 @@
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		A19C10D12E000001006BFCA1 /* PoseDetectorModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19C10D02E000001006BFCA1 /* PoseDetectorModule.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		BFC020261112000000000011 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BFC020261112000000000001; };
+		BFC020261112000000000012 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BFC020261112000000000002; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +34,14 @@
 		A19C10D02E000001006BFCA1 /* PoseDetectorModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PoseDetectorModule.swift; path = BFCam/PoseDetectorModule.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = BFCam/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		BFC020261112000000000100 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "BFCam/en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000101 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "BFCam/ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000102 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "BFCam/ko.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000103 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "BFCam/zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000110 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "BFCam/en.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000111 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "BFCam/ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000112 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "BFCam/ko.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		BFC020261112000000000113 = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "BFCam/zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +66,8 @@
 				BFC020261102000000000006 /* TrialReminderModuleBridge.m */,
 				BFC020261102000000000004 /* TrialReminderModule.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				BFC020261112000000000002 /* Localizable.strings */,
+				BFC020261112000000000001 /* InfoPlist.strings */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
@@ -151,9 +163,12 @@
 			};
 			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "BFCam" */;
 			compatibilityVersion = "Xcode 12.0";
-			developmentRegion = en;
+			developmentRegion = "zh-Hant";
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				ja,
+				ko,
+				"zh-Hant",
 				en,
 				Base,
 			);
@@ -167,12 +182,19 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXVariantGroup section */
+		BFC020261112000000000001 /* InfoPlist.strings */ = {isa = PBXVariantGroup; children = (BFC020261112000000000100, BFC020261112000000000101, BFC020261112000000000102, BFC020261112000000000103,); name = InfoPlist.strings; sourceTree = "<group>"; };
+		BFC020261112000000000002 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (BFC020261112000000000110, BFC020261112000000000111, BFC020261112000000000112, BFC020261112000000000113,); name = Localizable.strings; sourceTree = "<group>"; };
+/* End PBXVariantGroup section */
+
 /* Begin PBXResourcesBuildPhase section */
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				BFC020261112000000000012 /* Localizable.strings in Resources */,
+				BFC020261112000000000011 /* InfoPlist.strings in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

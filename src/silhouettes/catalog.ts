@@ -2,7 +2,7 @@ import type {SilhouetteDefinition} from '../types/composition';
 import {extraPoses} from './extraPoses';
 import {getReferencePose, referencePoses} from './referencePoses';
 
-export const silhouetteCategories = ['全部', '男', '女', '多人', '寵物', '通用人物', '美食', '風景', '建築', '商品'] as const;
+export const silhouetteCategories = ['全部', '男', '女', '多人', '寵物', '美食', '風景', '建築', '商品'] as const;
 export type SilhouetteCategory = typeof silhouetteCategories[number];
 export const silhouettePoseGroups = {
   男: ['坐姿', '站姿'],
@@ -17,9 +17,6 @@ export function matchesSilhouetteCategory(item: SilhouetteCatalogItem, category:
   if (category === '男') return reference?.subject === 'male' || item.id.startsWith('male-');
   if (category === '女') return reference?.subject === 'female' || item.id.startsWith('female-');
   if (category === '多人') return reference?.subject === 'couple' || item.id.startsWith('couple-') || item.id.startsWith('group-') || item.id.startsWith('family-');
-  if (category === '通用人物') return item.category === '人物'
-    && !reference
-    && !/^(male|female|couple|group|family)-/.test(item.id);
   return item.category === category;
 }
 
@@ -97,5 +94,8 @@ export const poseCatalog: SilhouetteCatalogItem[] = [
   ...extraPoses,
 ];
 
-// Keep every legacy vector silhouette and every new reference pose available.
-export const selectablePoseCatalog = poseCatalog;
+// Keep reference poses and non-human guides in the picker. Legacy definitions
+// remain available to composition presets and saved camera preferences.
+export const selectablePoseCatalog = poseCatalog.filter(
+  item => item.category !== '人物' || getReferencePose(item.id) !== undefined,
+);

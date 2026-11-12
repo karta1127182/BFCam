@@ -1,5 +1,6 @@
+import {Text, View} from '../../i18n/components';
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet} from 'react-native';
 import Svg, {Circle, Line} from 'react-native-svg';
 import type {NormalizedPose, PoseLandmarkName} from '../../utils/poseDetection';
 

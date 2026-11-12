@@ -1,0 +1,5 @@
+<resources>
+    <string name="trial_reminder_channel">Pro 체험 알림</string>
+    <string name="trial_reminder_title">Pro 체험이 곧 종료됩니다</string>
+    <string name="trial_reminder_fallback">체험 만료일과 구독 설정을 확인하세요</string>
+</resources>

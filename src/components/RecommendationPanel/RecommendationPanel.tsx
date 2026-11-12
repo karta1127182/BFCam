@@ -1,5 +1,6 @@
+import {Pressable, Text, View} from '../../i18n/components';
 import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {StyleSheet} from 'react-native';
 import type {CompositionRecommendation} from '../../utils/compositionRecommender';
 import {colors, radii, typography} from '../../theme';
 

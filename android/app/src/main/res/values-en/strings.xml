@@ -1,0 +1,5 @@
+<resources>
+    <string name="trial_reminder_channel">Pro trial reminders</string>
+    <string name="trial_reminder_title">Your Pro trial is ending</string>
+    <string name="trial_reminder_fallback">Check your trial expiry and subscription settings</string>
+</resources>

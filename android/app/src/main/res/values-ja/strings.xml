@@ -1,0 +1,5 @@
+<resources>
+    <string name="trial_reminder_channel">Pro体験のお知らせ</string>
+    <string name="trial_reminder_title">Pro体験がまもなく終了します</string>
+    <string name="trial_reminder_fallback">体験の期限と登録設定をご確認ください</string>
+</resources>

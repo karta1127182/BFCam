@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "BFCam-男友相機需要使用相機，提供即時構圖輔助與拍照功能。";
+"NSPhotoLibraryUsageDescription" = "BFCam-男友相機需要存取相簿，以儲存拍攝的照片。";
+"NSPhotoLibraryAddUsageDescription" = "BFCam-男友相機需要將拍攝的照片儲存到相簿。";

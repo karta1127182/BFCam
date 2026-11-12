@@ -1,12 +1,6 @@
+import {Pressable, Text, View} from '../../i18n/components';
 import React, {useState} from 'react';
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {FlatList, ScrollView, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Aperture, Eye, Grid3X3, Images, PersonStanding, SlidersHorizontal, SwitchCamera, Zap, ZapOff, type LucideIcon} from 'lucide-react-native';
 import {compositionTemplates} from '../../templates';
@@ -21,6 +15,8 @@ import {
   type SilhouetteCategory,
   type SilhouettePoseGroup,
 } from '../../silhouettes/catalog';
+import {FoodCompositionPicker} from '../FoodComposition/FoodCompositionPicker';
+import type {FoodComposition} from '../../utils/foodComposition';
 import {filters} from '../../filters';
 import {
   scenarioPresets,
@@ -31,6 +27,8 @@ import type {CompositionTemplate} from '../../types/composition';
 import {colors} from '../../theme';
 
 type Props = {
+  foodComposition: FoodComposition | null;
+  onFoodComposition: (config: FoodComposition) => void;
   cameraReady: boolean;
   cameraError: string;
 
@@ -222,7 +220,7 @@ export function CameraControls(
       <View style={smart ? [styles.smartIconContainer, selected && styles.smartIconActive] : styles.tabIcon}>
       <Icon size={smart ? 20 : 21} color={selected ? colors.primary : colors.textSecondary} strokeWidth={1.8} />
       </View>
-      <Text numberOfLines={1} style={[styles.tabLabel, selected && styles.tabLabelActive]}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.tabLabel, selected && styles.tabLabelActive]}>{label}</Text>
       {selected && <View style={styles.activeIndicator} />}
     </Pressable>
   );
@@ -256,6 +254,8 @@ export function CameraControls(
           {
             top:
               insets.top + 12,
+              marginLeft: insets.left,
+              marginRight: insets.right,
           },
         ]}>
         <Text style={styles.label}>
@@ -275,6 +275,8 @@ export function CameraControls(
         style={[
           styles.dock,
           {
+              paddingLeft: insets.left,
+              paddingRight: insets.right,
             paddingBottom:
               Math.max(
                 insets.bottom,
@@ -305,11 +307,15 @@ export function CameraControls(
                       props.activeScenarioId ===
                       scenario.id,
                   }}
-                  onPress={() =>
-                    props.onApplyScenario(
-                      scenario,
-                    )
-                  }
+                  onPress={() => {
+                      props.onApplyScenario(scenario);
+                      if (scenario.id === 'food' || scenario.id === 'restaurant') {
+                        setPanel('pose');
+                        setSilhouetteCategory('美食');
+                        setSilhouettePoseGroup(null);
+                        props.onFoodComposition({plates: scenario.id === 'restaurant' ? 3 : 1, cups: 1, arrangement: 'auto'});
+                      }
+                    }}
                   style={[
                     styles.scenarioCard,
 
@@ -736,7 +742,7 @@ export function CameraControls(
                   <Pressable
                     key={group}
                     accessibilityRole="tab"
-                    accessibilityLabel={`${silhouetteCategory}${group}輪廓`}
+                    accessibilityLabel={`${silhouetteCategory} · ${group}輪廓`}
                     accessibilityState={{selected: silhouettePoseGroup === group}}
                     onPress={() => setSilhouettePoseGroup(group)}
                     style={[styles.categoryTab, silhouettePoseGroup === group && styles.activeCategoryTab]}>
@@ -748,7 +754,8 @@ export function CameraControls(
               </ScrollView>
             )}
 
-            <FlatList
+            {silhouetteCategory === '美食' && <FoodCompositionPicker value={props.foodComposition} onChange={props.onFoodComposition} />}
+            {silhouetteCategory !== '美食' && <FlatList
               key={`${silhouetteCategory}:${silhouettePoseGroup ?? 'all'}`}
               horizontal
               data={visibleSilhouettes}
@@ -825,7 +832,7 @@ export function CameraControls(
                     />
                   </Pressable>
               )}
-            />
+            />}
           </View>
         )}
 

@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "BFCamはリアルタイムの構図ガイドと撮影のためにカメラを使用します。";
+"NSPhotoLibraryUsageDescription" = "BFCamは撮影した写真を保存するために写真ライブラリにアクセスします。";
+"NSPhotoLibraryAddUsageDescription" = "BFCamは撮影した写真をライブラリに保存します。";

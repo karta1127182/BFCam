@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Alert, AppState, Linking, Platform} from 'react-native';
+import { AppState, Linking, Platform} from 'react-native';
+import {Alert} from '../i18n/components';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {billingConfig} from '../config/billing';
 import {getStorePlans, initializeBilling, legalLinksConfigured, noProAccess, Purchases, resolveProAccess, type StorePlan} from '../services/billing';

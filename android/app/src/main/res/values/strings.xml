@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">BFCam</string>
+    <string name="app_name">BFCam-男友相機</string>
+    <string name="trial_reminder_channel">Pro 試用提醒</string>
+    <string name="trial_reminder_title">Pro 試用即將結束</string>
+    <string name="trial_reminder_fallback">請確認試用到期日與訂閱設定</string>
 </resources>

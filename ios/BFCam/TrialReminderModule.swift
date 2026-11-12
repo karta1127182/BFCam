@@ -14,7 +14,7 @@ final class TrialReminderModule: NSObject {
       guard granted else {resolve(false); return}
       let interval = due / 1000 - Date().timeIntervalSince1970
       guard interval > 0, expiry > due else {resolve(false); return}
-      let content = UNMutableNotificationContent(); content.title = "Pro 試用即將結束"; content.body = body; content.sound = .default
+      let content = UNMutableNotificationContent(); content.title = NSLocalizedString("trial_reminder_title", comment: "Pro trial reminder notification"); content.body = body; content.sound = .default
       let request = UNNotificationRequest(identifier: self.identifier, content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false))
       center.add(request) {error in
         if let error = error {reject("REMINDER_FAILED", error.localizedDescription, error)} else {resolve(true)}

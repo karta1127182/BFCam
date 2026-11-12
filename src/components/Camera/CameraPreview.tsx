@@ -1,5 +1,6 @@
+import {View} from '../../i18n/components';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Platform, StyleSheet, View, type LayoutChangeEvent} from 'react-native';
+import {Platform, StyleSheet, type LayoutChangeEvent} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import type {GestureType} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';

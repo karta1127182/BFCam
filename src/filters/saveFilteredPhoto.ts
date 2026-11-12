@@ -1,9 +1,9 @@
 import {ClipOp, FillType, ImageFormat, Skia} from '@shopify/react-native-skia';
 import {Images} from 'react-native-nitro-image';
 import type {Photo} from 'react-native-vision-camera';
-import {centerCropRect, localizedBrightnessMatrix, localizedRosyMatrix, type FaceRegion, type PhotoGeometry, type RetouchSettings} from './index';
+import {darkCircleMatrix, centerCropRect, localizedBrightnessMatrix, localizedRosyMatrix, type FaceRegion, type PhotoGeometry, type RetouchSettings} from './index';
 import {makeFaceReshapeLayer} from './faceReshape';
-import {addBrushDabs, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, smoothingBlurRadius} from './manualRetouch';
+import {addBrushDabs, darkCircleLayers, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, smoothingBlurRadius} from './manualRetouch';
 import {makeSkinSmoothingFilter} from './skinSmoothing';
 
 export async function saveFilteredPhoto(photo: Photo, matrix: number[]) {
@@ -26,9 +26,9 @@ export async function saveFilteredPhoto(photo: Photo, matrix: number[]) {
       surface.flush();
       const snapshot = surface.makeImageSnapshot();
       try {
-        const bytes = snapshot.encodeToBytes(ImageFormat.JPEG, 95);
-        const result = await Images.loadFromEncodedImageDataAsync({buffer: new Uint8Array(bytes).buffer, width: image.width(), height: image.height(), imageFormat: 'jpg'});
-        try { return await result.saveToTemporaryFileAsync('jpg', 95); }
+        const bytes = snapshot.encodeToBytes(ImageFormat.PNG, 100);
+        const result = await Images.loadFromEncodedImageDataAsync({buffer: new Uint8Array(bytes).buffer, width: image.width(), height: image.height(), imageFormat: 'png'});
+        try { return await result.saveToTemporaryFileAsync('jpg', 100); }
         finally { result.dispose(); }
       } finally { snapshot.dispose(); }
     } finally { paint.dispose(); colorFilter.dispose(); surface.dispose(); }
@@ -161,10 +161,11 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
           const darkCircle = Math.max(0, Math.min(1, face.darkCircle));
           if (darkCircle > 0) {
           const eyePaint = Skia.Paint();
-          const eyeColorFilter = Skia.ColorFilter.MakeMatrix(localizedBrightnessMatrix(matrix, darkCircle));
+          const eyeColorFilter = Skia.ColorFilter.MakeMatrix(darkCircleMatrix(matrix, darkCircle));
           try {
             eyePaint.setColorFilter(eyeColorFilter);
-            for (const eyeRegion of face.underEyes) {
+            for (const {region: eyeRegion, opacity} of face.underEyes.flatMap(darkCircleLayers)) {
+              eyePaint.setAlphaf(opacity);
               const eyeClip = {x: Math.max(0, eyeRegion.x), y: Math.max(0, eyeRegion.y), width: Math.min(eyeRegion.width, regionWidth - Math.max(0, eyeRegion.x)), height: Math.min(eyeRegion.height, regionHeight - Math.max(0, eyeRegion.y))};
               if (eyeClip.width <= 0 || eyeClip.height <= 0) continue;
               canvas.save();
@@ -180,7 +181,7 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
         for (const stroke of brushStrokes) {
           if (!stroke.points.length) continue;
           const strokePaint = Skia.Paint();
-          const strokeMatrix = stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : stroke.tool === 'darkCircle' ? stroke.strength : 0);
+          const strokeMatrix = stroke.tool === 'darkCircle' ? darkCircleMatrix(matrix, stroke.strength) : stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : 0);
           const strokeColorFilter = Skia.ColorFilter.MakeMatrix(stroke.tool === 'smoothing' ? matrix : strokeMatrix);
           const strokeSmoothing = stroke.tool === 'smoothing' ? makeSkinSmoothingFilter(smoothingBlurRadius(image.width(), stroke.strength), stroke.strength) : null;
           try {
@@ -220,9 +221,9 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
         surface.flush();
         const snapshot = surface.makeImageSnapshot();
         try {
-          const bytes = snapshot.encodeToBytes(ImageFormat.JPEG, 95);
-          const result = await Images.loadFromEncodedImageDataAsync({buffer: new Uint8Array(bytes).buffer, width: image.width(), height: image.height(), imageFormat: 'jpg'});
-          try { return await result.saveToTemporaryFileAsync('jpg', 95); }
+          const bytes = snapshot.encodeToBytes(ImageFormat.PNG, 100);
+          const result = await Images.loadFromEncodedImageDataAsync({buffer: new Uint8Array(bytes).buffer, width: image.width(), height: image.height(), imageFormat: 'png'});
+          try { return await result.saveToTemporaryFileAsync('jpg', 100); }
           finally { result.dispose(); }
         } finally { snapshot.dispose(); }
       } finally {

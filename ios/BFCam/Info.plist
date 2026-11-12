@@ -5,9 +5,9 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>zh-Hant</string>
 	<key>CFBundleDisplayName</key>
-	<string>BFCam</string>
+	<string>BFCam-男友相機</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -37,11 +37,11 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>NSCameraUsageDescription</key>
-	<string>BFCam 需要使用相機，提供即時構圖輔助與拍照功能。</string>
+	<string>BFCam-男友相機需要使用相機，提供即時構圖輔助與拍照功能。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>BFCam 需要存取相簿，以儲存拍攝的照片。</string>
+	<string>BFCam-男友相機需要存取相簿，以儲存拍攝的照片。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>BFCam 需要將拍攝的照片儲存到相簿。</string>
+	<string>BFCam-男友相機需要將拍攝的照片儲存到相簿。</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

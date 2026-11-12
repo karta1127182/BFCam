@@ -31,10 +31,20 @@ internal fun scheduleTrialAlarm(context: Context) {
 
 class TrialReminderModule(private val context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
   override fun getName() = "TrialReminderModule"
+  // Google Play review access is separate from verified store entitlements.
+  // Only the digest is shipped; the review code is provided privately in Play Console.
+  @ReactMethod fun verifyReviewCode(code: String, promise: Promise) {
+    val normalized = code.replace(Regex("[\\s-]"), "").uppercase(java.util.Locale.ROOT)
+    if (!normalized.matches(Regex("[A-F0-9]{32}"))) { promise.resolve(false); return }
+    val digest = java.security.MessageDigest.getInstance("SHA-256").digest(normalized.toByteArray(Charsets.UTF_8))
+      .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    promise.resolve(digest == "0cebb08288efed39f4f7782274fe87f983fb91ca9a5268434674411910e476cf")
+  }
+
   @ReactMethod fun schedule(due: Double, expiry: Double, body: String, promise: Promise) {
     try {
       val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      if (Build.VERSION.SDK_INT >= 26) manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "Pro 試用提醒", NotificationManager.IMPORTANCE_DEFAULT))
+      if (Build.VERSION.SDK_INT >= 26) manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, context.getString(R.string.trial_reminder_channel), NotificationManager.IMPORTANCE_DEFAULT))
       if (!manager.areNotificationsEnabled()) {promise.resolve(false); return}
       context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong("due", due.toLong()).putLong("expiry", expiry.toLong()).putString("body", body).apply()
       scheduleTrialAlarm(context); promise.resolve(true)
@@ -60,8 +70,8 @@ class TrialReminderReceiver : BroadcastReceiver() {
     val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
     val open = PendingIntent.getActivity(context, REMINDER_ID, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL_ID) else Notification.Builder(context)
-    val notification = builder.setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("Pro 試用即將結束")
-      .setContentText(prefs.getString("body", "請確認試用到期日與訂閱設定"))
+    val notification = builder.setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle(context.getString(R.string.trial_reminder_title))
+      .setContentText(prefs.getString("body", context.getString(R.string.trial_reminder_fallback)))
       .setStyle(Notification.BigTextStyle().bigText(prefs.getString("body", "")))
       .setContentIntent(open).setAutoCancel(true).build()
     try {manager.notify(REMINDER_ID, notification); prefs.edit().putLong("sent", expiry).apply()} catch (_: SecurityException) { }

@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "BFCam needs camera access for live composition guides and photography.";
+"NSPhotoLibraryUsageDescription" = "BFCam needs photo library access to save your photos.";
+"NSPhotoLibraryAddUsageDescription" = "BFCam needs permission to save photos to your library.";

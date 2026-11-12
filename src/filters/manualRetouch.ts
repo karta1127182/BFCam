@@ -1,4 +1,4 @@
-import type {ManualBrushStroke, ManualWarpStroke, RetouchPoint} from './index';
+import type {ManualBrushStroke, ManualWarpStroke, RetouchPoint, FaceRegion} from './index';
 
 export const MAX_MANUAL_WARPS = 48;
 
@@ -76,4 +76,12 @@ export function manualWarpUniforms(strokes: ManualWarpStroke[]) {
     manualWarpPoints: pad(active.map(stroke => [stroke.x, stroke.y, stroke.radius, toolCode(stroke.tool)])),
     manualWarpVectors: pad(active.map(stroke => [stroke.dx, stroke.dy, stroke.strength, 0])),
   };
+}
+
+// Fine feathering retains texture rather than blurring the eye area.
+export function darkCircleLayers(region: FaceRegion) {
+  return Array.from({length: 16}, (_, i) => {
+    const radius = 1 - i * .045;
+    return {opacity: .045, region: {x: region.x + region.width * (1-radius)/2, y: region.y + region.height * (1-radius)/2, width: region.width * radius, height: region.height * radius}};
+  });
 }

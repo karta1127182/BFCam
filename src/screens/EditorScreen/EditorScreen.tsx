@@ -1,13 +1,14 @@
+import {Pressable, Text, View} from '../../i18n/components';
 import {oneTapBeautyValues, type BeautyLevel} from '../../utils/oneTapBeauty';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {PanResponder, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View} from 'react-native';
+import {PanResponder, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
 import {Canvas, Circle, ColorMatrix, FillType, Group, Image as SkiaImage, Line, Paint, RoundedRect, RuntimeShader, Skia, useImage} from '@shopify/react-native-skia';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Crop, Redo2, RotateCcw, SlidersHorizontal, Sparkles, Undo2, WandSparkles, type LucideIcon} from 'lucide-react-native';
 import {useImageFaceDetector} from 'react-native-vision-camera-face-detector';
-import {cropAspectRatio, editMatrix, filterMatrix, filters, fitAspectWithin, identity, initialAdjustments, initialGeometry, initialRetouch, localizedBrightnessMatrix, localizedRosyMatrix, type CropAspect, type FaceRegion, type HealSpot, type ManualBrushStroke, type ManualBrushTool, type ManualWarpStroke, type ManualWarpTool, type PhotoAdjustments, type PhotoGeometry, type RetouchPoint, type RetouchSettings, type SkinMask} from '../../filters';
+import {darkCircleMatrix, cropAspectRatio, editMatrix, filterMatrix, filters, fitAspectWithin, identity, initialAdjustments, initialGeometry, initialRetouch, localizedBrightnessMatrix, localizedRosyMatrix, type CropAspect, type FaceRegion, type HealSpot, type ManualBrushStroke, type ManualBrushTool, type ManualWarpStroke, type ManualWarpTool, type PhotoAdjustments, type PhotoGeometry, type RetouchPoint, type RetouchSettings, type SkinMask} from '../../filters';
 import {faceReshapeEffect, faceReshapeUniforms} from '../../filters/faceReshape';
-import {addBrushDabs, appendBrushPoint, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, makeWarpStroke, MAX_MANUAL_WARPS, smoothingBlurRadius, warpEndFromDrag} from '../../filters/manualRetouch';
+import {addBrushDabs, darkCircleLayers, appendBrushPoint, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, makeWarpStroke, MAX_MANUAL_WARPS, smoothingBlurRadius, warpEndFromDrag} from '../../filters/manualRetouch';
 import {skinSmoothingEffect, skinSmoothingUniforms} from '../../filters/skinSmoothing';
 import {colors, radii} from '../../theme';
 import {clampEditorPan, clampEditorZoom, zoomFromPinch} from '../../utils/editorViewport';
@@ -48,7 +49,8 @@ const boundsForPoints = (points: Array<{x: number; y: number}>): FaceRegion | un
 
 export function EditorScreen({path, saving, sharing, initialFilterIndex, initialFilterStrength, onCancel, onSave, onShare, onRequestPremium, trialPanel}: Props) {
   const insets = useSafeAreaInsets();
-  const {width, height} = useWindowDimensions();
+  const {width: windowWidth, height} = useWindowDimensions();
+  const width = Math.max(0, windowWidth - insets.left - insets.right);
   const image = useImage(`file://${path}`);
   const initialState = useMemo<EditState>(() => ({filterIndex: initialFilterIndex, strength: initialFilterStrength, adjustments: initialAdjustments, geometry: initialGeometry, oneTapEnabled: false, beautyLevel: 'natural', retouchByFace: {}, healSpots: [], brushStrokes: [], warpStrokes: []}), [initialFilterIndex, initialFilterStrength]);
   const [edit, setEdit] = useState(initialState);
@@ -127,7 +129,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
         addBrushDabs(pathValue, stroke.points, stroke.radius * layer.radius, previewMapping.scale, previewMapping.offsetX, previewMapping.offsetY);
         return pathValue;
       });
-      const effectMatrix = stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : stroke.tool === 'darkCircle' ? stroke.strength : 0);
+      const effectMatrix = stroke.tool === 'darkCircle' ? darkCircleMatrix(matrix, stroke.strength) : stroke.tool === 'rosy' ? localizedRosyMatrix(matrix, stroke.strength) : localizedBrightnessMatrix(matrix, stroke.tool === 'whitening' ? stroke.strength * .72 : stroke.tool === 'teethWhitening' ? stroke.strength * .85 : stroke.tool === 'brightEyes' ? stroke.strength * .7 : 0);
       return {stroke, paths, matrix: effectMatrix};
     });
   }, [draftBrush, edit.brushStrokes, matrix, previewMapping]);
@@ -143,10 +145,10 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       let clip: ReturnType<typeof Skia.RRectXY> | ReturnType<typeof Skia.Path.Make> = regionClip(face.bounds, .45);
       let ownedPath: ReturnType<typeof Skia.Path.Make> | null = null;
       if (mask) {ownedPath = Skia.Path.Make(); ownedPath.setFillType(FillType.EvenOdd); ownedPath.addPoly(mapPoints(mask.outer), true); mask.exclusions.forEach(points => ownedPath?.addPoly(mapPoints(points), true)); clip = ownedPath;}
-      const underEyes = face.eyes.map(eye => regionClip({x: eye.x - face.bounds.width * .13, y: eye.y + face.bounds.height * .025, width: face.bounds.width * .26, height: face.bounds.height * .105}));
+      const underEyes = face.eyes.flatMap(eye => darkCircleLayers({x: eye.x - face.bounds.width * .13, y: eye.y + face.bounds.height * .025, width: face.bounds.width * .26, height: face.bounds.height * .105}).map(layer => ({clip: regionClip(layer.region), opacity: layer.opacity})));
       const eyes = face.eyes.map(eye => regionClip({x: eye.x - face.bounds.width * .14, y: eye.y - face.bounds.height * .075, width: face.bounds.width * .28, height: face.bounds.height * .15}));
       const mouth = boundsForPoints([...(face.contours.UPPER_LIP_TOP ?? []), ...(face.contours.LOWER_LIP_BOTTOM ?? [])]);
-      return {values, clip, ownedPath, mappedBounds, underEyes, eyes, mouth: mouth ? regionClip(mouth, .48) : null, whiteningMatrix: localizedBrightnessMatrix(matrix, values.whitening * .72), rosyMatrix: localizedRosyMatrix(matrix, values.rosy), darkCircleMatrix: localizedBrightnessMatrix(matrix, values.darkCircle), brightEyesMatrix: localizedBrightnessMatrix(matrix, values.brightEyes * .7), teethMatrix: localizedBrightnessMatrix(matrix, values.teethWhitening * .85)};
+      return {values, clip, ownedPath, mappedBounds, underEyes, eyes, mouth: mouth ? regionClip(mouth, .48) : null, whiteningMatrix: localizedBrightnessMatrix(matrix, values.whitening * .72), rosyMatrix: localizedRosyMatrix(matrix, values.rosy), darkCircleMatrix: darkCircleMatrix(matrix, values.darkCircle), brightEyesMatrix: localizedBrightnessMatrix(matrix, values.brightEyes * .7), teethMatrix: localizedBrightnessMatrix(matrix, values.teethWhitening * .85)};
     });
   }, [edit.oneTapEnabled, edit.retouchByFace, matrix, previewMapping, retouchFaces]);
   useEffect(() => () => previewFaceEffects.forEach(effect => effect.ownedPath?.dispose()), [previewFaceEffects]);
@@ -347,10 +349,10 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     return () => {active = false;};
   }, [faceDetector, path]);
 
-  return <View style={[styles.container, {paddingTop: insets.top}]}>
+  return <View style={[styles.container, {paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right}]}>
     <View style={styles.header}>
       {button('重拍', onCancel, false, saving || sharing)}
-      <View style={styles.headerTitle}><Text style={styles.headerEyebrow}>BFCAM STUDIO</Text><Text style={styles.title}>編輯照片</Text></View>
+      <View style={styles.headerTitle}><Text style={styles.headerEyebrow}>BFCam-男友相機</Text><Text style={styles.title}>編輯照片</Text></View>
       <View style={styles.headerActions}>
         {button(sharing ? '準備中…' : '分享', () => onShare(matrix, geometry, retouchSettings, edit.oneTapEnabled), false, saving || sharing || !image)}
         {button(saving ? '儲存中…' : '儲存', () => onSave(matrix, geometry, retouchSettings, edit.oneTapEnabled), true, saving || sharing || !image)}
@@ -368,7 +370,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
         {effect.values.smoothing > 0 && skinSmoothingEffect && <Group clip={effect.clip} layer={<Paint><RuntimeShader source={skinSmoothingEffect} uniforms={skinSmoothingUniforms(smoothingBlurRadius(image.width(), effect.values.smoothing) * previewMapping!.scale, effect.values.smoothing)} /></Paint>}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={matrix} /></SkiaImage></Group>}
         {effect.values.whitening > 0 && <Group clip={effect.clip} opacity={Math.min(.65, effect.values.whitening * .65)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.whiteningMatrix} /></SkiaImage></Group>}
         {effect.values.rosy > 0 && <Group clip={effect.clip} opacity={Math.min(.62, effect.values.rosy * .62)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.rosyMatrix} /></SkiaImage></Group>}
-        {effect.values.darkCircle > 0 && effect.underEyes.map((clip, index) => <Group key={`dark-${index}`} clip={clip}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.darkCircleMatrix} /></SkiaImage></Group>)}
+        {effect.values.darkCircle > 0 && effect.underEyes.map(({clip, opacity}, index) => <Group key={`dark-${index}`} clip={clip} opacity={opacity}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.darkCircleMatrix} /></SkiaImage></Group>)}
         {effect.values.brightEyes > 0 && effect.eyes.map((clip, index) => <Group key={`bright-${index}`} clip={clip} opacity={Math.min(.7, effect.values.brightEyes * .7)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.brightEyesMatrix} /></SkiaImage></Group>)}
         {effect.values.teethWhitening > 0 && effect.mouth && <Group clip={effect.mouth} opacity={Math.min(.55, effect.values.teethWhitening * .55)}><SkiaImage image={image} x={0} y={0} width={previewCanvasWidth} height={previewCanvasHeight} fit="cover"><ColorMatrix matrix={effect.teethMatrix} /></SkiaImage></Group>}
       </React.Fragment>)}

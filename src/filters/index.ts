@@ -179,3 +179,10 @@ export function editMatrix(filterIndex: number, strength: number, adjustments: P
   ];
   return multiplyMatrices(toneMatrix, multiplyMatrices(saturationMatrix, filterMatrix(filterIndex, strength)));
 }
+
+// Preserve highlights while gently lifting under-eye shadows without blur.
+export function darkCircleMatrix(base: number[], amount: number) {
+  const value = Math.max(0, Math.min(1, Number.isFinite(amount) ? amount : 0));
+  const r=value*.16, g=value*.125, b=value*.105;
+  return multiplyMatrices([1-r,0,0,0,r, 0,1-g,0,0,g, 0,0,1-b,0,b, 0,0,0,1,0], base);
+}

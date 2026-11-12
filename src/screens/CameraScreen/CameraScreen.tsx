@@ -1,3 +1,5 @@
+import {translate} from '../../i18n';
+import {Alert, Text, View} from '../../i18n/components';
 import React, {
   useCallback,
   useEffect,
@@ -9,16 +11,7 @@ import type {PhotoGeometry, RetouchSettings} from '../../filters';
 import {colors, radii} from '../../theme';
 import {saveEditedPhoto} from '../../filters/saveFilteredPhoto';
 import {
-  ActivityIndicator,
-  Alert,
-  AppState,
-  Linking,
-  PermissionsAndroid,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+  ActivityIndicator, AppState, Linking, PermissionsAndroid, Platform, StyleSheet} from 'react-native';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import Share from 'react-native-share';
 import {
@@ -38,6 +31,7 @@ import {usePremiumTrial} from '../../hooks/usePremiumTrial';
 import {PremiumTrialPanel} from '../../components/PremiumTrialPanel';
 import {compositionTemplates} from '../../templates';
 import {poseCatalog} from '../../silhouettes/catalog';
+import {normalizeFoodComposition, type FoodComposition} from '../../utils/foodComposition';
 import {resolveScenario, type ScenarioPreset} from '../../scenarios';
 import type {SilhouetteDefinition} from '../../types/composition';
 import {
@@ -70,6 +64,8 @@ export function CameraScreen() {
   const pendingSmartPhoto = useRef(false);
   const exportedTrialPhoto = useRef<string | null>(null);
 
+
+  const [foodComposition, setFoodComposition] = useState<FoodComposition | null>(null);
 
   const [preferencesHydrated, setPreferencesHydrated] = useState(false);
 
@@ -182,7 +178,8 @@ export function CameraScreen() {
 
   const trialPanel = <PremiumTrialPanel billing={trial.billing} topInset={!pendingPhotoPath} remaining={trial.remaining} status={trial.status}
     visible={trial.plansVisible} onOpen={() => {trial.setPlansVisible(true); trial.billing.refresh();}}
-    onClose={() => trial.setPlansVisible(false)} onRetry={trial.reload} />;
+    onClose={() => trial.setPlansVisible(false)} onRetry={trial.reload}
+    reviewActive={trial.reviewActive} onUnlockReview={trial.unlockReview} onEndReview={trial.endReview} />;
 
   const handleLiveFacesDetected = useCallback((faces: NormalizedFaceBounds[]) => {
     if (!smartCompositionActive || !smartCompositionRuntimeRef.current.faceTracking) return;
@@ -603,7 +600,7 @@ export function CameraScreen() {
           );
 
         const result = await Share.open({
-          title: '分享 BFCam 照片',
+          title: translate('分享 BFCam-男友相機照片'),
           url: `file://${outputPath}`,
           type: 'image/jpeg',
           failOnCancel: false,
@@ -641,6 +638,7 @@ export function CameraScreen() {
     const requestId = ++smartAnalysisRequestRef.current;
     captureLock.current = true;
 
+    setFoodComposition(null);
     setIsDetecting(true);
 
     try {
@@ -807,6 +805,7 @@ export function CameraScreen() {
    */
   const clearSmartComposition =
     useCallback(() => {
+      setFoodComposition(null);
       resetSmartComposition();
 
       // 隱藏構圖框線
@@ -845,6 +844,7 @@ export function CameraScreen() {
    */
   const applyScenario = useCallback(
     (scenario: ScenarioPreset) => {
+      setFoodComposition(null);
       const resolved =
         resolveScenario(scenario);
 
@@ -898,6 +898,7 @@ export function CameraScreen() {
         ),
       );
 
+      setFoodComposition(null);
       setTemplateIndex(nextIndex);
       const nextTemplate = compositionTemplates[nextIndex];
       setSilhouetteAnchor({
@@ -947,7 +948,7 @@ export function CameraScreen() {
     return (
       <View style={styles.message}>
         <View style={styles.messageCard}>
-          <Text style={styles.brand}>BFCAM</Text>
+          <Text style={styles.brand}>BFCam-男友相機</Text>
           <View style={styles.brandMark}><Text style={styles.brandMarkText}>B</Text></View>
           <Text style={styles.title}>需要相機權限</Text>
           <Text style={styles.body}>允許相機權限後，即可使用取景構圖、人物輪廓與智慧拍攝功能。</Text>
@@ -955,7 +956,7 @@ export function CameraScreen() {
             <Text accessibilityRole="button" accessibilityHint="重新顯示系統相機權限視窗" style={styles.link} onPress={() => {permissionRequestedRef.current = true; requestPermission().catch(() => undefined);}}>允許使用相機</Text>
           )}
           {!permission.canRequestPermission && (
-            <Text accessibilityRole="link" accessibilityHint="開啟系統中的 BFCam 權限設定" style={styles.link} onPress={() => Linking.openSettings()}>前往系統設定</Text>
+            <Text accessibilityRole="link" accessibilityHint="開啟系統中的 BFCam-男友相機權限設定" style={styles.link} onPress={() => Linking.openSettings()}>前往系統設定</Text>
           )}
         </View>
       </View>
@@ -969,7 +970,7 @@ export function CameraScreen() {
     return (
       <View style={styles.message}>
         <View style={styles.messageCard}>
-          <Text style={styles.brand}>BFCAM</Text>
+          <Text style={styles.brand}>BFCam-男友相機</Text>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.title}>準備拍攝</Text>
           <Text style={styles.body}>正在連接相機與載入鏡頭能力…</Text>
@@ -1009,6 +1010,7 @@ export function CameraScreen() {
         </View>
 
         <CompositionOverlay
+          foodComposition={foodComposition}
           template={template}
           guidesVisible={guideVisible}
           silhouetteVisible={silhouetteVisible}
@@ -1034,6 +1036,7 @@ export function CameraScreen() {
           resetSmartComposition();
         }}
         onApply={recommendation => {
+          setFoodComposition(null);
           setTemplateIndex(
             recommendation.templateIndex,
           );
@@ -1091,6 +1094,14 @@ export function CameraScreen() {
       </View>
 
       <CameraControls
+        foodComposition={foodComposition}
+        onFoodComposition={config => {
+          setFoodComposition(normalizeFoodComposition(config));
+          resetSmartComposition();
+          setActiveScenarioId(null);
+          setSilhouetteVisible(true);
+          setFollowZoom(false);
+        }}
         activeScenarioId={
           activeScenarioId
         }
@@ -1157,6 +1168,7 @@ export function CameraScreen() {
           selectTemplate
         }
         onSelectPose={value => {
+          setFoodComposition(null);
           const nextPose =
             poseCatalog.find(item => item.id === value) ??
             poseCatalog[0];

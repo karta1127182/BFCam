@@ -57,9 +57,9 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-// Native React Native modules in this app are not yet covered by complete R8 keep rules.
-// Keep production builds unminified to avoid release-only startup crashes.
-def enableProguardInReleaseBuilds = false
+// Optimize DEX and resources while preserving JNI/React Native entry points.
+// App-specific bridge rules live in proguard-rules.pro; libraries also supply consumer rules.
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -132,8 +132,8 @@ android {
         applicationId "com.bfcam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.0.4"
+        versionCode 8
+        versionName "1.0.7"
     }
     signingConfigs {
         release {

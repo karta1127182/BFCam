@@ -1,18 +1,20 @@
+import {Pressable, Text, View} from '../i18n/components';
 import React from 'react';
-import {Modal, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {Modal, ScrollView, StyleSheet} from 'react-native';
 import {colors} from '../theme';
 import type {useStoreBilling} from '../hooks/useStoreBilling';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {StoreReviewAccess, type ReviewAccessProps} from './StoreReviewAccess';
 
-type Props = {billing: ReturnType<typeof useStoreBilling>; remaining: number; status: 'loading' | 'ready' | 'error'; visible: boolean; topInset?: boolean; onOpen: () => void; onClose: () => void; onRetry: () => void};
-export function PremiumTrialPanel({remaining, status, visible, topInset, billing, onOpen, onClose, onRetry}: Props) {
+type Props = ReviewAccessProps & {billing: ReturnType<typeof useStoreBilling>; remaining: number; status: 'loading' | 'ready' | 'error'; visible: boolean; topInset?: boolean; onOpen: () => void; onClose: () => void; onRetry: () => void};
+export function PremiumTrialPanel({remaining, status, visible, topInset, billing, onOpen, onClose, onRetry, reviewActive, onUnlockReview, onEndReview}: Props) {
   const insets = useSafeAreaInsets();
-  const label = billing.access.active ? (billing.access.trial ? 'Pro 訂閱試用中' : 'Pro 已啟用') : status === 'loading' ? '正在讀取免費體驗…' : status === 'error' ? '體驗紀錄異常，請重新讀取' : `Pro 免費體驗剩餘 ${remaining} / 20 張`;
+  const label = reviewActive ? '商店審查模式 / Store review access' : billing.access.active ? (billing.access.trial ? 'Pro 訂閱試用中' : 'Pro 已啟用') : status === 'loading' ? '正在讀取免費體驗…' : status === 'error' ? '體驗紀錄異常，請重新讀取' : `Pro 免費體驗剩餘 ${remaining} / 20 張`;
   return <>
     <Pressable accessibilityRole="button" onPress={onOpen} style={[styles.banner, topInset && {paddingTop: insets.top + 9}]}><Text style={styles.text}>{label} · 查看方案</Text></Pressable>
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}><ScrollView contentContainerStyle={styles.sheet}>
-        <Text style={styles.title}>BFCam Pro</Text>
+      <View style={[styles.backdrop, {paddingTop: Math.max(48, insets.top), paddingBottom: Math.max(48, insets.bottom), paddingLeft: Math.max(20, insets.left), paddingRight: Math.max(20, insets.right)}]}><ScrollView contentContainerStyle={styles.sheet}>
+        <Text style={styles.title}>BFCam-男友相機 Pro</Text>
         <Text style={styles.text}>智慧構圖＋一鍵美顏</Text>
         <Text style={styles.text}>{label}</Text>
         <Text style={styles.detail}>免費體驗共 20 張。使用任一 Pro 功能後，成功儲存或完成分享才計次；同一張照片使用兩個功能只算一次。預覽、辨識失敗與取消不扣次。</Text>
@@ -24,8 +26,8 @@ export function PremiumTrialPanel({remaining, status, visible, topInset, billing
           <Text style={styles.text}>{plan.price}{plan.kind === 'monthly' ? '／月' : plan.kind === 'annual' ? '／年' : '，一次付款'}</Text>
           <Text style={styles.detail}>{plan.kind === 'lifetime' ? '永久使用相同 Pro 功能，不自動續訂。'
             : `${plan.threeDayTrial ? `先免費試用 3 天，之後 ${plan.price}／${plan.kind === 'monthly' ? '月' : '年'}。` : '是否適用試用優惠，以商店確認畫面為準。'}訂閱會自動續訂，請在試用或訂閱到期前透過商店取消。`}</Text>
-          <Pressable accessibilityRole="button" disabled={billing.busy || !billing.canPurchase || billing.access.active}
-            accessibilityState={{disabled: billing.busy || !billing.canPurchase || billing.access.active}}
+          <Pressable accessibilityRole="button" disabled={billing.busy || !billing.canPurchase || billing.access.active || reviewActive}
+            accessibilityState={{disabled: billing.busy || !billing.canPurchase || billing.access.active || reviewActive}}
             onPress={() => billing.purchase(plan)} style={[styles.button, (billing.busy || !billing.canPurchase || billing.access.active) && styles.disabled]}>
             <Text style={styles.text}>{billing.busy ? '商店處理中…' : billing.access.active ? 'Pro 已啟用' : plan.threeDayTrial ? '開始 3 天免費試用' : plan.kind === 'lifetime' ? '永久解鎖' : '前往商店訂閱'}</Text>
           </Pressable>
@@ -47,6 +49,7 @@ export function PremiumTrialPanel({remaining, status, visible, topInset, billing
         {billing.hasLegalLinks && <View style={styles.links}><Pressable accessibilityRole="link" onPress={billing.terms}><Text style={styles.detail}>使用條款</Text></Pressable><Pressable accessibilityRole="link" onPress={billing.privacy}><Text style={styles.detail}>隱私權政策</Text></Pressable></View>}
         <Text style={styles.detail}>免費體驗用完或訂閱到期後，仍可使用基本拍照與手動修圖；已儲存的照片不受影響。</Text>
         {status === 'error' && <Pressable accessibilityRole="button" onPress={onRetry} style={styles.button}><Text style={styles.text}>重新讀取體驗紀錄</Text></Pressable>}
+        <StoreReviewAccess reviewActive={reviewActive} onUnlockReview={onUnlockReview} onEndReview={onEndReview} />
         <Pressable accessibilityRole="button" onPress={onClose} style={styles.button}><Text style={styles.text}>返回拍照</Text></Pressable>
       </ScrollView></View>
     </Modal>

@@ -1,5 +1,6 @@
+import {View} from '../../i18n/components';
 import React, {useEffect} from 'react';
-import {Image, StyleSheet, View} from 'react-native';
+import {Image, StyleSheet} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import type {SharedValue} from 'react-native-reanimated';

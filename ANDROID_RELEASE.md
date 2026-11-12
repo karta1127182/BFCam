@@ -1,6 +1,41 @@
 # Android 上傳包與簽署
 
-目前套件 ID：`com.bfcam`，版本名稱 `1.0.2`，versionCode `3`。
+目前套件 ID：`com.bfcam`，顯示名稱 `BFCam-男友相機`，版本名稱 `1.0.7`，versionCode `8`。
+
+## 2026-11-12：英文、日文、韓文
+
+- AAB：`artifacts/BFCam-1.0.7-multilingual-upload.aab`，versionName `1.0.7`，versionCode `8`，210,977,753 bytes。
+- 包含三語介面與繁體中文預設、原有審查存取；沿用上傳金鑰與 R8 最佳化。
+- 混淆對照檔：`artifacts/BFCam-1.0.7-mapping.txt`；驗證摘要：`artifacts/BFCam-1.0.7-validation.json`。
+- Release 建置、bundletool 結構、844 個內容項目的簽章與既有上傳憑證比對通過；192 張姿勢圖片與 7 個 ML Kit 反射入口保留檢查通過。
+- SHA-256：`268cbba14fba524f5100fe95534bad771a31d5ebef23b8c8ae55e5daa44c6415`。
+- 尚未手機實測，未上傳 Google Play、送審或發布。
+
+## 2026-11-10：審查存取與中文名稱
+
+- 新 AAB：`artifacts/BFCam-1.0.6-review-access-upload.aab`；手機 APK：`artifacts/BFCam-1.0.6-review-access.apk`；混淆對照檔：`artifacts/BFCam-1.0.6-mapping.txt`。
+- Android 安裝包已驗證顯示名稱為 `BFCam-男友相機`。iOS 顯示名稱、啟動畫面與權限說明同步修改，但本 Windows 環境未建置 iOS。
+- 使用者授權新增 Google Play 審查存取：方案面板 → `Store review access` → 輸入私下提供的代碼 → `Enable review access`。不限次數、不過期、重啟保留，可停用；與 RevenueCat／商店購買資格分開，不模擬訂閱或交易。原免費額度紀錄保持不變。
+- 原生端只內含代碼 SHA-256 摘要。私有代碼在 `artifacts/BFCam-review-access-private.txt`，英文操作步驟與代碼已填入 Play Console「登入詳細資料」。不要公開代碼或將該檔加入 Git。此為離線審查入口，並非伺服器端防濫用系統。
+- 型別檢查、此次修改的 ESLint、4 組／17 項額度、購買與審查存取測試通過；測試包含額度用完後連續 25 次審查輸出不扣次、停用後恢復原限制、重啟重新驗證及儲存失敗不解鎖。
+- Release APK／AAB 建置、APK 簽章、bundletool 結構、824 個 AAB 內容項目的簽章、ML Kit 反射入口與 172 張姿勢圖片保留檢查通過。此次審查入口尚未做手機 UI 驗收，不能將單元測試視為實機驗收。
+- 本版本未上傳 Google Play；商店圖像與上架流程進度見 `PLAY_CONSOLE_SETUP.md`。
+
+## 2026-11-10：DEX 最佳化版本
+
+- Release 已啟用 R8 程式碼縮減、最佳化、混淆與資源縮減。
+- 原生 JNI 邊界的保留規則位於 `android/app/proguard-rules.pro`；React Native 與其他套件仍套用各自的 consumer rules。
+- AAB：`artifacts/BFCam-1.0.5-r8-20261110-upload.aab`。
+- APK：`artifacts/BFCam-1.0.5-r8-20261110.apk`。
+- 混淆對照檔：`artifacts/BFCam-1.0.5-r8-20261110-mapping.txt`。AAB 也內含同一份對照檔，須與此版本一起保存，不能拿其他版本的 mapping 還原錯誤。
+- 相較 1.0.4，DEX 由 4 個／34,202,996 bytes 減為 1 個／8,615,440 bytes，減少 74.81%；AAB 由 212,864,154 bytes 減為 210,599,761 bytes。原生函式庫與模型仍占大部分套件大小。
+- 保留 ML Kit/Firebase 透過 manifest 反射建立的註冊元件及無參數建構子，避免 R8 full mode 移除建構子後，人臉偵測初始化閃退。
+- `assembleRelease`、`bundleRelease`、bundletool 結構驗證及 824 個內容項目的上傳憑證簽章驗證通過。APK v2 簽章驗證通過。
+- 獨立 Android 37.1／x86_64／16 KB 模擬器冷啟動、相機預覽、拍照進入編輯頁、套用暖色濾鏡及輸出至 BFCam 相簿通過；未驗收實機辨識品質或商店購買。證據位於 `artifacts/validation/r8-*.xml`、`r8-camera.png`，彙整於 `artifacts/BFCam-1.0.5-r8-20261110.validation.json`。
+- 可重跑靜態回歸檢查：`python scripts/verify-r8-release.py --bundle artifacts/BFCam-1.0.5-r8-20261110-upload.aab`。會檢查 7 個 ML Kit 註冊元件的建構子、172 張姿勢圖片、內含程式與混淆對照檔；不取代裝置測試。此檢查已驗證會拒絕缺少反射建構子的失敗版本。
+- 本次只產生本機發布檔案，未上傳或送審。
+
+下列舊版檔名、大小與驗證紀錄保留作為歷史參考。
 
 ## 已完成
 
