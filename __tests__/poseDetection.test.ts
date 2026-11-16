@@ -4,6 +4,14 @@ import {detectImageLabels, normalizePose} from '../src/utils/poseDetection';
 const landmark = (name: string, x: number, y: number, confidence = .9) => ({name, x, y, z: 0, confidence});
 
 describe('pose detection normalization', () => {
+  it('rejects non-finite dimensions and offscreen-only detections', () => {
+    expect(normalizePose({width: NaN, height: 200, landmarks: [landmark('nose', 50, 20)]} as never)).toBeNull();
+    expect(normalizePose({width: 100, height: 200, landmarks: [landmark('nose', 150, 20)]} as never)).toBeNull();
+  });
+
+  it('does not give a complete-body score to an isolated confident face point', () => {
+    expect(normalizePose({width: 100, height: 200, landmarks: [landmark('nose', 50, 40)]} as never)?.score).toBeLessThan(50);
+  });
   it('normalizes landmarks and recognizes a complete body', () => {
     const names = ['nose', 'leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee', 'leftAnkle', 'rightAnkle'];
     const pose = normalizePose({width: 100, height: 200, landmarks: names.map((name, index) => landmark(name, 35 + index * 3, 30 + index * 15))} as never);
@@ -74,4 +82,13 @@ describe('native image label detection degradation', () => {
       message: '場景辨識失敗，人物智慧構圖仍可使用',
     });
   });
+});
+
+test('ignores offscreen and unknown joints and keeps the strongest duplicate', () => {
+  const pose = normalizePose({width: 100, height: 200, landmarks: [
+    landmark('nose', 50, 20, .9), landmark('nose', 20, 20, .1),
+    landmark('leftAnkle', 50, 400), landmark('unknown', 10, 10),
+  ]} as never);
+  expect(pose?.landmarks).toHaveLength(1);
+  expect(pose?.landmarks[0]).toMatchObject({name: 'nose', confidence: .9, x: .5});
 });

@@ -2,6 +2,7 @@ import {calculateSmartSilhouette, normalizeFaceBounds, recommendFaceCompositions
 import {chooseSceneComposition, chooseSceneSilhouette, type SceneKind} from './sceneComposition';
 import type {ImageLabel, NormalizedPose, SceneObject} from './poseDetection';
 import {compositionTemplates} from '../templates';
+import {chooseHumanOutline} from './humanOutline';
 
 type Box = {x: number; y: number; width: number; height: number};
 export type CompositionTarget = {
@@ -80,6 +81,10 @@ export function buildSubjectRecommendations(input: {
   const pet = findPet(objects, normalizedFaces);
   const compositionTarget = buildCompositionTarget(labels);
   const subject = analyzeSubject({faces, width, height, pose, mirrored});
+  if (subject) {
+    const outline = chooseHumanOutline({pose, width, height, personCount: subject.personCount, labels});
+    if (outline) subject.pose = outline.id;
+  }
   let recommendations = recommendFaceCompositions(faces, width, height, pose, mirrored);
   const personCount = subject?.personCount ?? 0;
   if (!personCount && pet) {
@@ -110,7 +115,7 @@ export function buildSubjectRecommendations(input: {
       title: index === 0 ? `${target.title}・人物輪廓` : item.title,
       reason: index === 0 ? `${target.reason} 人物輪廓依偵測到的身形縮放，請移動到構圖目標。` : item.reason};
   });
-  if (personCount === 1 && pet && personBounds) {
+  if (personCount === 1 && pet && personBounds && !subject?.pose.startsWith('ref-')) {
     const person = asRect(personBounds); const animal = pet.object;
     const left = Math.min(person.x, animal.x); const right = Math.max(person.x + person.width, animal.x + animal.width);
     const top = Math.min(person.y, animal.y); const bottom = Math.max(person.y + person.height, animal.y + animal.height);

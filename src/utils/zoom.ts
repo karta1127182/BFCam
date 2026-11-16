@@ -9,7 +9,7 @@ export function cameraZoomDisplayMultiplier(displayableZoom: number, nativeZoom:
 }
 
 export function cameraZoomOptions(minimum: number, maximum: number, displayFactor: number) {
-  const candidates = [minimum, ...[.6, 1, 2, 3, 10].map(value => value / displayFactor)];
+  const candidates = [minimum, ...[.5, .6, 1, 2, 3, 10].map(value => value / displayFactor)];
   return candidates.filter(value => Number.isFinite(value) && value >= minimum && value <= maximum)
     .filter((value, index, values) => index === values.findIndex(item => Math.abs(item - value) < .01))
     .sort((a, b) => a - b);
@@ -41,4 +41,8 @@ export function clampOverlayTranslation(
 export function normalizeRotation(degrees: number) {
   if (!Number.isFinite(degrees)) return 0;
   return ((degrees % 360) + 360) % 360;
+}
+
+export function cameraMaximumZoom(minimum: number, nativeMaximum: number, displayFactor: number) {
+  return Math.max(minimum, Math.min(nativeMaximum, 10 / displayFactor));
 }

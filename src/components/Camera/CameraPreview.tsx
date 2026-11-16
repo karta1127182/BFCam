@@ -8,14 +8,14 @@ import {Camera, type CameraDevice, type CameraPhotoOutput, type CameraRef} from 
 import {createFaceDetectorOutput} from 'react-native-vision-camera-face-detector';
 import {cameraZoomDisplayMultiplier} from '../../utils/zoom';
 import type {NormalizedFaceBounds} from '../../utils/compositionRecommender';
+import {useCameraRecovery} from '../../hooks/useCameraRecovery';
 
 export type ZoomCapabilities = {minimum: number; maximum: number; displayFactor: number};
 type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; onZoomCapabilities: (capabilities: ZoomCapabilities) => void; onLiveFacesDetected: (faces: NormalizedFaceBounds[]) => void; onLiveFaceDetectionError: (error: Error) => void; liveFaceDetectionEnabled: boolean; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>; isActive: boolean};
 
-export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilities, onLiveFacesDetected, onLiveFaceDetectionError, liveFaceDetectionEnabled, device, photoOutput, pinchGesture, torchEnabled, zoom, isActive}: Props) {
+export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilities, onLiveFacesDetected, onLiveFaceDetectionError, liveFaceDetectionEnabled, device, photoOutput, pinchGesture, torchEnabled, zoom, isActive, restartRequest = 0}: Props & {restartRequest?: number}) {
   const cameraRef = useRef<CameraRef>(null);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [cameraStarted, setCameraStarted] = useState(false);
   const [focusPoint, setFocusPoint] = useState<{x: number; y: number} | null>(null);
   const [previewSize, setPreviewSize] = useState({width: 0, height: 0});
   const liveFaceDetectionEnabledRef = useRef(liveFaceDetectionEnabled);
@@ -68,29 +68,22 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
       runClassifications: false,
       trackingEnabled: true,
     }), [device.position, previewSize.height, previewSize.width]);
-  const outputs = useMemo(
-    () => liveFaceDetectionEnabled && previewSize.width > 0
-      ? [photoOutput, faceDetectorOutput]
-      : [photoOutput],
-    [faceDetectorOutput, liveFaceDetectionEnabled, photoOutput, previewSize.width],
-  );
+  const photoOutputs = useMemo(() => [photoOutput], [photoOutput]);
+  const detectionOutputs = useMemo(() => [photoOutput, faceDetectorOutput], [photoOutput, faceDetectorOutput]);
+  const outputs = liveFaceDetectionEnabled && previewSize.width > 0 && previewSize.height > 0
+    ? detectionOutputs : photoOutputs;
   const getInitialZoom = useCallback(() => zoom.get(), [zoom]);
-  const handleStarted = useCallback(() => {
-    setCameraStarted(true);
+  const reportStarted = useCallback(() => {
     const controller = cameraRef.current?.controller;
     if (controller) {
       onZoomCapabilities({minimum: controller.minZoom, maximum: controller.maxZoom, displayFactor: cameraZoomDisplayMultiplier(controller.displayableZoomFactor, controller.zoom)});
     }
     onConfigured();
   }, [onConfigured, onZoomCapabilities]);
-  const handleStopped = useCallback(() => {
-    setCameraStarted(false);
-    onStopped();
-  }, [onStopped]);
-  const handleError = useCallback((error: Error) => {
-    setCameraStarted(false);
-    onError(error);
-  }, [onError]);
+  const {started: cameraStarted, restartCount, handleConfigured, handleStarted, handleStopped, handleError} = useCameraRecovery({
+    isActive, configuration: outputs, restartRequest,
+    onStarted: reportStarted, onStopped, onError,
+  });
   useEffect(() => () => {if (focusTimer.current) clearTimeout(focusTimer.current);}, []);
   const tapGesture = useMemo(() => Gesture.Tap().runOnJS(true).onEnd((event, success) => {
     if (!success || !cameraStarted || !isActive || !device.supportsFocusMetering) return;
@@ -105,10 +98,14 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
     <GestureDetector gesture={cameraGesture}>
       <View style={styles.fill} onLayout={handleLayout}>
         <Camera
+          key={`${restartRequest}:${restartCount}`}
           ref={cameraRef}
           getInitialZoom={getInitialZoom}
+          onConfigured={handleConfigured}
           onStarted={handleStarted}
           onStopped={handleStopped}
+          onInterruptionStarted={handleStopped}
+          onInterruptionEnded={handleStarted}
           onError={handleError}
           device={device}
           isActive={isActive}

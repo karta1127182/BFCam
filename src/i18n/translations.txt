@@ -586,3 +586,19 @@ Please wait…|Please wait…|お待ちください…|잠시 기다려 주세�
 {0} 盤 · {1} 杯，點選排列即可套用，將餐具對齊綠色輪廓。|{0} plates · {1} cups. Choose a layout and align the tableware with the green outlines.|{0}皿・{1}カップ。配置を選び、食器を緑の輪郭に合わせてください。|접시 {0}개 · 컵 {1}개. 배치를 선택하고 식기를 초록색 윤곽에 맞추세요.
 已達 {0} 筆上限；請復原或清除推拉後繼續。|Reached the {0}-stroke limit. Undo or clear reshaping to continue.|{0}回の上限です。元に戻すか変形を消去してください。|{0}회 제한에 도달했습니다. 실행 취소하거나 변형을 지운 후 계속하세요.
 {0} · 強度 {1}|{0} · Intensity {1}|{0}・強度 {1}|{0} · 강도 {1}
+對鏡拍|Mirror selfies|鏡越し撮影|거울 셀카
+男生高角度自拍|Man: high-angle selfie|男性・ハイアングル自撮り|남성 하이 앵글 셀카
+男生撥髮自拍|Man: hair-touch selfie|男性・髪に手を添える自撮り|남성 머리 만지며 셀카
+男生坐姿托臉自拍|Man: seated chin-rest selfie|男性・座って頬杖の自撮り|남성 앉아서 턱 괴고 셀카
+男生拿飲料自拍|Man: drink-in-hand selfie|男性・ドリンクを持つ自撮り|남성 음료 들고 셀카
+男生俯身比耶自拍|Man: leaning peace-sign selfie|男性・前かがみでピースの自撮り|남성 몸을 숙여 브이 셀카
+男生插袋對鏡拍|Man: hand-in-pocket mirror selfie|男性・ポケットに手を入れた鏡越し撮影|남성 주머니에 손 넣고 거울 셀카
+男生側身對鏡拍|Man: side-on mirror selfie|男性・横向きの鏡越し撮影|남성 옆모습 거울 셀카
+男生坐姿對鏡拍|Man: seated mirror selfie|男性・座った鏡越し撮影|남성 앉아서 거울 셀카
+男生叉腰對鏡拍|Man: hand-on-hip mirror selfie|男性・腰に手を当てた鏡越し撮影|남성 허리에 손 얹고 거울 셀카
+男生扶頸對鏡拍|Man: neck-touch mirror selfie|男性・首に手を添えた鏡越し撮影|남성 목에 손 대고 거울 셀카
+手機朝向鏡子，依照輪廓調整姿勢，保留手機與手臂線條。|Point your phone toward the mirror, match the pose outline, and keep your phone and arms in frame.|スマートフォンを鏡に向け、輪郭に合わせてポーズを調整し、スマートフォンと腕を画面に収めます。|휴대폰을 거울로 향하게 하고 윤곽에 맞춰 자세를 잡으세요. 휴대폰과 팔이 화면에 보이도록 하세요.
+依照紅色外輪廓趴下，讓身體曲線貼近綠色虛線。|Lie down along the red outline and align your body with the green dashed guides.|赤い輪郭に合わせて横になり、体の曲線を緑の破線に合わせます。|빨간 윤곽에 맞춰 엎드리고 몸의 곡선을 초록색 점선에 맞추세요.
+依照紅色外輪廓調整坐姿，讓背線或腿線貼近綠色虛線。|Match your seated pose to the red outline and align your back or legs with the green dashed guides.|赤い輪郭に合わせて座り、背中や脚を緑の破線に合わせます。|빨간 윤곽에 맞춰 앉고 등이나 다리를 초록색 점선에 맞추세요.
+兩人依照紅色外輪廓靠近，讓身體關係貼近綠色提示線。|Move closer together along the red outlines and align with the green guides.|二人で赤い輪郭に合わせて近づき、緑のガイド線に合わせます。|두 사람이 빨간 윤곽에 맞춰 가까이 서고 초록색 안내선에 맞추세요.
+依照紅色外輪廓站立，讓身體曲線貼近綠色虛線。|Stand along the red outline and align your body with the green dashed guides.|赤い輪郭に合わせて立ち、体の曲線を緑の破線に合わせます。|빨간 윤곽에 맞춰 서고 몸의 곡선을 초록색 점선에 맞추세요.

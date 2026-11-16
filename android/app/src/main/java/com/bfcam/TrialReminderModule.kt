@@ -31,16 +31,7 @@ internal fun scheduleTrialAlarm(context: Context) {
 
 class TrialReminderModule(private val context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
   override fun getName() = "TrialReminderModule"
-  // Google Play review access is separate from verified store entitlements.
-  // Only the digest is shipped; the review code is provided privately in Play Console.
-  @ReactMethod fun verifyReviewCode(code: String, promise: Promise) {
-    val normalized = code.replace(Regex("[\\s-]"), "").uppercase(java.util.Locale.ROOT)
-    if (!normalized.matches(Regex("[A-F0-9]{32}"))) { promise.resolve(false); return }
-    val digest = java.security.MessageDigest.getInstance("SHA-256").digest(normalized.toByteArray(Charsets.UTF_8))
-      .joinToString("") { "%02x".format(it.toInt() and 0xff) }
-    promise.resolve(digest == "0cebb08288efed39f4f7782274fe87f983fb91ca9a5268434674411910e476cf")
-  }
-
+  override fun getConstants(): Map<String, Any> = mapOf("closedTesting" to BuildConfig.CLOSED_TESTING)
   @ReactMethod fun schedule(due: Double, expiry: Double, body: String, promise: Promise) {
     try {
       val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

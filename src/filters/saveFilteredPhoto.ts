@@ -3,7 +3,7 @@ import {Images} from 'react-native-nitro-image';
 import type {Photo} from 'react-native-vision-camera';
 import {darkCircleMatrix, centerCropRect, localizedBrightnessMatrix, localizedRosyMatrix, type FaceRegion, type PhotoGeometry, type RetouchSettings} from './index';
 import {makeFaceReshapeLayer} from './faceReshape';
-import {addBrushDabs, darkCircleLayers, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, smoothingBlurRadius} from './manualRetouch';
+import {addBrushDabs, clipRetouchRegion, darkCircleLayers, BRUSH_FEATHER_LAYERS, HEAL_FEATHER_LAYERS, smoothingBlurRadius} from './manualRetouch';
 import {makeSkinSmoothingFilter} from './skinSmoothing';
 
 export async function saveFilteredPhoto(photo: Photo, matrix: number[]) {
@@ -100,7 +100,7 @@ export async function saveEditedPhoto(sourcePath: string, matrix: number[], geom
         canvas.drawImage(image, 0, 0, paint);
         for (const face of faces) {
           const region = face.region;
-          const clipped = {x: Math.max(0, region.x), y: Math.max(0, region.y), width: Math.min(region.width, regionWidth - Math.max(0, region.x)), height: Math.min(region.height, regionHeight - Math.max(0, region.y))};
+          const clipped = clipRetouchRegion(region, regionWidth, regionHeight);
           if (clipped.width <= 0 || clipped.height <= 0) continue;
           const clipFace = () => {
             if (face.skinMask?.outer.length) {

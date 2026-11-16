@@ -1,4 +1,4 @@
-import {cameraZoomDisplayMultiplier, cameraZoomOptions} from '../src/utils/zoom';
+import {cameraMaximumZoom, cameraZoomDisplayMultiplier, cameraZoomOptions} from '../src/utils/zoom';
 
 describe('native camera zoom', () => {
   it('derives a constant lens multiplier from current zoom, not the displayed ratio', () => {
@@ -13,4 +13,11 @@ describe('native camera zoom', () => {
   it('does not invent 0.5x when the camera only supports 1x and above', () => {
     expect(cameraZoomOptions(1, 3, 1)).toEqual([1, 2, 3]);
   });
+});
+
+test('limits displayed zoom to 10x without truncating a multi-camera to 5x', () => {
+  expect(cameraMaximumZoom(1, 40, .5)).toBe(20);
+  expect(cameraMaximumZoom(1, 8, 1)).toBe(8);
+  expect(cameraMaximumZoom(1, 40, 1)).toBe(10);
+  expect(cameraZoomOptions(.5, 10, 1)[0]).toBe(.5);
 });

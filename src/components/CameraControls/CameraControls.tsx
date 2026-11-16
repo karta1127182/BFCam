@@ -31,6 +31,7 @@ type Props = {
   onFoodComposition: (config: FoodComposition) => void;
   cameraReady: boolean;
   cameraError: string;
+  onRetryCamera?: () => void;
 
   activeScenarioId: string | null;
 
@@ -248,7 +249,7 @@ export function CameraControls(
       )}
       {/* 上方提示 */}
       <View
-        pointerEvents="none"
+        pointerEvents={props.cameraError ? 'auto' : 'none'}
         style={[
           styles.hint,
           {
@@ -269,6 +270,12 @@ export function CameraControls(
                 : props.template
                     .description}
         </Text>
+        {!!props.cameraError && props.onRetryCamera && (
+          <Pressable accessibilityRole="button" disabled={props.isCapturing || props.isDetecting}
+            onPress={props.onRetryCamera}>
+            <Text style={styles.label}>{'\u91cd\u65b0\u555f\u52d5\u76f8\u6a5f'}</Text>
+          </Pressable>
+        )}
       </View>
 
       <View
@@ -1013,17 +1020,22 @@ export function CameraControls(
           )}
         </ScrollView>
 
+        <Text
+          accessibilityLabel={`Zoom ${(props.zoomLevel * props.zoomDisplayFactor).toFixed(1)}x`}
+          style={styles.currentZoom}>
+          {(props.zoomLevel * props.zoomDisplayFactor).toFixed(1)}x
+        </Text>
         <View style={styles.zoomRow}>
           {props.onToggleUltraWide && (
             <>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="0.6 倍超廣角"
+                accessibilityLabel={"\u8d85\u5ee3\u89d2"}
                 accessibilityState={{selected: props.ultraWideActive, disabled: !props.cameraReady || props.isCapturing}}
                 disabled={!props.cameraReady || props.isCapturing}
                 onPress={props.onToggleUltraWide}
                 style={styles.zoomPreset}>
-                <Text style={[styles.zoomPresetText, props.ultraWideActive && styles.zoomPresetTextActive]}>0.6×</Text>
+                <Text style={[styles.zoomPresetText, props.ultraWideActive && styles.zoomPresetTextActive]}>{'\u8d85\u5ee3\u89d2'}</Text>
               </Pressable>
               <Text style={styles.zoomSeparator}>•••</Text>
             </>
@@ -1219,6 +1231,8 @@ const styles =
 
     cameraAction: {width: 70, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8},
     cameraActionLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
+
+    currentZoom: {alignSelf: 'center', color: '#FFD43B', fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: 'rgba(0,0,0,.48)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4},
 
     zoomRow: {
       minHeight: 36,

@@ -118,7 +118,7 @@ tasks.register('validateUploadSigning') {
         }
     }
 }
-tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+tasks.matching { it.name in ['preReleaseBuild', 'preClosedTestingBuild'] }.configureEach {
     dependsOn('validateUploadSigning')
 }
 
@@ -129,12 +129,14 @@ android {
 
     namespace "com.bfcam"
     defaultConfig {
+        buildConfigField "boolean", "CLOSED_TESTING", "false"
         applicationId "com.bfcam"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
-        versionName "1.0.7"
+        versionCode 9
+        versionName "1.0.8"
     }
+    buildFeatures { buildConfig true }
     signingConfigs {
         release {
             if (uploadStorePath) storeFile rootProject.file(uploadStorePath)
@@ -159,6 +161,14 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+        // Closed testing only: bundleClosedTesting. Never promote this AAB to production.
+        // Production and quota/payment verification must use bundleRelease.
+        closedTesting {
+            initWith release
+            manifestPlaceholders = [usesCleartextTraffic: "false"]
+            matchingFallbacks = ["release"]
+            buildConfigField "boolean", "CLOSED_TESTING", "true"
         }
     }
 }

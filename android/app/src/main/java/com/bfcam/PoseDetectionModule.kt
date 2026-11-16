@@ -99,7 +99,8 @@ class PoseDetectionModule(private val context: ReactApplicationContext) : ReactC
   @ReactMethod
   fun detect(uri: String, promise: Promise) {
     try {
-      val image = InputImage.fromFilePath(context, Uri.parse(uri))
+      val bitmap = analysisBitmap(Uri.parse(uri))
+      val image = InputImage.fromBitmap(bitmap, 0)
       val detector = PoseDetection.getClient(PoseDetectorOptions.Builder()
         .setDetectorMode(PoseDetectorOptions.SINGLE_IMAGE_MODE).build())
       detector.process(image).addOnSuccessListener { pose ->
@@ -116,8 +117,8 @@ class PoseDetectionModule(private val context: ReactApplicationContext) : ReactC
           })
         }}
         promise.resolve(Arguments.createMap().apply {putInt("width", image.width); putInt("height", image.height); putArray("landmarks", landmarks)})
-        detector.close()
-      }.addOnFailureListener { error -> detector.close(); promise.reject("POSE_DETECTION_FAILED", error) }
+        detector.close(); bitmap.recycle()
+      }.addOnFailureListener { error -> detector.close(); bitmap.recycle(); promise.reject("POSE_DETECTION_FAILED", error) }
     } catch (error: Exception) { promise.reject("POSE_IMAGE_INVALID", error) }
   }
 

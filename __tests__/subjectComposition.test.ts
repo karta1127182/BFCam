@@ -1,6 +1,7 @@
 import {analyzeSubject, avoidBackground, buildCompositionTarget, buildSubjectRecommendations, placeOutlineAtTarget} from '../src/utils/subjectComposition';
 import {normalizeSceneObjects, type SceneObject} from '../src/utils/poseDetection';
 import {compositionTemplates} from '../src/templates';
+import {getReferencePose} from '../src/silhouettes/referencePoses';
 
 const person = {x: 100, y: 200, width: 140, height: 180};
 const cat: SceneObject = {x: .6, y: .55, width: .25, height: .25, labels: [{text: 'Cat', confidence: .9}]};
@@ -13,10 +14,10 @@ test('moves a proposed subject away from a detected background region and stays 
   expect(planned.x + planned.width / 2).toBeLessThanOrEqual(1);
 });
 
-test('background selects the target while person detection selects only outline type and size', () => {
+test('background selects the target and a face alone does not imply standing or seated posture', () => {
   const recommendations = buildSubjectRecommendations({...input, labels: [{text: 'Mountain', confidence: .9}],
     objects: [{x: .55, y: .1, width: .35, height: .8, labels: [{text: 'Tree', confidence: .9}]}]});
-  expect(recommendations.every(item => item.pose === 'bust')).toBe(true);
+  expect(recommendations.every(item => !getReferencePose(item.pose))).toBe(true);
   expect(recommendations[0].templateIndex).toBe(3);
   expect(recommendations[0].silhouette!.x).toBeCloseTo(compositionTemplates[3].silhouette.x);
 });
@@ -24,7 +25,7 @@ test('background selects the target while person detection selects only outline 
 test('double portraits retain a double silhouette while the background owns the template', () => {
   const recommendations = buildSubjectRecommendations({...input, faces: [person, {...person, x: 400}], labels: [{text: 'Mountain', confidence: .9}]});
   expect(recommendations[0].templateIndex).toBe(3);
-  expect(recommendations.every(item => item.pose === 'couple-side-by-side')).toBe(true);
+  expect(recommendations.every(item => getReferencePose(item.pose)?.subject === 'couple')).toBe(true);
 });
 
 test('composition target never depends on the detected person position', () => {
@@ -36,18 +37,19 @@ test('composition target never depends on the detected person position', () => {
   expect(placeOutlineAtTarget(left, target).width).toBeCloseTo(placeOutlineAtTarget(right, target).width);
 });
 
-test('uses detected cat geometry and a composite silhouette for person plus cat', () => {
+test('uses detected cat geometry and retains a new human outline for person plus cat', () => {
   const pet = buildSubjectRecommendations({...input, faces: [], objects: [cat]})[0];
   expect(pet.pose).toBe('cat');
   expect(pet.silhouette?.width).toBeCloseTo(.25);
   const combined = buildSubjectRecommendations({...input, objects: [cat]});
   expect(combined.every(item => item.pose === 'person-with-cat')).toBe(true);
-  expect(combined[0].silhouette!.width).toBeGreaterThan(pet.silhouette!.width);
+  expect(combined[0].silhouette).toBeDefined();
 });
 
 test('a crop containing a human face is not mistaken for a separate pet', () => {
   const recommendations = buildSubjectRecommendations({...input, objects: [{x: 0, y: 0, width: 1, height: 1, labels: cat.labels}]});
-  expect(recommendations[0].pose).toBe('bust');
+  expect(recommendations[0].pose).not.toBe('person-with-cat');
+  expect(recommendations[0].pose).not.toBe('person-with-dog');
 });
 
 test('supports mirror symmetry for background avoidance', () => {

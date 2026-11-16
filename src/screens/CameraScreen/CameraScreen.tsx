@@ -39,8 +39,8 @@ import {
   type CompositionRecommendation,
   type NormalizedFaceBounds,
 } from '../../utils/compositionRecommender';
-import {cameraZoomOptions, normalizeRotation} from '../../utils/zoom';
-import {friendlyCameraError} from '../../utils/cameraErrors';
+import {cameraMaximumZoom, cameraZoomOptions, normalizeRotation} from '../../utils/zoom';
+import {friendlyCameraError, isCameraTransitionError} from '../../utils/cameraErrors';
 import {filters} from '../../filters';
 import {
   loadCameraPreferences,
@@ -77,6 +77,7 @@ export function CameraScreen() {
 
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState('');
+  const [cameraRestartRequest, setCameraRestartRequest] = useState(0);
   const [zoomCapabilities, setZoomCapabilities] = useState<ZoomCapabilities | null>(null);
 
   const markStopped = useCallback(() => {
@@ -91,15 +92,27 @@ export function CameraScreen() {
   }, []);
 
   const handleCameraError = useCallback((error: Error) => {
-    const message = error.message ?? '';
-    if (message.includes('Camera is not active') || message.includes('OperationCanceledException')) {
+    markStopped();
+    setFlashEnabled(false);
+    if (isCameraTransitionError(error)) {
       return;
     }
-    readyRef.current = false;
-    setCameraReady(false);
-    setFlashEnabled(false);
     setCameraError(friendlyCameraError(error, '相機無法啟動，請稍後再試。'));
-  }, []);
+  }, [markStopped]);
+
+  const restartCamera = useCallback(() => {
+    markStopped();
+    setCameraError('');
+    setFlashEnabled(false);
+    setCameraRestartRequest(value => value + 1);
+  }, [markStopped]);
+
+  const recoverCaptureError = useCallback((error: unknown) => {
+    if (!isCameraTransitionError(error)) return false;
+    // Restart only the session. Retrying capture could create a duplicate photo.
+    restartCamera();
+    return true;
+  }, [restartCamera]);
 
   const [filterIndex, setFilterIndex] = useState(0);
   const [activeScenarioId, setActiveScenarioId] =
@@ -178,8 +191,7 @@ export function CameraScreen() {
 
   const trialPanel = <PremiumTrialPanel billing={trial.billing} topInset={!pendingPhotoPath} remaining={trial.remaining} status={trial.status}
     visible={trial.plansVisible} onOpen={() => {trial.setPlansVisible(true); trial.billing.refresh();}}
-    onClose={() => trial.setPlansVisible(false)} onRetry={trial.reload}
-    reviewActive={trial.reviewActive} onUnlockReview={trial.unlockReview} onEndReview={trial.endReview} />;
+    onClose={() => trial.setPlansVisible(false)} onRetry={trial.reload} />;
 
   const handleLiveFacesDetected = useCallback((faces: NormalizedFaceBounds[]) => {
     if (!smartCompositionActive || !smartCompositionRuntimeRef.current.faceTracking) return;
@@ -223,9 +235,8 @@ export function CameraScreen() {
 
   useEffect(() => {
     setZoomCapabilities(null);
-    markStopped();
     setFlashEnabled(false);
-  }, [device?.id, markStopped]);
+  }, [device?.id]);
 
   const detectorOptions = useMemo(
     () => ({
@@ -367,12 +378,10 @@ export function CameraScreen() {
 
   const minimumZoom = zoomCapabilities?.minimum ?? device?.minZoom ?? 1;
 
-  const maximumZoom = Math.min(
-    zoomCapabilities?.maximum ?? device?.maxZoom ?? 1,
-    10,
-  );
-
   const zoomDisplayFactor = zoomCapabilities?.displayFactor ?? 1;
+
+  const maximumZoom = cameraMaximumZoom(minimumZoom,
+    zoomCapabilities?.maximum ?? device?.maxZoom ?? 1, zoomDisplayFactor);
 
   const initialZoom = Math.min(
     Math.max(useSeparateUltraWide && position === 'back' ? minimumZoom : 1 / zoomDisplayFactor, minimumZoom),
@@ -485,6 +494,7 @@ export function CameraScreen() {
         photo.dispose();
       }
     } catch (error) {
+      if (recoverCaptureError(error)) return;
       Alert.alert(
         '無法拍照',
         friendlyCameraError(error, '請稍後再試。'),
@@ -499,6 +509,7 @@ export function CameraScreen() {
     device?.hasFlash,
     flashEnabled,
     photoOutput,
+    recoverCaptureError,
   ]);
 
   /**
@@ -781,6 +792,7 @@ export function CameraScreen() {
     } catch (error) {
       if (requestId !== smartAnalysisRequestRef.current) return;
       resetSmartComposition();
+      if (recoverCaptureError(error)) return;
 
       Alert.alert(
         '無法偵測',
@@ -796,6 +808,7 @@ export function CameraScreen() {
     position,
     requireAccess,
     resetSmartComposition,
+    recoverCaptureError,
   ]);
 
   /**
@@ -993,6 +1006,7 @@ export function CameraScreen() {
           }>
           <CameraPreview
             key={device.id}
+            restartRequest={cameraRestartRequest}
             onConfigured={markConfigured}
             onStopped={markStopped}
             onError={handleCameraError}
@@ -1107,6 +1121,7 @@ export function CameraScreen() {
         }
         cameraReady={cameraReady}
         cameraError={cameraError}
+        onRetryCamera={restartCamera}
         filterIndex={filterIndex}
         filterStrength={
           filterStrength

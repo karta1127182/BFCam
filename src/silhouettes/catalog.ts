@@ -5,11 +5,11 @@ import {getReferencePose, referencePoses} from './referencePoses';
 export const silhouetteCategories = ['全部', '男', '女', '多人', '寵物', '美食', '風景', '建築', '商品'] as const;
 export type SilhouetteCategory = typeof silhouetteCategories[number];
 export const silhouettePoseGroups = {
-  男: ['坐姿', '站姿'],
-  女: ['坐姿', '站姿', '趴姿'],
+  男: ['坐姿', '站姿', '對鏡拍'],
+  女: ['坐姿', '站姿', '趴姿', '對鏡拍'],
   多人: ['情侶'],
 } as const;
-export type SilhouettePoseGroup = '坐姿' | '站姿' | '趴姿' | '情侶';
+export type SilhouettePoseGroup = '坐姿' | '站姿' | '趴姿' | '情侶' | '對鏡拍';
 
 export function matchesSilhouetteCategory(item: SilhouetteCatalogItem, category: SilhouetteCategory) {
   if (category === '全部') return true;
@@ -21,6 +21,7 @@ export function matchesSilhouetteCategory(item: SilhouetteCatalogItem, category:
 }
 
 export function matchesSilhouettePoseGroup(item: SilhouetteCatalogItem, group: SilhouettePoseGroup): boolean {
+  if (group === '對鏡拍') return getReferencePose(item.id)?.mirrorSelfie === true;
   if (group === '情侶') return getReferencePose(item.id)?.group === '情侶' || item.id.startsWith('couple-');
   const referenceGroup = getReferencePose(item.id)?.group;
   if (referenceGroup) return referenceGroup === group;
@@ -83,13 +84,15 @@ export const poseCatalog: SilhouetteCatalogItem[] = [
     category: '人物' as const,
     width: item.group === '情侶' ? .66 : item.group === '趴姿' ? .72 : item.group === '坐姿' ? .58 : .44,
     height: item.group === '趴姿' ? .46 : item.group === '坐姿' ? .58 : .72,
-    hint: item.group === '趴姿'
-      ? '依照黑色外輪廓趴下，讓身體曲線貼近綠色虛線。'
+    hint: item.mirrorSelfie
+      ? '手機朝向鏡子，依照輪廓調整姿勢，保留手機與手臂線條。'
+      : item.group === '趴姿'
+      ? '依照紅色外輪廓趴下，讓身體曲線貼近綠色虛線。'
       : item.group === '坐姿'
-        ? '依照黑色外輪廓調整坐姿，讓背線或腿線貼近綠色虛線。'
+        ? '依照紅色外輪廓調整坐姿，讓背線或腿線貼近綠色虛線。'
         : item.group === '情侶'
-          ? '兩人依照黑色外輪廓靠近，讓身體關係貼近綠色提示線。'
-          : '依照黑色外輪廓站立，讓身體曲線貼近綠色虛線。',
+          ? '兩人依照紅色外輪廓靠近，讓身體關係貼近綠色提示線。'
+          : '依照紅色外輪廓站立，讓身體曲線貼近綠色虛線。',
   })),
   ...extraPoses,
 ];

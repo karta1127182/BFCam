@@ -1,3 +1,13 @@
+export function isCameraTransitionError(error: unknown) {
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  return /Photo Output is not yet attached|Camera is not active|OperationCanceledException/i.test(message);
+}
+
+export function isCameraAccessError(error: unknown) {
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  return /Camera is disabled|device policy|permission|access denied|not authorized/i.test(message);
+}
+
 export function friendlyCameraError(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
   if (/Photo Output is not yet attached|Camera is not active|OperationCanceledException/i.test(message)) return '相機仍在切換或初始化，請等畫面穩定後再試一次。';

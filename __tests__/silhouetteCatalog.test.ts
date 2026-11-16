@@ -1,4 +1,4 @@
-import {matchesSilhouetteCategory, matchesSilhouettePoseGroup, poseCatalog, selectablePoseCatalog, silhouetteCategories} from '../src/silhouettes/catalog';
+import {matchesSilhouetteCategory, matchesSilhouettePoseGroup, poseCatalog, selectablePoseCatalog, silhouetteCategories, silhouettePoseGroups} from '../src/silhouettes/catalog';
 import {extraPosePaths, extraPoses} from '../src/silhouettes/extraPoses';
 import {referencePoses} from '../src/silhouettes/referencePoses';
 
@@ -22,14 +22,14 @@ describe('silhouette browsing', () => {
       expect(extraPosePaths[item.id as keyof typeof extraPosePaths]).toMatch(/^M/);
       expect(item.width).toBeGreaterThan(0); expect(item.height).toBeLessThanOrEqual(1);
     });
-    expect(referencePoses).toHaveLength(192);
-    expect(selectablePoseCatalog.filter(item => item.category === '人物')).toHaveLength(192);
+    expect(referencePoses).toHaveLength(202);
+    expect(selectablePoseCatalog.filter(item => item.category === '人物')).toHaveLength(202);
     expect(selectablePoseCatalog.filter(item => item.category === '人物').map(item => item.id))
       .toEqual(referencePoses.map(item => item.id));
     expect(selectablePoseCatalog.filter(item => item.category !== '人物'))
       .toEqual(poseCatalog.filter(item => item.category !== '人物'));
     expect(silhouetteCategories).not.toContain('通用人物');
-    expect(new Set(referencePoses.map(item => item.id)).size).toBe(192);
+    expect(new Set(referencePoses.map(item => item.id)).size).toBe(202);
     expect(poseCatalog.some(item => /^(male|female)-/.test(item.id))).toBe(true);
   });
   it('supports gender and couple pose subcategories', () => {
@@ -41,6 +41,18 @@ describe('silhouette browsing', () => {
     expect(matchesSilhouettePoseGroup(poseCatalog.find(item => item.id === 'male-seated')!, '坐姿')).toBe(true);
     expect(matchesSilhouettePoseGroup(poseCatalog.find(item => item.id === 'female-dress')!, '站姿')).toBe(true);
     expect(matchesSilhouettePoseGroup(poseCatalog.find(item => item.id === 'female-prone')!, '趴姿')).toBe(true);
+  });
+  it('offers mirror selfies for both genders while preserving posture filters', () => {
+    expect(silhouettePoseGroups.男).toContain('對鏡拍');
+    expect(silhouettePoseGroups.女).toContain('對鏡拍');
+    const mirrorPoses = selectablePoseCatalog.filter(item => matchesSilhouettePoseGroup(item, '對鏡拍'));
+    expect(mirrorPoses.filter(item => matchesSilhouetteCategory(item, '男'))).toHaveLength(5);
+    expect(mirrorPoses.filter(item => matchesSilhouetteCategory(item, '女'))).toHaveLength(8);
+    const seatedMirror = poseCatalog.find(item => item.id === 'ref-male-selfie-08')!;
+    expect(matchesSilhouettePoseGroup(seatedMirror, '坐姿')).toBe(true);
+    expect(matchesSilhouettePoseGroup(seatedMirror, '對鏡拍')).toBe(true);
+    expect(matchesSilhouettePoseGroup(poseCatalog.find(item => item.id === 'ref-male-selfie-01')!, '對鏡拍')).toBe(false);
+    expect(matchesSilhouettePoseGroup(poseCatalog.find(item => item.id === 'ref-female-d-07')!, '對鏡拍')).toBe(false);
   });
 });
 

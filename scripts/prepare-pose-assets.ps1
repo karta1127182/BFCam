@@ -42,7 +42,7 @@ function Convert-ToOverlayPng {
       if ($isTransparent -or $isWhite -or $isLightGrayArtifact -or $isRed -or $isTopGreenBadge) {
         $bitmap.SetPixel($x, $y, [System.Drawing.Color]::Transparent)
       } else {
-        $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb(255, $pixel.R, $pixel.G, $pixel.B))
+        $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($pixel.A, $pixel.R, $pixel.G, $pixel.B))
       }
     }
   }
@@ -76,6 +76,17 @@ function Convert-ToOverlayPng {
     }
   }
 
+  # Apply the contour color after border detection, which relies on dark pixels.
+  for ($y = 0; $y -lt $bitmap.Height; $y++) {
+    for ($x = 0; $x -lt $bitmap.Width; $x++) {
+      $pixel = $bitmap.GetPixel($x, $y)
+      $maximum = [Math]::Max($pixel.R, [Math]::Max($pixel.G, $pixel.B))
+      $minimum = [Math]::Min($pixel.R, [Math]::Min($pixel.G, $pixel.B))
+      if ($pixel.A -gt 0 -and $maximum -lt 180 -and ($maximum - $minimum) -lt 25) {
+        $bitmap.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($pixel.A, 255, 59, 48))
+      }
+    }
+  }
   $directory = Split-Path -Parent $Destination
   [System.IO.Directory]::CreateDirectory($directory) | Out-Null
   # A figure may touch a card border in the source. Never delete the entire connected
@@ -314,4 +325,9 @@ foreach ($entry in $brokenFrameColumns.GetEnumerator()) {
   } finally { $bitmap.Dispose() }
 }
 
-Write-Output "Prepared 172 selectable transparent pose overlays with safety padding in $Output"
+# Restore the exact source rectangles and alpha handling for the affected cards.
+# Run last so bulk extraction cannot reintroduce clipped heads or mixed-sheet noise.
+python (Join-Path $PSScriptRoot 'repair-pose-extraction.py')
+if ($LASTEXITCODE -ne 0) { throw 'Pose extraction repair failed.' }
+
+Write-Output "Prepared transparent pose overlays with safety padding in $Output"

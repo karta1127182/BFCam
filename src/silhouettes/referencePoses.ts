@@ -3,9 +3,19 @@ import type {ImageSourcePropType} from 'react-native';
 export type ReferencePoseGroup = '坐姿' | '站姿' | '趴姿' | '情侶';
 export type ReferencePoseSubject = 'male' | 'female' | 'couple';
 
-const pose = (id: string, name: string, subject: ReferencePoseSubject, group: ReferencePoseGroup, source: ImageSourcePropType) => ({id, name, subject, group, source});
+const pose = (id: string, name: string, subject: ReferencePoseSubject, group: ReferencePoseGroup, source: ImageSourcePropType, mirrorSelfie = false) => ({id, name, subject, group, source, mirrorSelfie});
 
 export const referencePoses = [
+  pose('ref-male-selfie-01', '男生高角度自拍', 'male', '站姿', require('../assets/poses/male-selfie-01.png')),
+  pose('ref-male-selfie-02', '男生撥髮自拍', 'male', '站姿', require('../assets/poses/male-selfie-02.png')),
+  pose('ref-male-selfie-03', '男生坐姿托臉自拍', 'male', '坐姿', require('../assets/poses/male-selfie-03.png')),
+  pose('ref-male-selfie-04', '男生拿飲料自拍', 'male', '站姿', require('../assets/poses/male-selfie-04.png')),
+  pose('ref-male-selfie-05', '男生俯身比耶自拍', 'male', '站姿', require('../assets/poses/male-selfie-05.png')),
+  pose('ref-male-selfie-06', '男生插袋對鏡拍', 'male', '站姿', require('../assets/poses/male-selfie-06.png'), true),
+  pose('ref-male-selfie-07', '男生側身對鏡拍', 'male', '站姿', require('../assets/poses/male-selfie-07.png'), true),
+  pose('ref-male-selfie-08', '男生坐姿對鏡拍', 'male', '坐姿', require('../assets/poses/male-selfie-08.png'), true),
+  pose('ref-male-selfie-09', '男生叉腰對鏡拍', 'male', '站姿', require('../assets/poses/male-selfie-09.png'), true),
+  pose('ref-male-selfie-10', '男生扶頸對鏡拍', 'male', '站姿', require('../assets/poses/male-selfie-10.png'), true),
   pose('ref-single-guide-01', '女生長裙側身扶腰', 'female', '站姿', require('../assets/poses/single-guide-01.png')),
   pose('ref-single-guide-02', '女生水中側身跪坐', 'female', '坐姿', require('../assets/poses/single-guide-02.png')),
   pose('ref-single-guide-03', '女生躺椅抬手', 'female', '坐姿', require('../assets/poses/single-guide-03.png')),
@@ -159,15 +169,15 @@ export const referencePoses = [
   pose('ref-female-c-07', '女生靠牆提包站姿', 'female', '站姿', require('../assets/poses/female-guide-c-07.png')),
   pose('ref-female-c-08', '女生方台提包坐姿', 'female', '坐姿', require('../assets/poses/female-guide-c-08.png')),
   pose('ref-female-c-09', '女生側躺提包趴姿', 'female', '趴姿', require('../assets/poses/female-guide-c-09.png')),
-  pose('ref-female-d-01', '女生正面提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-01.png')),
-  pose('ref-female-d-02', '女生側身提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-02.png')),
-  pose('ref-female-d-03', '女生桌邊提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-03.png')),
-  pose('ref-female-d-04', '女生方台提包自拍坐姿', 'female', '坐姿', require('../assets/poses/female-guide-d-04.png')),
-  pose('ref-female-d-05', '女生地面提包自拍坐姿', 'female', '坐姿', require('../assets/poses/female-guide-d-05.png')),
-  pose('ref-female-d-06', '女生跪坐提包自拍姿勢', 'female', '坐姿', require('../assets/poses/female-guide-d-06.png')),
+  pose('ref-female-d-01', '女生正面提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-01.png'), true),
+  pose('ref-female-d-02', '女生側身提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-02.png'), true),
+  pose('ref-female-d-03', '女生桌邊提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-03.png'), true),
+  pose('ref-female-d-04', '女生方台提包自拍坐姿', 'female', '坐姿', require('../assets/poses/female-guide-d-04.png'), true),
+  pose('ref-female-d-05', '女生地面提包自拍坐姿', 'female', '坐姿', require('../assets/poses/female-guide-d-05.png'), true),
+  pose('ref-female-d-06', '女生跪坐提包自拍姿勢', 'female', '坐姿', require('../assets/poses/female-guide-d-06.png'), true),
   pose('ref-female-d-07', '女生側躺舉手機趴姿', 'female', '趴姿', require('../assets/poses/female-guide-d-07.png')),
-  pose('ref-female-d-08', '女生抬手提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-08.png')),
-  pose('ref-female-d-09', '女生提包跨步自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-09.png')),
+  pose('ref-female-d-08', '女生抬手提包自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-08.png'), true),
+  pose('ref-female-d-09', '女生提包跨步自拍站姿', 'female', '站姿', require('../assets/poses/female-guide-d-09.png'), true),
   pose('ref-male-a-01', '男生提包交叉腿站姿', 'male', '站姿', require('../assets/poses/male-guide-a-01.png')),
   pose('ref-male-a-02', '男生提包跨步站姿', 'male', '站姿', require('../assets/poses/male-guide-a-02.png')),
   pose('ref-male-a-03', '男生肩背包站姿', 'male', '站姿', require('../assets/poses/male-guide-a-03.png')),

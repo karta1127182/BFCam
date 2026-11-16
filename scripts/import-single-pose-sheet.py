@@ -55,8 +55,8 @@ def extract():
             if len(component) < 100 and all(yy < h * .15 or xx < 12 or xx > w - 12 for yy, xx in component) and not any(green[yy, xx] for yy, xx in component):
                 for yy, xx in component:
                     alpha[yy, xx] = 0
-        # Neutral strokes become black; green strokes keep their source color.
-        rgb = np.where(green[:, :, None], pixels, 0).astype('uint8')
+        # Neutral strokes become red; green strokes keep their source color.
+        rgb = np.where(green[:, :, None], pixels, (255, 59, 48)).astype('uint8')
         overlay = Image.fromarray(np.dstack((rgb, alpha)), 'RGBA')
         bounds = overlay.getbbox()
         if bounds is None:

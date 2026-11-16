@@ -85,3 +85,11 @@ export function darkCircleLayers(region: FaceRegion) {
     return {opacity: .045, region: {x: region.x + region.width * (1-radius)/2, y: region.y + region.height * (1-radius)/2, width: region.width * radius, height: region.height * radius}};
   });
 }
+
+// Intersect with the output after crop/rotation; retain only actual face pixels.
+export function clipRetouchRegion(region: FaceRegion, width: number, height: number): FaceRegion {
+  const x = Math.max(0, region.x);
+  const y = Math.max(0, region.y);
+  return {x, y, width: Math.max(0, Math.min(width, region.x + region.width) - x),
+    height: Math.max(0, Math.min(height, region.y + region.height) - y)};
+}

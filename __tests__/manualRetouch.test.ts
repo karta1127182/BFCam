@@ -1,4 +1,4 @@
-import {addBrushDabs, appendBrushPoint, BRUSH_FEATHER_LAYERS, makeWarpStroke, manualWarpUniforms, MAX_MANUAL_WARPS, smoothingBlurRadius, warpEndFromDrag} from '../src/filters/manualRetouch';
+import {clipRetouchRegion, addBrushDabs, appendBrushPoint, BRUSH_FEATHER_LAYERS, makeWarpStroke, manualWarpUniforms, MAX_MANUAL_WARPS, smoothingBlurRadius, warpEndFromDrag} from '../src/filters/manualRetouch';
 import {skinSmoothingUniforms} from '../src/filters/skinSmoothingModel';
 
 describe('manual retouch gestures', () => {
@@ -47,4 +47,12 @@ describe('manual retouch gestures', () => {
     expect(uniforms.manualWarpPoints[0][0]).toBe(0);
     expect(uniforms.manualWarpPoints[MAX_MANUAL_WARPS - 1][0]).toBe(MAX_MANUAL_WARPS - 1);
   });
+});
+
+test('cropped face masks intersect the original face instead of extending into the background', () => {
+  expect(clipRetouchRegion({x: -30, y: -20, width: 100, height: 80}, 200, 200))
+    .toEqual({x: 0, y: 0, width: 70, height: 60});
+  expect(clipRetouchRegion({x: -100, y: 10, width: 50, height: 30}, 200, 200).width).toBe(0);
+  expect(clipRetouchRegion({x: 180, y: 190, width: 50, height: 30}, 200, 200))
+    .toEqual({x: 180, y: 190, width: 20, height: 10});
 });

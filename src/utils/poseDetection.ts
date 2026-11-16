@@ -31,17 +31,28 @@ export type NormalizedPose = {landmarks: PoseLandmark[]; complete: boolean; scor
 type NativePoseResult = {width: number; height: number; landmarks: PoseLandmark[]};
 
 const required: PoseLandmarkName[] = ['nose', 'leftShoulder', 'rightShoulder', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee', 'leftAnkle', 'rightAnkle'];
+const landmarkNames = new Set<string>([...required, 'leftElbow', 'rightElbow', 'leftWrist', 'rightWrist']);
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 export function normalizePose(result: NativePoseResult): NormalizedPose | null {
-  if (!result || result.width <= 0 || result.height <= 0 || !Array.isArray(result.landmarks)) return null;
-  const landmarks = result.landmarks.filter(point => point && Number.isFinite(point.x) && Number.isFinite(point.y)).map(point => ({...point, x: point.x / result.width, y: point.y / result.height}));
+  if (!result || !Number.isFinite(result.width) || !Number.isFinite(result.height) || result.width <= 0 || result.height <= 0 || !Array.isArray(result.landmarks)) return null;
+  const candidates = result.landmarks.filter(point => point && landmarkNames.has(point.name) && Number.isFinite(point.x) && Number.isFinite(point.y)
+    && Number.isFinite(point.confidence) && point.confidence >= 0 && point.confidence <= 1)
+    .map(point => ({...point, z: Number.isFinite(point.z) ? point.z : 0, x: point.x / result.width, y: point.y / result.height}))
+    .filter(point => point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1);
+  const unique = new Map<PoseLandmarkName, PoseLandmark>();
+  for (const point of candidates) {
+    const previous = unique.get(point.name);
+    if (!previous || point.confidence > previous.confidence) unique.set(point.name, point);
+  }
+  const landmarks = [...unique.values()];
   if (!landmarks.length) return null;
-  const confidentLandmarks = landmarks.filter(point => point.confidence >= .55);
+  const confidentLandmarks = landmarks.filter(point => point.confidence >= .55
+    && point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1);
   if (!confidentLandmarks.length) return null;
   const visible = new Map(landmarks.map(point => [point.name, point.confidence >= .55 && point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1]));
   const complete = required.every(name => visible.get(name));
-  const confidentRatio = confidentLandmarks.length / landmarks.length;
+  const confidentRatio = required.filter(name => visible.get(name)).length / required.length;
   const margin = Math.min(...confidentLandmarks.flatMap(point => [point.x, point.y, 1 - point.x, 1 - point.y]));
   const score = Math.round(clamp(confidentRatio * .7 + clamp(margin / .08) * .3) * 100);
   let hint = '姿勢完整，請依輪廓安排站位後拍攝。';
