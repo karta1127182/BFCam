@@ -5,6 +5,7 @@ export type FaceBounds = {x: number; y: number; width: number; height: number};
 export type NormalizedFaceBounds = FaceBounds;
 export type SmartSilhouetteBounds = {x: number; y: number; width: number; height: number};
 export type CompositionRecommendation = {
+  showSilhouette?: boolean;
   templateIndex: number;
   pose: SilhouetteDefinition['variant'];
   title: string;

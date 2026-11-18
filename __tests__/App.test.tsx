@@ -73,6 +73,11 @@ test('includes first and second-version compositions from the product plan', () 
     'leading-lines',
     'symmetry',
     'foreground',
+    'wide-scene-person',
+    'gaze-space',
+    'reflection',
+    'fill-frame',
+    'golden-ratio',
   ]);
 });
 

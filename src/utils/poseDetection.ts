@@ -1,4 +1,11 @@
 import {NativeModules} from 'react-native';
+import type {GrayImage} from './geometryComposition';
+
+export async function sampleGeometry(uri: string): Promise<GrayImage | null> {
+  const detector = NativeModules.PoseDetectorModule as {sampleGeometry?: (path: string) => Promise<GrayImage>} | undefined;
+  if (!detector?.sampleGeometry) return null;
+  try { return await detector.sampleGeometry(uri); } catch { return null; }
+}
 export type ImageLabel = {text: string; confidence: number; index?: number};
 export type SceneObject = {x: number; y: number; width: number; height: number; labels: ImageLabel[]};
 export type SceneObjectResult = {status: 'available' | 'unavailable' | 'failed'; objects: SceneObject[]};

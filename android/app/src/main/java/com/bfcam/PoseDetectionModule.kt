@@ -24,6 +24,29 @@ import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 class PoseDetectionModule(private val context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
   override fun getName() = "PoseDetectorModule"
 
+  @ReactMethod
+  fun sampleGeometry(uri: String, promise: Promise) {
+    Thread {
+      try {
+        val original = analysisBitmap(Uri.parse(uri))
+        val scale = 128.0 / maxOf(original.width, original.height)
+        val bitmap = Bitmap.createScaledBitmap(original, maxOf(1, (original.width * scale).toInt()), maxOf(1, (original.height * scale).toInt()), true)
+        try {
+          val colors = IntArray(bitmap.width * bitmap.height)
+          bitmap.getPixels(colors, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+          val pixels = Arguments.createArray()
+          colors.forEach { color -> pixels.pushInt(((color shr 16 and 255) * 299 + (color shr 8 and 255) * 587 + (color and 255) * 114) / 1000) }
+          promise.resolve(Arguments.createMap().apply {
+            putInt("width", bitmap.width); putInt("height", bitmap.height); putArray("pixels", pixels)
+          })
+        } finally {
+          if (bitmap !== original) bitmap.recycle()
+          original.recycle()
+        }
+      } catch (error: Exception) { promise.reject("GEOMETRY_IMAGE_INVALID", error) }
+    }.start()
+  }
+
   // Bounded, upright analysis bitmap; never decode the full camera image just to classify crops.
   private fun analysisBitmap(uri: Uri): Bitmap {
     val size = BitmapFactory.Options().apply { inJustDecodeBounds = true }

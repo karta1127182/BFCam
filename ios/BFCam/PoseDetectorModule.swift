@@ -12,6 +12,28 @@ import ImageIO
 final class PoseDetectorModule: NSObject {
   @objc static func requiresMainQueueSetup() -> Bool { false }
 
+  @objc(sampleGeometry:resolver:rejecter:)
+  func sampleGeometry(_ uri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+    DispatchQueue.global(qos: .userInitiated).async {
+      let path = uri.hasPrefix("file://") ? String(uri.dropFirst(7)) : uri
+      guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
+        let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+          kCGImageSourceCreateThumbnailWithTransform: true, kCGImageSourceThumbnailMaxPixelSize: 128] as CFDictionary)
+      else { reject("GEOMETRY_IMAGE_INVALID", "Unable to read image", nil); return }
+      let width = image.width; let height = image.height
+      var pixels = [UInt8](repeating: 0, count: width * height)
+      let rendered = pixels.withUnsafeMutableBytes { buffer -> Bool in
+        guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+          bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return true
+      }
+      guard rendered else { reject("GEOMETRY_IMAGE_INVALID", "Unable to sample image", nil); return }
+      resolve(["width": width, "height": height, "pixels": pixels.map { Int($0) }])
+    }
+  }
+
   @objc(detectObjects:resolver:rejecter:)
   func detectObjects(_ uri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
     DispatchQueue.global(qos: .userInitiated).async {

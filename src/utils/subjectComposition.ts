@@ -2,7 +2,8 @@ import {calculateSmartSilhouette, normalizeFaceBounds, recommendFaceCompositions
 import {chooseSceneComposition, chooseSceneSilhouette, type SceneKind} from './sceneComposition';
 import type {ImageLabel, NormalizedPose, SceneObject} from './poseDetection';
 import {compositionTemplates} from '../templates';
-import {chooseHumanOutline} from './humanOutline';
+import {chooseHumanOutline, classifyHumanPosture} from './humanOutline';
+import {recommendSkeletonComposition, recommendLineComposition, type GrayImage, type GeometryDecision} from './geometryComposition';
 
 type Box = {x: number; y: number; width: number; height: number};
 export type CompositionTarget = {
@@ -43,12 +44,13 @@ export function findPet(objects: SceneObject[], faces: Box[]) {
   return pets.sort((a, b) => b.object.width * b.object.height * b.label.confidence - a.object.width * a.object.height * a.label.confidence)[0];
 }
 
-/** Background labels choose the composition. Person position is intentionally not an input. */
-export function buildCompositionTarget(labels: ImageLabel[]): CompositionTarget {
-  const decision = chooseSceneComposition(labels, 0);
-  const templateIndex = decision.scene === 'unknown' ? 1 : decision.templateIndex;
+/** Geometry owns the target; labels provide only a fallback when geometry is unavailable. */
+export function buildCompositionTarget(labels: ImageLabel[], geometry?: GeometryDecision | null): CompositionTarget {
+  const scene = chooseSceneComposition(labels, 0);
+  const decision = geometry ?? scene;
+  const templateIndex = geometry ? geometry.templateIndex : scene.scene === 'unknown' ? 1 : scene.templateIndex;
   const anchor = compositionTemplates[templateIndex].silhouette;
-  return {scene: decision.scene, templateIndex, x: anchor.x, y: anchor.y, title: decision.title, reason: decision.reason};
+  return {scene: scene.scene, templateIndex, x: anchor.x, y: anchor.y, title: decision.title, reason: decision.reason};
 }
 
 /** Faces and pose choose only the person outline and its measured size. */
@@ -74,20 +76,28 @@ export function placeOutlineAtTarget(subject: SubjectAnalysis, target: Compositi
 export function buildSubjectRecommendations(input: {
   faces: FaceBounds[]; width: number; height: number; pose: NormalizedPose | null;
   labels: ImageLabel[]; objects: SceneObject[]; mirrored: boolean;
+  geometryImage?: GrayImage | null;
 }): CompositionRecommendation[] {
   const {faces, width, height, pose, labels, mirrored} = input;
   const objects = input.objects.map(object => ({...object, x: mirrored ? 1 - object.x - object.width : object.x}));
   const normalizedFaces = normalizeFaceBounds(faces, width, height).map(face => ({...face, x: mirrored ? 1 - face.x - face.width : face.x}));
   const pet = findPet(objects, normalizedFaces);
-  const compositionTarget = buildCompositionTarget(labels);
   const subject = analyzeSubject({faces, width, height, pose, mirrored});
+  const skeletonDecision = faces.length <= 1 ? recommendSkeletonComposition(pose, width, height, mirrored) : null;
+  const personHint = labels.some(label => /^(person|people|man|woman|boy|girl)$/i.test(label.text) && label.confidence >= .7);
+  const lineDecision = !subject && !personHint && input.geometryImage ? recommendLineComposition(input.geometryImage) : null;
+  const personDecision: GeometryDecision = skeletonDecision ?? {templateIndex: 1, title: '人物・基本置中',
+    reason: faces.length > 1 ? '多人畫面先以置中保留合照空間，單人骨架無法代表所有人的動作。' : '骨架資訊不足，先提供人物置中建議，請讓肩膀、髖部與肢體清楚入鏡。'};
+  const compositionTarget = buildCompositionTarget(labels, subject || personHint ? personDecision : lineDecision);
   if (subject) {
-    const outline = chooseHumanOutline({pose, width, height, personCount: subject.personCount, labels});
+    if (subject.personCount === 1 && classifyHumanPosture(pose, width, height) === 'sitting') subject.pose = 'sitting';
+    // A random pose must not contradict the action that selected the composition.
+    const outline = subject.personCount > 1 ? chooseHumanOutline({pose, width, height, personCount: subject.personCount, labels}) : undefined;
     if (outline) subject.pose = outline.id;
   }
   let recommendations = recommendFaceCompositions(faces, width, height, pose, mirrored);
   const personCount = subject?.personCount ?? 0;
-  if (!personCount && pet) {
+  if (!personCount && !personHint && pet) {
     const cat = /\bcat\b/i.test(pet.label.text);
     const box = pet.object;
     const scale = Math.min(1, .65 / box.height, .72 / box.width);
@@ -96,11 +106,19 @@ export function buildSubjectRecommendations(input: {
       silhouette: {x: Math.min(2 / 3, 1 - box.width * scale / 2 - .03), y: Math.max(box.height * scale / 2 + .03, Math.min(1 - box.height * scale / 2 - .03, box.y + box.height / 2)), width: box.width * scale, height: box.height * scale}}];
   }
   if (!recommendations.length) {
-    const scene = chooseSceneComposition(labels, 0);
-    if (scene.scene === 'unknown') return [];
-    if (scene.scene === 'pet' && !labels.some(label => /\b(cat|dog)\b/i.test(label.text) && label.confidence >= .65)) return [];
-    recommendations = [{templateIndex: scene.templateIndex, pose: chooseSceneSilhouette(scene.scene, labels), title: scene.title, reason: scene.reason}];
+    if (lineDecision) {
+      recommendations = [{...lineDecision, pose: chooseSceneSilhouette(compositionTarget.scene, labels), showSilhouette: false}];
+    } else if (personHint) {
+      recommendations = [{...personDecision, pose: 'full-body', showSilhouette: false}];
+    } else {
+      const scene = chooseSceneComposition(labels, 0);
+      if (scene.scene === 'unknown' && !input.geometryImage) return [];
+      if (scene.scene === 'pet' && !labels.some(label => /\b(cat|dog)\b/i.test(label.text) && label.confidence >= .65)) return [];
+      recommendations = [{templateIndex: scene.templateIndex, pose: chooseSceneSilhouette(scene.scene, labels), title: scene.title, showSilhouette: false,
+        reason: '未取得明確主線條，暫依場景提供基本建議。' + scene.reason}];
+    }
   }
+  if (!subject && lineDecision) recommendations = [{...recommendations[0], ...lineDecision, showSilhouette: false}];
   const personBounds = subject?.bounds;
   recommendations = recommendations.map((item, index) => {
     if (!subject) return item;
@@ -140,7 +158,7 @@ export function buildSubjectRecommendations(input: {
   }
   const subjectRegions: Box[] = [...(personBounds ? [asRect(personBounds)] : []), ...(pet ? [pet.object] : [])];
   const obstacles = objects.filter(object => object.width * object.height < .75
-    && !subjectRegions.some(subject => overlapArea(object, subject) / Math.max(.001, Math.min(object.width * object.height, subject.width * subject.height)) > .45)
+    && !subjectRegions.some(region => overlapArea(object, region) / Math.max(.001, Math.min(object.width * object.height, region.width * region.height)) > .45)
     && !normalizedFaces.some(face => overlapArea(object, face) / Math.max(.001, face.width * face.height) > .5));
   return recommendations.map(item => {
     if (!item.silhouette) return item;

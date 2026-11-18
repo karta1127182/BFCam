@@ -14,17 +14,17 @@ test('moves a proposed subject away from a detected background region and stays 
   expect(planned.x + planned.width / 2).toBeLessThanOrEqual(1);
 });
 
-test('background selects the target and a face alone does not imply standing or seated posture', () => {
+test('a face alone falls back to centered and does not imply standing or seated posture', () => {
   const recommendations = buildSubjectRecommendations({...input, labels: [{text: 'Mountain', confidence: .9}],
     objects: [{x: .55, y: .1, width: .35, height: .8, labels: [{text: 'Tree', confidence: .9}]}]});
   expect(recommendations.every(item => !getReferencePose(item.pose))).toBe(true);
-  expect(recommendations[0].templateIndex).toBe(3);
-  expect(recommendations[0].silhouette!.x).toBeCloseTo(compositionTemplates[3].silhouette.x);
+  expect(recommendations[0].templateIndex).toBe(1);
+  expect(recommendations[0].silhouette!.x).toBeCloseTo(compositionTemplates[1].silhouette.x);
 });
 
-test('double portraits retain a double silhouette while the background owns the template', () => {
+test('double portraits retain a double silhouette with a centered group target', () => {
   const recommendations = buildSubjectRecommendations({...input, faces: [person, {...person, x: 400}], labels: [{text: 'Mountain', confidence: .9}]});
-  expect(recommendations[0].templateIndex).toBe(3);
+  expect(recommendations[0].templateIndex).toBe(1);
   expect(recommendations.every(item => getReferencePose(item.pose)?.subject === 'couple')).toBe(true);
 });
 
