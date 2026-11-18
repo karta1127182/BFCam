@@ -1,20 +1,19 @@
 import {Pressable, Text, View} from '../../i18n/components';
-import React, {useState} from 'react';
-import {FlatList, ScrollView, StyleSheet} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {AccessibilityInfo, ActivityIndicator, Animated, BackHandler, FlatList, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Aperture, Eye, Grid3X3, Images, PersonStanding, SlidersHorizontal, SwitchCamera, Zap, ZapOff, type LucideIcon} from 'lucide-react-native';
-import {compositionTemplates} from '../../templates';
+import {Aperture, Check, ChevronDown, Ellipsis, Grid3X3, Images, PersonStanding, SwitchCamera, WandSparkles, Zap, ZapOff, type LucideIcon} from 'lucide-react-native';
+import {compositionCategories, templatesForCategory, type CompositionCategoryId} from '../../templates/categories';
 import {GuideRenderer} from '../GuideRenderer/GuideRenderer';
 import {PoseDrawing} from '../Silhouette/Silhouette';
 import {
   selectablePoseCatalog,
   silhouetteCategories,
-  matchesSilhouetteCategory,
-  matchesSilhouettePoseGroup,
   silhouettePoseGroups,
   type SilhouetteCategory,
   type SilhouettePoseGroup,
 } from '../../silhouettes/catalog';
+import {filterPoseCatalog, poseScenes, type PoseSceneId} from '../../silhouettes/poseScenes';
 import {FoodCompositionPicker} from '../FoodComposition/FoodCompositionPicker';
 import type {FoodComposition} from '../../utils/foodComposition';
 import {filters} from '../../filters';
@@ -27,6 +26,8 @@ import type {CompositionTemplate} from '../../types/composition';
 import {colors} from '../../theme';
 
 type Props = {
+  onDockHeight?: (height: number) => void;
+  noticeOffset?: number;
   foodComposition: FoodComposition | null;
   onFoodComposition: (config: FoodComposition) => void;
   cameraReady: boolean;
@@ -125,7 +126,8 @@ type Props = {
 export function CameraControls(
   props: Props,
 ) {
-  const [panel, setPanel] =
+  const [toolsCollapsed, setToolsCollapsed] = useState(false);
+  const [panel, updatePanel] =
     useState<
       | 'scenario'
       | 'composition'
@@ -134,6 +136,32 @@ export function CameraControls(
       | 'filters'
       | null
     >(null);
+
+  const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const panelProgress = useRef(new Animated.Value(1)).current;
+  const shutterScale = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useRef(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(value => {reduceMotion.current = value;}).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', value => {reduceMotion.current = value;});
+    return () => subscription.remove();
+  }, []);
+  useEffect(() => {
+    if (!panel) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {updatePanel(null); return true;});
+    return () => subscription.remove();
+  }, [panel]);
+  const setPanel = (next: typeof panel) => {
+    if (next && next !== panel) {
+      panelProgress.setValue(reduceMotion.current ? 1 : 0);
+      Animated.timing(panelProgress, {toValue: 1, duration: 180, useNativeDriver: true}).start();
+    }
+    updatePanel(next);
+  };
+  const animateShutter = (pressed: boolean) => Animated.timing(shutterScale, {
+    toValue: pressed && !reduceMotion.current ? .92 : 1, duration: 100, useNativeDriver: true,
+  }).start();
+  const panelTitles = {scenario: '拍攝情境', composition: '構圖指南', pose: '姿勢圖鑑', settings: '更多工具', filters: '色彩與濾鏡'};
 
   const [
     silhouetteCategory,
@@ -152,20 +180,21 @@ export function CameraControls(
   const [silhouettePoseGroup, setSilhouettePoseGroup] =
     useState<SilhouettePoseGroup | null>(null);
 
+  const [compositionCategory, setCompositionCategory] = useState<CompositionCategoryId>('all');
+  const visibleTemplates = templatesForCategory(compositionCategory);
+
+  const [poseScene, setPoseScene] = useState<PoseSceneId | null>(null);
+  const sceneFiltersVisible = ['全部', '男', '女', '多人'].includes(silhouetteCategory);
+
   const insets =
     useSafeAreaInsets();
 
-  const categorySilhouettes =
-    silhouetteCategory === '全部'
-      ? selectablePoseCatalog
-      : selectablePoseCatalog.filter(
-          item =>
-            matchesSilhouetteCategory(item, silhouetteCategory),
-        );
-
-  const visibleSilhouettes = silhouettePoseGroup
-    ? categorySilhouettes.filter(item => matchesSilhouettePoseGroup(item, silhouettePoseGroup))
-    : categorySilhouettes;
+  const visibleSilhouettes = filterPoseCatalog(selectablePoseCatalog, silhouetteCategory, silhouettePoseGroup, poseScene);
+  const clearPoseFilters = () => {
+    setSilhouetteCategory('全部');
+    setSilhouettePoseGroup(null);
+    setPoseScene(null);
+  };
 
   const visiblePoseGroups = silhouetteCategory === '男' || silhouetteCategory === '女' || silhouetteCategory === '多人'
     ? silhouettePoseGroups[silhouetteCategory]
@@ -199,6 +228,7 @@ export function CameraControls(
   ) => (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{
         selected,
         disabled,
@@ -217,11 +247,11 @@ export function CameraControls(
   );
 
   const tabButton = (label: string, Icon: LucideIcon, action: () => void, selected = false, disabled = false, smart = false) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected, disabled}} disabled={disabled} onPress={action} style={[styles.tab, disabled && styles.disabled]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected, disabled}} disabled={disabled} onPress={action} style={({pressed}) => [styles.tab, {width: Math.max(48, (windowWidth - insets.left - insets.right - 24) / 6)}, pressed && styles.pressed, disabled && styles.disabled]}>
       <View style={smart ? [styles.smartIconContainer, selected && styles.smartIconActive] : styles.tabIcon}>
       <Icon size={smart ? 20 : 21} color={selected ? colors.primary : colors.textSecondary} strokeWidth={1.8} />
       </View>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.tabLabel, selected && styles.tabLabelActive]}>{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={[styles.tabLabel, selected && styles.tabLabelActive]}>{label}</Text>
       {selected && <View style={styles.activeIndicator} />}
     </Pressable>
   );
@@ -254,7 +284,7 @@ export function CameraControls(
           styles.hint,
           {
             top:
-              insets.top + 12,
+              insets.top + 12 + (props.noticeOffset ?? 0),
               marginLeft: insets.left,
               marginRight: insets.right,
           },
@@ -279,6 +309,7 @@ export function CameraControls(
       </View>
 
       <View
+        onLayout={event => {if (!panel) props.onDockHeight?.(event.nativeEvent.layout.height);}}
         style={[
           styles.dock,
           {
@@ -291,8 +322,23 @@ export function CameraControls(
               ),
           },
         ]}>
-        <View pointerEvents="none" style={styles.dockHandle} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={toolsCollapsed ? '展開工具面板' : '收合工具面板'}
+          accessibilityState={{expanded: !toolsCollapsed}}
+          onPress={() => {setPanel(null); setToolsCollapsed(value => !value);}}
+          style={styles.toolsToggle}>
+          <ChevronDown size={18} color={colors.textSecondary} style={{transform: [{rotate: toolsCollapsed ? '180deg' : '0deg'}]}} />
+          <Text style={styles.toolsToggleLabel}>{toolsCollapsed ? '展開工具面板' : '收合工具面板'}</Text>
+        </Pressable>
 
+        {!toolsCollapsed && <>
+        {panel && <Animated.View style={{opacity: panelProgress, transform: [{translateY: panelProgress.interpolate({inputRange: [0, 1], outputRange: [12, 0]})}]}}>
+          <View style={styles.panelHeader}>
+            <View><Text style={styles.panelEyebrow}>BFCAM STUDIO</Text><Text style={styles.panelTitle}>{panelTitles[panel]}</Text></View>
+            <Pressable accessibilityRole="button" accessibilityLabel="收合面板" onPress={() => setPanel(null)} hitSlop={8} style={styles.closePanel}><ChevronDown size={21} color={colors.textSecondary} /></Pressable>
+          </View>
+          <ScrollView style={{maxHeight: Math.max(120, Math.min(360, windowHeight * .38))}} nestedScrollEnabled showsVerticalScrollIndicator={false}>
         {/* 情境 */}
         {panel === 'scenario' && (
           <ScrollView
@@ -569,6 +615,11 @@ export function CameraControls(
         {/* 構圖 */}
         {panel ===
           'composition' && (
+          <View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryTabs}>
+              {compositionCategories.map(category => <Pressable key={category.id} accessibilityRole="tab" accessibilityLabel={category.label + '構圖分類'} accessibilityState={{selected: compositionCategory === category.id}} onPress={() => setCompositionCategory(category.id)} style={[styles.categoryTab, compositionCategory === category.id && styles.activeCategoryTab]}><Text style={[styles.categoryTabLabel, compositionCategory === category.id && styles.activeCategoryTabLabel]}>{category.label}</Text></Pressable>)}
+            </ScrollView>
+            <Text style={styles.catalogMeta}>{visibleTemplates.length} 款構圖 · 左右滑動選擇</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={
@@ -577,11 +628,7 @@ export function CameraControls(
             contentContainerStyle={
               styles.choices
             }>
-            {compositionTemplates.map(
-              (
-                template,
-                index,
-              ) => (
+            {visibleTemplates.map(({template, index}) => (
                 <Pressable
                   key={
                     template.id
@@ -684,6 +731,7 @@ export function CameraControls(
               ),
             )}
           </ScrollView>
+          </View>
         )}
 
         {/* 輪廓 */}
@@ -710,13 +758,8 @@ export function CameraControls(
                     }}
                     onPress={() => {
                       setSilhouetteCategory(category);
-                      setSilhouettePoseGroup(
-                        category === '男' || category === '女'
-                          ? '坐姿'
-                          : category === '多人'
-                            ? '情侶'
-                            : null,
-                      );
+                      setSilhouettePoseGroup(null);
+                      setPoseScene(null);
                     }}
                     style={[
                       styles.categoryTab,
@@ -744,7 +787,8 @@ export function CameraControls(
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryTabs}>
+                contentContainerStyle={styles.poseGroupTabs}>
+                <Pressable accessibilityRole="tab" accessibilityLabel="全部姿態" accessibilityState={{selected: silhouettePoseGroup === null}} onPress={() => setSilhouettePoseGroup(null)} style={[styles.poseGroupTab, silhouettePoseGroup === null && styles.activePoseGroup]}><Text style={styles.categoryTabLabel}>全部姿態</Text></Pressable>
                 {visiblePoseGroups.map(group => (
                   <Pressable
                     key={group}
@@ -752,7 +796,7 @@ export function CameraControls(
                     accessibilityLabel={`${silhouetteCategory} · ${group}輪廓`}
                     accessibilityState={{selected: silhouettePoseGroup === group}}
                     onPress={() => setSilhouettePoseGroup(group)}
-                    style={[styles.categoryTab, silhouettePoseGroup === group && styles.activeCategoryTab]}>
+                    style={[styles.poseGroupTab, silhouettePoseGroup === group && styles.activePoseGroup]}>
                     <Text style={[styles.categoryTabLabel, silhouettePoseGroup === group && styles.activeCategoryTabLabel]}>
                       {group}
                     </Text>
@@ -761,11 +805,24 @@ export function CameraControls(
               </ScrollView>
             )}
 
+            {sceneFiltersVisible && <View>
+              <Text style={styles.catalogMeta}>適合場景</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.poseSceneTabs}>
+                <Pressable accessibilityRole="tab" accessibilityLabel="全部場景" accessibilityState={{selected: poseScene === null}} onPress={() => setPoseScene(null)} style={[styles.categoryTab, poseScene === null && styles.activeCategoryTab]}><Text style={styles.categoryTabLabel}>全部場景</Text></Pressable>
+                {poseScenes.map(scene => {
+                  const count = filterPoseCatalog(selectablePoseCatalog, silhouetteCategory, silhouettePoseGroup, scene.id).length;
+                  return <Pressable key={scene.id} accessibilityRole="tab" accessibilityLabel={scene.label} accessibilityState={{selected: poseScene === scene.id}} onPress={() => setPoseScene(scene.id)} style={[styles.categoryTab, poseScene === scene.id && styles.activeCategoryTab]}><Text style={[styles.categoryTabLabel, poseScene === scene.id && styles.activeCategoryTabLabel]}>{scene.label} · {count}</Text></Pressable>;
+                })}
+              </ScrollView>
+            </View>}
+            {(poseScene !== null || silhouettePoseGroup !== null) && <Pressable accessibilityRole="button" accessibilityLabel="清除姿勢篩選" onPress={clearPoseFilters} style={styles.clearPoseFilters}><Text style={styles.actionText}>清除姿勢篩選</Text></Pressable>}
             {silhouetteCategory === '美食' && <FoodCompositionPicker value={props.foodComposition} onChange={props.onFoodComposition} />}
+            {silhouetteCategory !== '美食' && <Text style={styles.catalogMeta}>{visibleSilhouettes.length} 款姿勢 · 左右滑動選擇</Text>}
             {silhouetteCategory !== '美食' && <FlatList
-              key={`${silhouetteCategory}:${silhouettePoseGroup ?? 'all'}`}
+              key={`${silhouetteCategory}:${silhouettePoseGroup ?? 'all'}:${poseScene ?? 'all'}`}
               horizontal
               data={visibleSilhouettes}
+              ListEmptyComponent={<Text style={styles.emptyPoses}>沒有符合的姿勢，請切換場景或清除篩選。</Text>}
               extraData={props.template.silhouette.variant}
               keyExtractor={pose => pose.id}
               showsHorizontalScrollIndicator={false}
@@ -804,6 +861,7 @@ export function CameraControls(
                         pose.id &&
                         styles.selected,
                     ]}>
+                    {props.template.silhouette.variant === pose.id && <View style={styles.poseCheck}><Check size={12} color={colors.background} strokeWidth={3} /></View>}
                     <View
                       style={
                         styles.thumbnail
@@ -889,6 +947,20 @@ export function CameraControls(
               !props.silhouetteVisible,
             )}
 
+
+          </View>
+        )}
+
+          </ScrollView>
+        </Animated.View>}
+
+        {/* Keep outline editing reachable without opening a tools panel. */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickAdjust}>
+          {button(props.silhouetteLocked ? '調整輪廓' : '完成調整', () => {
+            setPanel(null);
+            props.onToggleSilhouetteLock();
+          }, !props.silhouetteLocked, !props.silhouetteVisible)}
+          {!props.silhouetteLocked && <>
             {button(
               '左轉 15°',
               () =>
@@ -915,8 +987,8 @@ export function CameraControls(
               false,
               !props.silhouetteVisible,
             )}
-          </View>
-        )}
+          </>}
+        </ScrollView>
 
         {/* 主選單 */}
         <ScrollView
@@ -954,7 +1026,7 @@ export function CameraControls(
           )}
 
           {tabButton(
-            '輪廓', PersonStanding,
+            '姿勢', PersonStanding,
             () =>
               setPanel(
                 panel === 'pose'
@@ -994,32 +1066,11 @@ export function CameraControls(
             true,
           )}
 
-          {tabButton(
-            '顯示', Eye,
-            () =>
-              setPanel(
-                panel ===
-                  'settings'
-                  ? null
-                  : 'settings',
-              ),
-            panel === 'settings',
-          )}
-
-          {tabButton(
-            props.silhouetteLocked
-              ? '調整'
-              : '完成',
-            SlidersHorizontal,
-
-            props.onToggleSilhouetteLock,
-
-            !props.silhouetteLocked,
-
-            !props.silhouetteVisible,
-          )}
+          {tabButton('濾鏡', WandSparkles, () => setPanel(panel === 'filters' ? null : 'filters'), panel === 'filters')}
+          {tabButton('更多', Ellipsis, () => setPanel(panel === 'settings' ? null : 'settings'), panel === 'settings')}
         </ScrollView>
 
+        <View style={styles.zoomControls}>
         <Text
           accessibilityLabel={`Zoom ${(props.zoomLevel * props.zoomDisplayFactor).toFixed(1)}x`}
           style={styles.currentZoom}>
@@ -1034,7 +1085,7 @@ export function CameraControls(
                 accessibilityState={{selected: props.ultraWideActive, disabled: !props.cameraReady || props.isCapturing}}
                 disabled={!props.cameraReady || props.isCapturing}
                 onPress={props.onToggleUltraWide}
-                style={styles.zoomPreset}>
+                style={({pressed}) => [styles.zoomPreset, pressed && styles.pressed]}>
                 <Text style={[styles.zoomPresetText, props.ultraWideActive && styles.zoomPresetTextActive]}>{'\u8d85\u5ee3\u89d2'}</Text>
               </Pressable>
               <Text style={styles.zoomSeparator}>•••</Text>
@@ -1061,6 +1112,9 @@ export function CameraControls(
           })}
         </View>
 
+        </View>
+
+        </>}
         {/* 快門 */}
         <View
           style={
@@ -1074,7 +1128,10 @@ export function CameraControls(
             !props.canUseFlash,
           )}
 
+          <Animated.View style={{transform: [{scale: shutterScale}]}}>
           <Pressable
+            onPressIn={() => animateShutter(true)}
+            onPressOut={() => animateShutter(false)}
             accessibilityRole="button"
             accessibilityLabel="拍照"
             accessibilityState={{
@@ -1096,12 +1153,9 @@ export function CameraControls(
                 !props.cameraReady) &&
                 styles.disabled,
             ]}>
-            <View
-              style={
-                styles.shutterInner
-              }
-            />
+            <View style={styles.shutterInner}>{props.isCapturing && <ActivityIndicator color={colors.background} />}</View>
           </Pressable>
+          </Animated.View>
 
           {cameraAction(
             '翻轉', SwitchCamera,
@@ -1124,7 +1178,7 @@ const styles =
       right: 0,
 
       backgroundColor:
-        'rgba(15,19,23,0.98)',
+        colors.surface,
 
       paddingTop: 10,
 
@@ -1132,14 +1186,33 @@ const styles =
       borderTopRightRadius: 24,
 
       borderTopWidth: 1,
-      borderColor: 'rgba(215,185,120,0.18)',
+      borderColor: colors.border,
       shadowColor: '#000',
-      shadowOpacity: .6,
+      shadowOpacity: .18,
       shadowRadius: 20,
-      elevation: 22,
+      elevation: 5,
     },
 
-    dockHandle: {alignSelf: 'center', width: 34, height: 3, marginBottom: 3, borderRadius: 2, backgroundColor: 'rgba(215,185,120,0.45)'},
+    poseSceneTabs: {gap: 8, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 4},
+    clearPoseFilters: {minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 20},
+    actionText: {color: colors.primarySoft, fontSize: 12},
+    emptyPoses: {color: colors.textSecondary, padding: 12, fontSize: 13},
+
+    quickAdjust: {flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingBottom: 4},
+
+    toolsToggle: {alignSelf: 'center', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18},
+    toolsToggleLabel: {color: colors.textSecondary, fontSize: 12, fontWeight: '600'},
+    panelHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12},
+    panelEyebrow: {color: colors.textMuted, fontSize: 12, letterSpacing: 1.5, fontWeight: '600'},
+    panelTitle: {color: colors.text, fontSize: 20, fontWeight: '700', marginTop: 4},
+    closePanel: {width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card},
+    pressed: {opacity: .65},
+    zoomControls: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 3, gap: 8},
+    catalogMeta: {fontSize: 12, color: colors.textMuted, paddingHorizontal: 20, paddingTop: 12},
+    poseGroupTabs: {paddingHorizontal: 18, paddingTop: 10, gap: 8},
+    poseGroupTab: {minHeight: 36, paddingHorizontal: 13, justifyContent: 'center', borderBottomWidth: 2, borderColor: 'transparent'},
+    activePoseGroup: {borderColor: colors.primary},
+    poseCheck: {position: 'absolute', top: 10, right: 10, zIndex: 1, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center'},
 
     hint: {
       position: 'absolute',
@@ -1172,7 +1245,7 @@ const styles =
       gap: 5,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: '#394149',
+      borderColor: colors.border,
       backgroundColor: '#202830',
     },
 
@@ -1192,15 +1265,15 @@ const styles =
 
     percentText: {
       color: '#fff0cf',
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '700',
     },
 
     tabs: {
       flexDirection: 'row',
-      paddingHorizontal: 8,
+      paddingHorizontal: 12,
       paddingVertical: 6,
-      gap: 2,
+      gap: 0,
     },
 
     tab: {
@@ -1212,7 +1285,7 @@ const styles =
     },
 
     tabIcon: {height: 24, alignItems: 'center', justifyContent: 'center'},
-    tabLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
+    tabLabel: {color: '#AAB2B9', fontSize: 12, fontWeight: '500'},
     tabLabelActive: {color: '#FFF0CF', fontWeight: '700'},
     activeIndicator: {position: 'absolute', bottom: 0, width: 18, height: 2, borderRadius: 2, backgroundColor: '#D7B978', shadowColor: '#D7B978', shadowOpacity: .65, shadowRadius: 4},
     smartIconContainer: {width: 32, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(215,185,120,0.10)', borderWidth: 1, borderColor: 'rgba(215,185,120,0.28)'},
@@ -1230,9 +1303,9 @@ const styles =
     },
 
     cameraAction: {width: 70, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8},
-    cameraActionLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
+    cameraActionLabel: {color: '#AAB2B9', fontSize: 12, fontWeight: '500'},
 
-    currentZoom: {alignSelf: 'center', color: '#FFD43B', fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'], backgroundColor: 'rgba(0,0,0,.48)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4},
+    currentZoom: {alignSelf: 'center', color: colors.primarySoft, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'], backgroundColor: 'rgba(0,0,0,.48)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4},
 
     zoomRow: {
       minHeight: 36,
@@ -1246,9 +1319,9 @@ const styles =
       backgroundColor: 'rgba(0,0,0,.48)',
     },
 
-    zoomPreset: {minWidth: 29, minHeight: 26, alignItems: 'center', justifyContent: 'center'},
+    zoomPreset: {minWidth: 34, minHeight: 44, alignItems: 'center', justifyContent: 'center'},
     zoomPresetText: {color: '#FFFFFF', fontSize: 13, fontWeight: '600', textShadowColor: 'rgba(0,0,0,.85)', textShadowRadius: 3},
-    zoomPresetTextActive: {color: '#FFD43B', fontWeight: '800'},
+    zoomPresetTextActive: {color: colors.primarySoft, fontWeight: '800'},
     zoomSeparator: {color: 'rgba(255,255,255,.48)', fontSize: 8, letterSpacing: 3, marginHorizontal: 4},
 
     choices: {
@@ -1274,7 +1347,7 @@ const styles =
       borderRadius: 16,
 
       backgroundColor:
-        '#242c33',
+        colors.card,
 
       borderWidth: 1,
       borderColor: '#394149',
@@ -1282,7 +1355,7 @@ const styles =
 
     activeCategoryTab: {
       backgroundColor:
-        '#5a4930',
+        colors.primaryMuted,
 
       borderColor: '#d8bc86',
     },
@@ -1307,7 +1380,7 @@ const styles =
     },
 
     card: {
-      width: 94,
+      width: 106,
 
       alignItems: 'center',
 
@@ -1319,7 +1392,7 @@ const styles =
       borderColor: 'rgba(255,255,255,0.08)',
 
       backgroundColor:
-        'rgba(28,34,39,0.92)',
+        colors.surfaceElevated,
     },
 
     scenarioCard: {
@@ -1334,7 +1407,7 @@ const styles =
       borderColor: 'rgba(255,255,255,0.08)',
 
       backgroundColor:
-        'rgba(28,34,39,0.92)',
+        colors.surfaceElevated,
 
       justifyContent:
         'space-between',
@@ -1358,19 +1431,22 @@ const styles =
 
     scenarioMeta: {
       color: '#9faab2',
-      fontSize: 11,
+      fontSize: 12,
     },
 
     thumbnail: {
-      width: 66,
-      height: 94,
+      width: 86,
+      height: 110,
+      padding: 8,
+      borderRadius: 12,
+      backgroundColor: colors.background,
 
       marginBottom: 8,
     },
 
     compositionThumbnail: {
-      width: 76,
-      height: 94,
+      width: 86,
+      height: 110,
 
       marginBottom: 8,
 
@@ -1490,12 +1566,14 @@ const styles =
       padding: 5,
       backgroundColor: 'rgba(255,255,255,0.08)',
       shadowColor: '#FFFFFF',
-      shadowOpacity: .22,
+      shadowOpacity: .08,
       shadowRadius: 9,
-      elevation: 7,
+      elevation: 2,
     },
 
     shutterInner: {
+      alignItems: 'center',
+      justifyContent: 'center',
       flex: 1,
 
       borderRadius: 34,

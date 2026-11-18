@@ -8,6 +8,8 @@ import React, {
   useState,
 } from 'react';
 import type {PhotoGeometry, RetouchSettings} from '../../filters';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Check} from 'lucide-react-native';
 import {colors, radii} from '../../theme';
 import {saveEditedPhoto} from '../../filters/saveFilteredPhoto';
 import {
@@ -50,15 +52,26 @@ import {
   detectImageLabels,
   detectSceneObjects,
   detectPose,
+  sampleGeometry,
   type NormalizedPose,
 } from '../../utils/poseDetection';
 import {compositionGuidance, mirrorFaceBounds} from '../../utils/sceneComposition';
 import {buildSubjectRecommendations} from '../../utils/subjectComposition';
+import {PoseCoaching} from '../../components/PoseCoaching/PoseCoaching';
 import {SmartCompositionHint} from '../../components/SmartCompositionHint/SmartCompositionHint';
 import {createSmartCompositionResetState, createSmartCompositionRuntime, resetSmartCompositionRuntime} from '../../utils/smartCompositionState';
 import {compositionPlacementForPose} from '../../utils/posePlacement';
 
 export function CameraScreen() {
+  const insets = useSafeAreaInsets();
+  const [dockHeight, setDockHeight] = useState(212);
+  const [bannerHeight, setBannerHeight] = useState(insets.top + 41);
+  const [saveNotice, setSaveNotice] = useState(false);
+  useEffect(() => {
+    if (!saveNotice) return;
+    const timer = setTimeout(() => setSaveNotice(false), 2600);
+    return () => clearTimeout(timer);
+  }, [saveNotice]);
   const trial = usePremiumTrial();
   const {requireAccess, recordExport} = trial;
   const pendingSmartPhoto = useRef(false);
@@ -414,8 +427,8 @@ export function CameraScreen() {
       x: silhouetteAnchor.x,
       y: silhouetteAnchor.y,
 
-      height: smartSilhouetteSize?.height ?? selectedPose.height,
-      width: smartSilhouetteSize?.width ?? selectedPose.width,
+      height: smartSilhouetteSize?.height ?? selectedPose.height * (baseTemplate.subjectScale ?? 1),
+      width: smartSilhouetteSize?.width ?? selectedPose.width * (baseTemplate.subjectScale ?? 1),
 
       rotation: normalizeRotation(
         (baseTemplate.silhouette.rotation ?? 0) +
@@ -425,6 +438,22 @@ export function CameraScreen() {
 
     description: `${baseTemplate.description} ${selectedPose.hint}`,
   };
+
+  // Shares the capture lock with shutter and smart composition; never exports these samples.
+  const checkCoachingPose = useCallback(async () => {
+    if (!readyRef.current || captureLock.current) return undefined;
+    captureLock.current = true;
+    try {
+      const photo = await photoOutput.capturePhoto({flashMode: 'off'}, {});
+      try {
+        const image = await photo.toImageAsync();
+        try {
+          const path = await image.saveToTemporaryFileAsync('jpg', 85);
+          return await detectPose(path);
+        } finally {image.dispose();}
+      } finally {photo.dispose();}
+    } finally {captureLock.current = false;}
+  }, [photoOutput]);
 
   /**
    * 拍照
@@ -561,10 +590,9 @@ export function CameraScreen() {
         pendingSmartPhoto.current = false;
         setPendingPhotoPath(null);
 
-        Alert.alert(
-          '拍攝完成',
-          trialRecordFailed ? '照片已儲存到 BFCam 相簿，但體驗紀錄未能保存；請重新讀取紀錄後再使用 Pro 功能。' : '編輯後的照片已儲存到 BFCam 相簿。',
-        );
+        if (trialRecordFailed) {
+          Alert.alert('拍攝完成', '照片已儲存到 BFCam 相簿，但體驗紀錄未能保存；請重新讀取紀錄後再使用 Pro 功能。');
+        } else setSaveNotice(true);
       } catch (error) {
         Alert.alert(
           '無法儲存',
@@ -678,6 +706,7 @@ export function CameraScreen() {
             poseResult,
             labelsResult,
             objectsResult,
+            geometryResult,
           ] = await Promise.allSettled([
             imageFaceDetector.detectFaces(
               `file://${path}`,
@@ -690,6 +719,7 @@ export function CameraScreen() {
               `file://${path}`,
             ),
             detectSceneObjects(`file://${path}`),
+            sampleGeometry(`file://${path}`),
           ]);
 
           if (requestId !== smartAnalysisRequestRef.current) return;
@@ -718,6 +748,7 @@ export function CameraScreen() {
           const nextRecommendations = buildSubjectRecommendations({
             faces: bounds, width: oriented.width, height: oriented.height,
             pose: nextPose, labels, objects: objectDetection.objects, mirrored: position === 'front',
+            geometryImage: geometryResult.status === 'fulfilled' ? geometryResult.value : null,
           });
 
           const normalizedFaces = normalizeFaceBounds(
@@ -733,7 +764,7 @@ export function CameraScreen() {
           const displayFaces = position === 'front' ? mirrorFaceBounds(normalizedFaces) : normalizedFaces;
           setSmartHint(normalizedFaces.length || nextPose
             ? nextRecommendations[0]?.pose.startsWith('person-with-') ? '人物與寵物依輪廓並排入鏡，確認兩者都完整可見' : compositionGuidance(displayFaces, nextPose, nextRecommendations[0]?.silhouette)
-            : '已套用主題輪廓，請依輪廓安排主體後拍攝');
+            : nextRecommendations[0]?.showSilhouette === false ? '已套用構圖參考線，請依主要線條調整取景' : '已套用主題輪廓，請依輪廓安排主體後拍攝');
           smartCompositionRuntimeRef.current.hintHistory = [];
 
           setRecommendations(
@@ -756,7 +787,7 @@ export function CameraScreen() {
             }
             setSilhouetteRotationOffset(0);
             setGuideVisible(true);
-            setSilhouetteVisible(true);
+            setSilhouetteVisible(best.showSilhouette !== false);
             setSilhouetteResetKey(value => value + 1);
           }
 
@@ -994,8 +1025,8 @@ export function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      {trialPanel}
-      <View style={styles.viewfinder}>
+      <View onLayout={event => setBannerHeight(event.nativeEvent.layout.height)}>{trialPanel}</View>
+      <View style={[styles.viewfinder, {top: bannerHeight + 8, left: insets.left + 8, right: insets.right + 8, bottom: dockHeight + 8}]}>
         <View
           style={styles.cameraFill}
           pointerEvents={
@@ -1057,7 +1088,7 @@ export function CameraScreen() {
           smartCompositionRuntimeRef.current.liveSilhouette = recommendation.silhouette ?? null;
           smartCompositionRuntimeRef.current.hintHistory = [];
           setSilhouetteLocked(true);
-          setSmartHint('已套用建議，請依輪廓安排主體');
+          setSmartHint(recommendation.showSilhouette === false ? '已套用構圖參考線，請依主要線條調整取景' : '已套用建議，請依輪廓安排主體');
           const recommendedTemplate = compositionTemplates[recommendation.templateIndex];
           setSilhouetteAnchor({x: recommendedTemplate.silhouette.x, y: recommendedTemplate.silhouette.y});
           if (recommendation.silhouette) {
@@ -1078,7 +1109,7 @@ export function CameraScreen() {
            * 確保框線與輪廓顯示。
            */
           setGuideVisible(true);
-          setSilhouetteVisible(true);
+          setSilhouetteVisible(recommendation.showSilhouette !== false);
 
           /**
            * 套用完成後，
@@ -1101,13 +1132,22 @@ export function CameraScreen() {
         }}
         />
 
-        <SmartCompositionHint
-          text={smartCompositionActive ? `${selectedPose.name} · ${smartHint}` : ''}
+        {silhouetteVisible && !foodComposition && selectedPose.category === '人物' ? <PoseCoaching
+          key={pose + ':' + silhouetteResetKey + ':' + position}
+          pose={selectedPose}
+          checkPose={checkCoachingPose}
+          hint={smartCompositionActive ? smartHint : undefined}
+          notice={smartCompositionActive ? sceneDetectionNotice : undefined}
+        /> : <SmartCompositionHint
+          text={smartCompositionActive ? silhouetteVisible ? `${selectedPose.name} · ${smartHint}` : smartHint : ''}
           notice={smartCompositionActive ? sceneDetectionNotice : ''}
-        />
+        />}
       </View>
 
+      {saveNotice && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.saveNotice, {top: bannerHeight + 24}]}><Check size={18} color={colors.success} /><Text style={styles.saveNoticeText}>已儲存至 BFCam 相簿</Text></View>}
       <CameraControls
+        onDockHeight={setDockHeight}
+        noticeOffset={bannerHeight - insets.top + 8}
         foodComposition={foodComposition}
         onFoodComposition={config => {
           setFoodComposition(normalizeFoodComposition(config));
@@ -1305,6 +1345,8 @@ export function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
+  saveNotice: {position: 'absolute', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 18, paddingVertical: 13, borderRadius: 24, backgroundColor: colors.overlay, zIndex: 50},
+  saveNoticeText: {color: colors.text, fontSize: 14, fontWeight: '600'},
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -1317,14 +1359,14 @@ const styles = StyleSheet.create({
     right: 8,
     bottom: 230,
     overflow: 'hidden',
-    borderRadius: radii.xlarge,
+    borderRadius: radii.large,
     borderWidth: 1,
     borderColor: colors.borderStrong,
     backgroundColor: '#050607',
     shadowColor: '#000',
-    shadowOpacity: .5,
+    shadowOpacity: .12,
     shadowRadius: 18,
-    elevation: 8,
+    elevation: 2,
   },
 
   cameraFill: {

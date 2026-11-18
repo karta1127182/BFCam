@@ -1,10 +1,10 @@
-import {Pressable, Text, View} from '../../i18n/components';
+import {Alert, Pressable, Text, View} from '../../i18n/components';
 import {oneTapBeautyValues, type BeautyLevel} from '../../utils/oneTapBeauty';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {PanResponder, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
+import {AccessibilityInfo, LayoutAnimation, PanResponder, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
 import {Canvas, Circle, ColorMatrix, FillType, Group, Image as SkiaImage, Line, Paint, RoundedRect, RuntimeShader, Skia, useImage} from '@shopify/react-native-skia';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Crop, Redo2, RotateCcw, SlidersHorizontal, Sparkles, Undo2, WandSparkles, type LucideIcon} from 'lucide-react-native';
+import {Crop, Ellipsis, Redo2, SlidersHorizontal, Sparkles, Undo2, WandSparkles, type LucideIcon} from 'lucide-react-native';
 import {useImageFaceDetector} from 'react-native-vision-camera-face-detector';
 import {darkCircleMatrix, cropAspectRatio, editMatrix, filterMatrix, filters, fitAspectWithin, identity, initialAdjustments, initialGeometry, initialRetouch, localizedBrightnessMatrix, localizedRosyMatrix, type CropAspect, type FaceRegion, type HealSpot, type ManualBrushStroke, type ManualBrushTool, type ManualWarpStroke, type ManualWarpTool, type PhotoAdjustments, type PhotoGeometry, type RetouchPoint, type RetouchSettings, type SkinMask} from '../../filters';
 import {faceReshapeEffect, faceReshapeUniforms} from '../../filters/faceReshape';
@@ -56,7 +56,19 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   const [edit, setEdit] = useState(initialState);
   const [undoStack, setUndoStack] = useState<EditState[]>([]);
   const [redoStack, setRedoStack] = useState<EditState[]>([]);
-  const [section, setSection] = useState<'filters' | 'retouch' | 'adjust' | 'crop'>('filters');
+  const [section, updateSection] = useState<'filters' | 'retouch' | 'adjust' | 'crop'>('filters');
+  const reduceMotion = useRef(false);
+  const [moreVisible, setMoreVisible] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(value => {reduceMotion.current = value;}).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', value => {reduceMotion.current = value;});
+    return () => subscription.remove();
+  }, []);
+  const setSection = (next: typeof section) => {
+    if (!reduceMotion.current) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setMoreVisible(false);
+    updateSection(next);
+  };
   const [faceAnalysis, setFaceAnalysis] = useState<'detecting' | 'ready' | 'empty' | 'error'>('detecting');
   const [retouchFaces, setRetouchFaces] = useState<RetouchFace[]>([]);
   const [selectedFaceIndex, setSelectedFaceIndex] = useState(0);
@@ -107,7 +119,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
   useEffect(() => {if (editZoom <= 1) setEditPan({x: 0, y: 0});}, [editZoom]);
   const {filterIndex, strength, adjustments, geometry} = edit;
   const matrix = useMemo(() => editMatrix(filterIndex, strength, adjustments), [adjustments, filterIndex, strength]);
-  const previewHeight = Math.max(190, height - 370 - insets.top - insets.bottom - (trialPanel ? 41 : 0));
+  const [previewHeight, setPreviewHeight] = useState(Math.max(120, height - 390 - insets.top - insets.bottom));
   const sourceAspect = image ? image.width() / image.height() : width / previewHeight;
   const rotatedSourceAspect = geometry.rotation % 180 === 0 ? sourceAspect : 1 / sourceAspect;
   const cropPreview = fitAspectWithin(Math.max(0, width - 20), Math.max(0, previewHeight - 12), cropAspectRatio(geometry.cropAspect, rotatedSourceAspect));
@@ -303,7 +315,11 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     onPanResponderTerminate: () => {pinchStart.current.distance = 0; setBrushCursor(null); draftBrushRef.current = null; setDraftBrush(null); strokeStart.current = null; draftWarpRef.current = null; setDraftWarp(null);},
     onPanResponderTerminationRequest: () => false,
   }), [commit, edit, geometry.mirrored, geometry.rotation, healBrushSize, healSource, image, manualBrushSize, manualStrength, pickingHealSource, previewCanvasHeight, previewCanvasWidth, previewMapping, retouchTool, screenToSource]);
-  const button = (label: string, onPress: () => void, selected = false, disabled = false) => <Pressable accessibilityRole="button" accessibilityState={{selected, disabled}} disabled={disabled} onPress={onPress} style={[styles.button, selected && styles.selected, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></Pressable>;
+  const resetEdits = () => Alert.alert('重設編輯', '將移除目前的修圖效果，可使用復原還原。', [
+    {text: '取消', style: 'cancel'}, {text: '重設', style: 'destructive', onPress: () => {commit(initialState); setMoreVisible(false);}},
+  ]);
+  const historyAction = (label: string, Icon: LucideIcon, action: () => void, disabled = false) => <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{disabled}} disabled={disabled} hitSlop={4} onPress={action} style={({pressed}) => [styles.historyButton, pressed && styles.pressed, disabled && styles.disabled]}><Icon size={19} color={colors.text} strokeWidth={1.8} /></Pressable>;
+  const button = (label: string, onPress: () => void, selected = false, disabled = false) => <Pressable accessibilityRole="button" accessibilityState={{selected, disabled}} disabled={disabled} onPress={onPress} style={({pressed}) => [styles.button, selected && styles.selected, pressed && styles.pressed, disabled && styles.disabled]}><Text style={styles.buttonText}>{label}</Text></Pressable>;
   const editorTab = (label: string, Icon: LucideIcon, onPress: () => void, selected = false, disabled = false) => <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected, disabled}} disabled={disabled} onPress={onPress} style={[styles.editorTab, disabled && styles.disabled]}><Icon size={20} color={selected ? '#D7B978' : '#AAB2B9'} strokeWidth={1.8} /><Text style={[styles.editorTabLabel, selected && styles.editorTabLabelActive]}>{label}</Text>{selected && <View style={styles.editorIndicator} />}</Pressable>;
   const retouchToolCard = (tool: RetouchTool, label: string, description: string, enabled = true) => <Pressable accessibilityRole="button" accessibilityState={{selected: retouchTool === tool, disabled: !enabled}} accessibilityHint={enabled ? `選擇${label}工具` : `${label}需要更完整的臉部定位`} disabled={!enabled} onPress={() => setRetouchTool(tool)} style={[styles.retouchToolCard, retouchTool === tool && styles.retouchToolCardActive, !enabled && styles.disabled]}><Text style={[styles.retouchToolName, retouchTool === tool && styles.retouchToolNameActive]}>{label}</Text><Text style={styles.retouchToolDescription}>{enabled ? description : '目前照片不可用'}</Text></Pressable>;
   const activeManualCount = brushTool(retouchTool) ? edit.brushStrokes.filter(stroke => stroke.tool === brushTool(retouchTool)).length : warpTool(retouchTool) ? edit.warpStrokes.filter(stroke => stroke.tool === warpTool(retouchTool)).length : edit.healSpots.length;
@@ -359,7 +375,7 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       </View>
     </View>
     {trialPanel}
-    <View style={[styles.preview, {width, height: previewHeight}]}>
+    <View onLayout={event => setPreviewHeight(Math.max(1, event.nativeEvent.layout.height))} style={[styles.preview, {width}]}>
     <View style={[styles.cropPreview, {width: cropPreview.width, height: cropPreview.height}]}>
     <Canvas style={{width: previewCanvasWidth, height: previewCanvasHeight, transform: [{translateX: editPan.x}, {translateY: editPan.y}, {scale: editZoom}, {rotate: `${geometry.rotation}deg`}, {scaleX: geometry.mirrored ? -1 : 1}]}}>
       <Group layer={!comparing && hasPreviewReshape && faceReshapeEffect ? <Paint><RuntimeShader source={faceReshapeEffect} uniforms={previewReshapeUniforms} /></Paint> : undefined}>
@@ -393,13 +409,17 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
     {section === 'retouch' && <View accessibilityRole="adjustable" accessibilityLabel="手動修容畫布，單指使用工具，雙指縮放與移動" accessibilityValue={{min: 100, max: 500, now: Math.round(editZoom * 100), text: `${editZoom.toFixed(1)} 倍`}} accessibilityActions={[{name: 'increment', label: '放大'}, {name: 'decrement', label: '縮小'}]} onAccessibilityAction={event => setEditZoom(current => clampEditorZoom(current + (event.nativeEvent.actionName === 'increment' ? .5 : -.5)))} style={StyleSheet.absoluteFill} {...healGesture.panHandlers} />}
     </View>
     </View>
+    <View style={styles.historyRow}>
+      <View style={styles.historyActions}>{historyAction('復原', Undo2, undo, !undoStack.length)}{historyAction('重做', Redo2, redo, !redoStack.length)}</View>
+      {moreVisible ? <View style={styles.moreActions}>{button('重設全部', resetEdits)}{historyAction('收合更多', Ellipsis, () => setMoreVisible(false))}</View> : historyAction('更多編輯選項', Ellipsis, () => setMoreVisible(true))}
+    </View>
     <View style={styles.compareRow}>
       <View style={styles.statusPill}><Text style={styles.status}>{filters[filterIndex].name} · {Math.round(strength * 100)}%</Text></View>
       <Pressable accessibilityRole="button" onPressIn={() => setComparing(true)} onPressOut={() => setComparing(false)} style={styles.compare}><Text style={styles.buttonText}>按住比較原圖</Text></Pressable>
     </View>
     {section === 'filters' ? <View style={styles.filterTools}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>{categories.map(item => <Pressable key={item} accessibilityRole="tab" accessibilityState={{selected: category === item}} onPress={() => setCategory(item)} style={[styles.category, category === item && styles.selected]}><Text style={styles.buttonText}>{item}</Text></Pressable>)}</ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.filters}>{visibleFilters.map(filter => {const index = filters.indexOf(filter); return <Pressable key={filter.name} accessibilityRole="button" accessibilityState={{selected: filterIndex === index}} onPress={() => commit({...edit, filterIndex: index})} style={[styles.filterCard, filterIndex === index && styles.selected]}><View style={styles.filterSwatch}>{image ? <Canvas style={StyleSheet.absoluteFill}>{<SkiaImage image={image} x={0} y={0} width={50} height={36} fit="cover"><ColorMatrix matrix={filterMatrix(index, strength)} /></SkiaImage>}</Canvas> : <Text style={styles.filterPlaceholder}>{filter.name.slice(0, 1)}</Text>}</View><Text style={styles.buttonText}>{filter.name}</Text></Pressable>;})}</ScrollView>
+      <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.filters}>{visibleFilters.map(filter => {const index = filters.indexOf(filter); return <Pressable key={filter.name} accessibilityRole="button" accessibilityState={{selected: filterIndex === index}} onPress={() => commit({...edit, filterIndex: index})} style={[styles.filterCard, filterIndex === index && styles.selected]}><View style={styles.filterSwatch}>{image ? <Canvas style={StyleSheet.absoluteFill}>{<SkiaImage image={image} x={0} y={0} width={64} height={48} fit="cover"><ColorMatrix matrix={filterMatrix(index, strength)} /></SkiaImage>}</Canvas> : <Text style={styles.filterPlaceholder}>{filter.name.slice(0, 1)}</Text>}</View><Text style={styles.buttonText}>{filter.name}</Text></Pressable>;})}</ScrollView>
       <View style={styles.strengthControl}>
         <Text style={styles.adjustValue}>濾鏡強度 {Math.round(strength * 100)}%</Text>
         <View
@@ -449,27 +469,29 @@ export function EditorScreen({path, saving, sharing, initialFilterIndex, initial
       {(['original', '1:1', '4:3', '3:2', '9:16'] as CropAspect[]).map(aspect => <View key={aspect}>{button(aspect === 'original' ? '原始比例' : aspect, () => commit({...edit, geometry: {...geometry, cropAspect: aspect}}), geometry.cropAspect === aspect)}</View>)}
     </View>}
     <View style={[styles.bottomTabs, {paddingBottom: Math.max(insets.bottom, 10)}]}>
-      {editorTab('復原', Undo2, undo, false, !undoStack.length)}
-      {editorTab('重做', Redo2, redo, false, !redoStack.length)}
       {editorTab('濾鏡', WandSparkles, () => setSection('filters'), section === 'filters')}
-      {editorTab('修容', Sparkles, () => setSection('retouch'), section === 'retouch')}
+      {editorTab('修顏', Sparkles, () => setSection('retouch'), section === 'retouch')}
       {editorTab('調整', SlidersHorizontal, () => setSection('adjust'), section === 'adjust')}
       {editorTab('裁切', Crop, () => setSection('crop'), section === 'crop')}
-      {editorTab('重設', RotateCcw, () => commit(initialState))}
     </View>
   </View>;
 }
 
 const styles = StyleSheet.create({
+  pressed: {opacity: .65},
+  historyRow: {paddingHorizontal: 14, paddingTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  historyActions: {flexDirection: 'row', gap: 6},
+  historyButton: {width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center'},
+  moreActions: {flexDirection: 'row', alignItems: 'center', gap: 6},
   container: {flex: 1, backgroundColor: colors.background},
-  preview: {overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background},
-  cropPreview: {overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderRadius: radii.large, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: '#000', shadowColor: '#000', shadowOpacity: .5, shadowRadius: 18, elevation: 9},
-  header: {height: 68, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: colors.border},
+  preview: {flex: 1, minHeight: 100, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background},
+  cropPreview: {overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderRadius: radii.large, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: '#000', shadowColor: '#000', shadowOpacity: .12, shadowRadius: 8, elevation: 2},
+  header: {minHeight: 64, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: colors.border},
   headerActions: {flexDirection: 'row', alignItems: 'center', gap: 7},
   headerTitle: {alignItems: 'center'},
-  headerEyebrow: {color: colors.primary, fontSize: 8, fontWeight: '800', letterSpacing: 1.4},
-  title: {color: colors.text, fontSize: 16, fontWeight: '800', letterSpacing: .3, marginTop: 1},
-  button: {backgroundColor: colors.card, borderRadius: radii.medium, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.border},
+  headerEyebrow: {color: colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.4},
+  title: {color: colors.text, fontSize: 16, fontWeight: '700', letterSpacing: .3, marginTop: 1},
+  button: {minHeight: 40, justifyContent: 'center', backgroundColor: colors.card, borderRadius: radii.medium, paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderColor: 'transparent'},
   buttonText: {color: colors.text, fontSize: 12, fontWeight: '600'},
   selected: {backgroundColor: colors.primaryMuted, borderColor: colors.primary},
   disabled: {opacity: .4},
@@ -478,11 +500,11 @@ const styles = StyleSheet.create({
   status: {color: colors.textSecondary, fontSize: 12},
   statusPill: {paddingHorizontal: 11, paddingVertical: 6, borderRadius: radii.pill, backgroundColor: 'rgba(255,255,255,0.055)'},
   categories: {gap: 7, paddingHorizontal: 14, paddingVertical: 7},
-  category: {paddingHorizontal: 12, paddingVertical: 7, borderRadius: 15, backgroundColor: '#20262C', borderWidth: 1, borderColor: '#343C43'},
+  category: {paddingHorizontal: 14, paddingVertical: 9, borderRadius: 18, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: 'transparent'},
   filters: {gap: 9, paddingHorizontal: 14, paddingVertical: 7},
-  filterTools: {minHeight: 176},
-  filterCard: {width: 76, height: 78, alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 16, backgroundColor: '#20262C', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)'},
-  filterSwatch: {width: 50, height: 36, borderRadius: 7, overflow: 'hidden', backgroundColor: '#3c464d'},
+  filterTools: {minHeight: 184},
+  filterCard: {width: 88, minHeight: 90, alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 16, backgroundColor: '#20262C', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)'},
+  filterSwatch: {width: 64, height: 48, borderRadius: 7, overflow: 'hidden', backgroundColor: '#3c464d'},
   filterPlaceholder: {color: '#FFF0CF', fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 36},
   adjustRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10},
   adjustValue: {minWidth: 72, color: '#fff', textAlign: 'center', fontSize: 12},
@@ -493,20 +515,20 @@ const styles = StyleSheet.create({
   adjustments: {gap: 10, padding: 14},
   cropTools: {minHeight: 112, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 14},
   adjustmentCard: {width: 170, padding: 12, borderRadius: 14, backgroundColor: '#202830'},
-  retouchTools: {position: 'absolute', left: 0, right: 0, zIndex: 20, marginHorizontal: 10, flexGrow: 0, borderRadius: 22, backgroundColor: '#181D22', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', shadowColor: '#000', shadowOpacity: .55, shadowRadius: 18, elevation: 18},
+  retouchTools: {position: 'absolute', left: 0, right: 0, zIndex: 20, marginHorizontal: 10, flexGrow: 0, borderRadius: 22, backgroundColor: '#181D22', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', shadowColor: '#000', shadowOpacity: .18, shadowRadius: 12, elevation: 6},
   retouchToolsContent: {paddingBottom: 22, gap: 8},
   sheetHandleArea: {height: 30, alignItems: 'center', justifyContent: 'center'},
   sheetHandle: {width: 42, height: 5, borderRadius: 3, backgroundColor: '#667078'},
   retouchHeader: {paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  retouchEyebrow: {color: '#887450', fontSize: 9, fontWeight: '700', letterSpacing: 1.4},
+  retouchEyebrow: {color: '#887450', fontSize: 12, fontWeight: '700', letterSpacing: 1.4},
   retouchTitle: {color: '#FFF', fontSize: 18, fontWeight: '800', marginTop: 2},
-  retouchMessage: {color: '#AAB2B9', fontSize: 11, paddingHorizontal: 16},
+  retouchMessage: {color: '#AAB2B9', fontSize: 12, paddingHorizontal: 16},
   faceBadge: {paddingHorizontal: 10, paddingVertical: 6, borderRadius: 13, backgroundColor: '#242B31', borderWidth: 1, borderColor: '#343C43'},
   faceBadgeReady: {backgroundColor: 'rgba(215,185,120,0.12)', borderColor: 'rgba(215,185,120,0.5)'},
-  faceBadgeText: {color: '#FFF0CF', fontSize: 10, fontWeight: '700'},
+  faceBadgeText: {color: '#FFF0CF', fontSize: 12, fontWeight: '700'},
   retouchOptions: {gap: 8, paddingHorizontal: 14},
   faceSelector: {gap: 8, paddingHorizontal: 14},
-  retouchStatus: {color: '#D7B978', fontSize: 10, paddingHorizontal: 16},
+  retouchStatus: {color: '#D7B978', fontSize: 12, paddingHorizontal: 16},
   viewportControls: {marginHorizontal: 12, paddingHorizontal: 11, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderRadius: 13, backgroundColor: 'rgba(255,255,255,.035)'},
   viewportHint: {flex: 1, color: colors.textMuted, fontSize: 10},
   viewportActions: {flexDirection: 'row', gap: 6},
@@ -514,14 +536,14 @@ const styles = StyleSheet.create({
   oneTapIcon: {width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(215,185,120,.38)', backgroundColor: 'rgba(215,185,120,.12)'},
   oneTapCopy: {flex: 1, marginHorizontal: 10},
   oneTapTitle: {color: colors.primarySoft, fontSize: 14, fontWeight: '900'},
-  oneTapDescription: {color: colors.textSecondary, fontSize: 10, lineHeight: 14, marginTop: 2},
+  oneTapDescription: {color: colors.textSecondary, fontSize: 12, lineHeight: 14, marginTop: 2},
   oneTapAction: {color: colors.primary, fontSize: 12, fontWeight: '900'},
   retouchToolList: {gap: 8, paddingHorizontal: 12, paddingVertical: 3},
   retouchToolCard: {width: 94, minHeight: 58, justifyContent: 'center', paddingHorizontal: 11, paddingVertical: 9, borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card},
   retouchToolCardActive: {borderColor: colors.primary, backgroundColor: colors.primaryMuted},
   retouchToolName: {color: colors.text, fontSize: 13, fontWeight: '800'},
   retouchToolNameActive: {color: colors.primarySoft},
-  retouchToolDescription: {color: colors.textMuted, fontSize: 10, marginTop: 3},
+  retouchToolDescription: {color: colors.textMuted, fontSize: 12, marginTop: 3},
   retouchSlider: {marginHorizontal: 12, paddingHorizontal: 12, paddingVertical: 7, gap: 2, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.035)'},
   healPanel: {marginHorizontal: 12, padding: 13, gap: 6, borderRadius: 15, borderWidth: 1, borderColor: 'rgba(215,185,120,.22)', backgroundColor: colors.primaryMuted},
   healActions: {flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 3},
@@ -530,13 +552,13 @@ const styles = StyleSheet.create({
   sliderLabel: {color: '#E8ECEF', fontSize: 12, fontWeight: '600'},
   sliderValue: {color: '#FFF0CF', fontSize: 12, fontWeight: '800', fontVariant: ['tabular-nums']},
   sliderReset: {paddingHorizontal: 8, paddingVertical: 4, borderRadius: 9, backgroundColor: 'rgba(255,255,255,.06)'},
-  sliderResetText: {color: colors.textSecondary, fontSize: 10, fontWeight: '700'},
-  retouchHint: {color: '#727C84', fontSize: 10, paddingHorizontal: 16, paddingTop: 2},
-  retouchWarning: {color: '#E8A0A0', fontSize: 11, lineHeight: 16, paddingHorizontal: 16},
+  sliderResetText: {color: colors.textSecondary, fontSize: 12, fontWeight: '700'},
+  retouchHint: {color: '#727C84', fontSize: 12, paddingHorizontal: 16, paddingTop: 2},
+  retouchWarning: {color: '#E8A0A0', fontSize: 12, lineHeight: 16, paddingHorizontal: 16},
   adjustmentName: {color: '#fff0cf', fontWeight: '700', textAlign: 'center', marginBottom: 10},
-  bottomTabs: {zIndex: 30, marginTop: 'auto', paddingTop: 8, flexDirection: 'row', justifyContent: 'space-evenly', borderTopWidth: 1, borderColor: 'rgba(215,185,120,0.14)', backgroundColor: colors.surface, borderTopLeftRadius: radii.large, borderTopRightRadius: radii.large, shadowColor: '#000', shadowOpacity: .45, shadowRadius: 16, elevation: 18},
-  editorTab: {width: 48, height: 50, alignItems: 'center', justifyContent: 'center', gap: 3},
-  editorTabLabel: {color: '#AAB2B9', fontSize: 10, fontWeight: '500'},
+  bottomTabs: {zIndex: 30, marginTop: 'auto', paddingTop: 8, flexDirection: 'row', justifyContent: 'space-evenly', borderTopWidth: 1, borderColor: 'rgba(215,185,120,0.14)', backgroundColor: colors.surface, borderTopLeftRadius: radii.large, borderTopRightRadius: radii.large, shadowColor: '#000', shadowOpacity: .12, shadowRadius: 8, elevation: 4},
+  editorTab: {flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', gap: 3},
+  editorTabLabel: {color: '#AAB2B9', fontSize: 12, fontWeight: '500'},
   editorTabLabelActive: {color: '#FFF0CF', fontWeight: '700'},
   editorIndicator: {position: 'absolute', bottom: 0, width: 20, height: 2, borderRadius: 2, backgroundColor: '#D7B978'},
 });

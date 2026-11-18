@@ -21,7 +21,9 @@ export function scoreFaceComposition(faces: NormalizedFaceBounds[], template: Co
   const centerY = (top + bottom) / 2;
   const targetX = template.silhouette.x;
   const targetY = clamp(template.silhouette.y - template.silhouette.height * .3, .12, .6);
-  const distance = Math.hypot(centerX - targetX, centerY - targetY);
+  const offsetX = centerX - targetX;
+  const offsetY = centerY - targetY;
+  const distance = Math.hypot(offsetX, offsetY);
   const position = Math.round(clamp(50 - distance * 110, 0, 50));
 
   const area = (right - left) * (bottom - top);
@@ -35,7 +37,13 @@ export function scoreFaceComposition(faces: NormalizedFaceBounds[], template: Co
 
   let hint = '構圖穩定，可以拍攝。';
   if (safety < 15) hint = '主體太靠近邊緣，請多留一點安全空間。';
-  else if (position < 32) hint = centerX < targetX ? '人物往右一點。' : '人物往左一點。';
+  else if (position < 32) {
+    // Image coordinates grow downward. Favor horizontal guidance on ties,
+    // allowing for floating-point rounding in normalized coordinates.
+    hint = Math.abs(offsetY) - Math.abs(offsetX) > 1e-6
+      ? (offsetY < 0 ? '人物往下一點。' : '人物往上一點。')
+      : (offsetX < 0 ? '人物往右一點。' : '人物往左一點。');
+  }
   else if (size < 15) hint = area < expectedArea ? '再靠近人物一點。' : '稍微拉遠一點。';
 
   return {total, position, size, safety, hint};

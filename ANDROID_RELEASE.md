@@ -1,6 +1,11 @@
 # Android 上傳包與簽署
 
-目前套件 ID：`com.bfcam`，顯示名稱 `BFCam-男友相機`，版本名稱 `1.0.7`，versionCode `8`。
+目前套件 ID：`com.bfcam`，顯示名稱 `BFCam-男友相機`，版本名稱 `1.1.0`，versionCode `11`（目前原始碼設定；Release 與 ClosedTesting 共用）。
+
+## 2026-11-17：版本設定 1.1.0（11）
+
+- REL-002：Android versionName 改為 `1.1.0`，versionCode 改為 `11`。
+- 本次僅更新版本設定並核對數值，尚未重新建置 APK／AAB、安裝或上傳；既有產物保留原版本。
 
 ## 2026-11-12：英文、日文、韓文
 

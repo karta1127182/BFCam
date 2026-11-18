@@ -162,6 +162,195 @@ export const compositionTemplates: CompositionTemplate[] = [
     zoomBehavior: 'followZoom',
     description: '用花草、門框或近物包住畫面下緣，增加景深與層次。',
   },
+{
+  "id": "wide-scene-person",
+  "name": "大景小人",
+  "category": "full-body",
+  "guides": [
+    {
+      "type": "line",
+      "startX": 0,
+      "startY": 0.65,
+      "endX": 1,
+      "endY": 0.65,
+      "dashed": true
+    },
+    {
+      "type": "rect",
+      "x": 0.61,
+      "y": 0.59,
+      "width": 0.12,
+      "height": 0.24,
+      "dashed": true
+    }
+  ],
+  "silhouette": {
+    "id": "person-standing",
+    "variant": "full-body",
+    "x": 0.67,
+    "y": 0.71,
+    "width": 0.0952,
+    "height": 0.2312,
+    "anchor": "center"
+  },
+  "zoomBehavior": "fixed",
+  "description": "人物縮小放在右下方，保留山海、街景或建築的完整尺度。",
+  "subjectScale": 0.34
+},
+{
+  "id": "gaze-space",
+  "name": "視線留白",
+  "category": "single",
+  "guides": [
+    {
+      "type": "line",
+      "startX": 0.32,
+      "startY": 0.06,
+      "endX": 0.32,
+      "endY": 0.94,
+      "dashed": true
+    },
+    {
+      "type": "line",
+      "startX": 0.4,
+      "startY": 0.3,
+      "endX": 0.92,
+      "endY": 0.3,
+      "dashed": true
+    }
+  ],
+  "silhouette": {
+    "id": "person-standing",
+    "variant": "side",
+    "x": 0.28,
+    "y": 0.52,
+    "width": 0.28,
+    "height": 0.68,
+    "anchor": "center"
+  },
+  "zoomBehavior": "fixed",
+  "description": "人物放在左側並朝右看，在視線或前進方向保留空間。"
+},
+{
+  "id": "reflection",
+  "name": "倒影構圖",
+  "category": "full-body",
+  "guides": [
+    {
+      "type": "line",
+      "startX": 0,
+      "startY": 0.5,
+      "endX": 1,
+      "endY": 0.5,
+      "dashed": true
+    },
+    {
+      "type": "rect",
+      "x": 0.2,
+      "y": 0.06,
+      "width": 0.6,
+      "height": 0.4,
+      "dashed": true
+    },
+    {
+      "type": "rect",
+      "x": 0.2,
+      "y": 0.54,
+      "width": 0.6,
+      "height": 0.4,
+      "dashed": true
+    }
+  ],
+  "silhouette": {
+    "id": "person-standing",
+    "variant": "full-body",
+    "x": 0.5,
+    "y": 0.26,
+    "width": 0.182,
+    "height": 0.442,
+    "anchor": "center"
+  },
+  "zoomBehavior": "fixed",
+  "description": "將水面或玻璃的反射分界對齊中線，上下保留實景與倒影。",
+  "subjectScale": 0.65
+},
+{
+  "id": "fill-frame",
+  "name": "填滿畫面",
+  "category": "portrait",
+  "guides": [
+    {
+      "type": "rect",
+      "x": 0.06,
+      "y": 0.06,
+      "width": 0.88,
+      "height": 0.88,
+      "dashed": true
+    }
+  ],
+  "silhouette": {
+    "id": "person-standing",
+    "variant": "headshot",
+    "x": 0.5,
+    "y": 0.5,
+    "width": 0.6048,
+    "height": 0.4256,
+    "anchor": "center"
+  },
+  "zoomBehavior": "fixed",
+  "description": "靠近主體，讓臉部、寵物或食物佔據畫面，保留必要邊界。",
+  "subjectScale": 1.12
+},
+{
+  "id": "golden-ratio",
+  "name": "黃金分割",
+  "category": "single",
+  "guides": [
+    {
+      "type": "line",
+      "startX": 0.382,
+      "startY": 0,
+      "endX": 0.382,
+      "endY": 1,
+      "dashed": true
+    },
+    {
+      "type": "line",
+      "startX": 0.618,
+      "startY": 0,
+      "endX": 0.618,
+      "endY": 1,
+      "dashed": true
+    },
+    {
+      "type": "line",
+      "startX": 0,
+      "startY": 0.382,
+      "endX": 1,
+      "endY": 0.382,
+      "dashed": true
+    },
+    {
+      "type": "line",
+      "startX": 0,
+      "startY": 0.618,
+      "endX": 1,
+      "endY": 0.618,
+      "dashed": true
+    }
+  ],
+  "silhouette": {
+    "id": "person-standing",
+    "variant": "full-body",
+    "x": 0.618,
+    "y": 0.52,
+    "width": 0.28,
+    "height": 0.68,
+    "anchor": "center"
+  },
+  "zoomBehavior": "fixed",
+  "description": "把主體或視覺焦點安排在黃金分割線及交點附近。"
+},
 ];
 
 export const getCompositionTemplate = (id: string) =>

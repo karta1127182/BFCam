@@ -61,5 +61,7 @@ export type CompositionTemplate = {
   guides: Guide[];
   silhouette: SilhouetteDefinition;
   zoomBehavior: 'fixed' | 'followZoom';
+  /** Relative size of the user-selected silhouette in manual template mode. */
+  subjectScale?: number;
   description: string;
 };

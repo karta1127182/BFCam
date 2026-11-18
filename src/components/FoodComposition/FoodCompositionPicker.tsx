@@ -13,7 +13,7 @@ export function FoodCompositionPicker({value, onChange}: Props) {
       {foodAngles.map(angle => <Pressable key={angle.id} accessibilityRole="button"
         accessibilityLabel={`拍攝角度：${angle.name}`} accessibilityState={{selected: (config.angle ?? 'overhead') === angle.id}}
         onPress={() => onChange({...config, angle: angle.id})}
-        style={[styles.count, {flex: 1}, (config.angle ?? 'overhead') === angle.id && styles.selected]}>
+        style={[styles.count, styles.angleOption, (config.angle ?? 'overhead') === angle.id && styles.selected]}>
         <Text style={styles.text}>{angle.name}</Text>
       </Pressable>)}
     </View>
@@ -47,8 +47,9 @@ export function FoodCompositionPicker({value, onChange}: Props) {
 const styles = StyleSheet.create({
   container: {paddingHorizontal: 16, gap: 8}, title: {color: colors.text, fontSize: 13, fontWeight: '700'},
   row: {flexDirection: 'row', alignItems: 'center', gap: 10}, text: {color: colors.text, fontSize: 12},
-  count: {minWidth: 36, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: colors.borderStrong},
+  angleOption: {flex: 1},
+  count: {minWidth: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: colors.borderStrong},
   selected: {borderColor: colors.primary, backgroundColor: colors.primaryMuted}, disabled: {opacity: .3},
-  layouts: {gap: 8}, card: {width: 88, padding: 6, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: colors.borderStrong},
-  preview: {width: 70, height: 70}, hint: {color: colors.textSecondary, fontSize: 11, lineHeight: 16},
+  layouts: {gap: 8}, card: {width: 100, padding: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: colors.borderStrong},
+  preview: {width: 78, height: 90, borderRadius: 10, backgroundColor: colors.background}, hint: {color: colors.textSecondary, fontSize: 12, lineHeight: 18},
 });

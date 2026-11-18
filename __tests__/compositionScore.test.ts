@@ -23,3 +23,25 @@ test('composition score always stays within its declared range', () => {
   expect(result.size).toBeLessThanOrEqual(25);
   expect(result.safety).toBeLessThanOrEqual(25);
 });
+
+// Use a central target to exercise each direction without edge warnings.
+test.each([
+  [-.2, 0, '右'],
+  [.2, 0, '左'],
+  [0, -.2, '下'],
+  [0, .2, '上'],
+  [.1, -.2, '下'],
+  [-.2, .1, '右'],
+  [.16, .16, '左'],
+])('guides the subject toward the target for offset (%s, %s)', (dx, dy, direction) => {
+  const base = getCompositionTemplate('centered');
+  const template = {...base, silhouette: {...base.silhouette, y: .704, height: .68}};
+  const result = scoreFaceComposition([{x: .4 + dx, y: .4 + dy, width: .2, height: .2}], template)!;
+  expect(result.position).toBeLessThan(32);
+  expect(result.hint).toBe('人物往' + direction + '一點。');
+});
+
+test('edge safety guidance takes priority over positional correction', () => {
+  const result = scoreFaceComposition([{x: -.02, y: .5, width: .2, height: .2}], getCompositionTemplate('centered'))!;
+  expect(result.hint).toBe(scoreFaceComposition([{x: -.02, y: .01, width: .22, height: .25}], getCompositionTemplate('centered'))!.hint);
+});

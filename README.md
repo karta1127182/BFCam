@@ -1,3 +1,7 @@
+## BFCam 功能文件
+
+功能分類、固定編號、程式位置與修改紀錄格式見 [FEATURE_CATALOG.md](FEATURE_CATALOG.md)。後續需求與修改紀錄請引用功能編號，例如 `OVL-001`（輪廓調整入口）、`POS-002`（姿勢自動判定）。
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started

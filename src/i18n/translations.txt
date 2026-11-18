@@ -602,3 +602,66 @@ Please wait…|Please wait…|お待ちください…|잠시 기다려 주세�
 依照紅色外輪廓調整坐姿，讓背線或腿線貼近綠色虛線。|Match your seated pose to the red outline and align your back or legs with the green dashed guides.|赤い輪郭に合わせて座り、背中や脚を緑の破線に合わせます。|빨간 윤곽에 맞춰 앉고 등이나 다리를 초록색 점선에 맞추세요.
 兩人依照紅色外輪廓靠近，讓身體關係貼近綠色提示線。|Move closer together along the red outlines and align with the green guides.|二人で赤い輪郭に合わせて近づき、緑のガイド線に合わせます。|두 사람이 빨간 윤곽에 맞춰 가까이 서고 초록색 안내선에 맞추세요.
 依照紅色外輪廓站立，讓身體曲線貼近綠色虛線。|Stand along the red outline and align your body with the green dashed guides.|赤い輪郭に合わせて立ち、体の曲線を緑の破線に合わせます。|빨간 윤곽에 맞춰 서고 몸의 곡선을 초록색 점선에 맞추세요.
+
+街拍旅遊|Street & travel|街撮り・旅行|거리·여행
+咖啡廳|Cafe|カフェ|카페
+室內居家|At home|室内・自宅|실내·집
+職場形象|Professional|ビジネス|프로필·직장
+海邊泳池|Beach & pool|ビーチ・プール|해변·수영장
+自拍對鏡|Selfie & mirror|自撮り・鏡|셀카·거울
+情侶約會|Couple & date|カップル・デート|커플·데이트
+適合場景|Suggested settings|おすすめシーン|추천 장면
+全部場景|All settings|すべてのシーン|모든 장면
+全部姿態|All positions|すべての姿勢|모든 자세
+清除姿勢篩選|Clear pose filters|姿勢の絞り込みを解除|자세 필터 초기화
+沒有符合的姿勢，請切換場景或清除篩選。|No matching poses. Change the setting or clear filters.|一致する姿勢がありません。シーンを変えるか絞り込みを解除してください。|일치하는 자세가 없습니다. 장면을 바꾸거나 필터를 초기화하세요.
+全部構圖|All compositions|すべての構図|모든 구도
+旅遊風景|Travel & landscape|旅行・風景|여행·풍경
+特寫商品|Close-up & product|接写・商品|클로즈업·상품
+構圖分類|Composition category|構図カテゴリ|구도 분류
+款構圖 · 左右滑動選擇|compositions · Swipe to choose|種類の構図・左右にスワイプして選択|개 구도 · 좌우로 밀어 선택
+大景小人|Small person, grand scene|広い景色と小さな人物|넓은 풍경 속 작은 인물
+視線留白|Gaze space|視線の先の余白|시선 방향 여백
+倒影構圖|Reflection|反射の構図|반영 구도
+填滿畫面|Fill the frame|画面いっぱいに|프레임 채우기
+黃金分割|Golden ratio|黄金分割|황금분할
+人物縮小放在右下方，保留山海、街景或建築的完整尺度。|Place a small subject at the lower right to show the scale of the landscape or architecture.|人物を右下に小さく配置し、風景や建築のスケールを見せます。|인물을 오른쪽 아래에 작게 배치해 풍경이나 건축물의 규모를 보여주세요.
+人物放在左側並朝右看，在視線或前進方向保留空間。|Place the subject on the left looking right, leaving space in the direction of gaze or movement.|人物を左に置いて右を向き、視線や進行方向に余白を残します。|인물을 왼쪽에 배치하고 오른쪽을 보게 하여 시선이나 이동 방향에 여백을 주세요.
+將水面或玻璃的反射分界對齊中線，上下保留實景與倒影。|Align the reflection boundary with the center line, leaving room for the scene and its reflection.|水面やガラスの反射の境界を中央線に合わせ、実景と反射を上下に収めます。|물이나 유리의 반사 경계를 중앙선에 맞추고 실제 풍경과 반영을 위아래에 담으세요.
+靠近主體，讓臉部、寵物或食物佔據畫面，保留必要邊界。|Move closer so the face, pet or food fills the frame while keeping essential edges visible.|主役に近づいて顔やペット、食べ物を大きく写し、必要な余白を残します。|피사체에 가까이 다가가 얼굴이나 반려동물, 음식으로 화면을 채우되 필요한 여백을 남기세요.
+把主體或視覺焦點安排在黃金分割線及交點附近。|Place the subject or visual focus near the golden-ratio lines and intersections.|主役や視覚的な焦点を黄金分割線や交点の近くに置きます。|피사체나 시각적 초점을 황금분할선과 교차점 근처에 배치하세요.
+展開姿勢教學|Expand pose guide|ポーズガイドを開く|자세 가이드 펼치기
+縮小姿勢教學|Minimize pose guide|ポーズガイドを小さくする|자세 가이드 최소화
+姿勢判定持續進行中|Pose checks are still running|姿勢の判定を継続中|자세 판정이 계속 진행 중입니다
+顯示目前姿勢的教學步驟|Show the steps for the current pose|現在のポーズの手順を表示|현재 자세의 안내 단계 보기
+骨架・對角線構圖|Skeleton: diagonal|骨格・対角線構図|골격·대각선 구도
+骨架・向右留白|Skeleton: space on the right|骨格・右に余白|골격·오른쪽 여백
+骨架・向左留白|Skeleton: space on the left|骨格・左に余白|골격·왼쪽 여백
+骨架・三角構圖|Skeleton: triangle|骨格・三角構図|골격·삼각형 구도
+骨架・坐姿置中|Skeleton: seated and centered|骨格・座位を中央に|골격·앉은 자세 중앙 배치
+骨架・置中構圖|Skeleton: centered|骨格・中央構図|골격·중앙 구도
+人物・基本置中|Person: basic centering|人物・基本の中央構図|인물·기본 중앙 배치
+線條・框架構圖|Lines: frame|線・フレーム構図|선·프레임 구도
+線條・對稱構圖|Lines: symmetry|線・対称構図|선·대칭 구도
+線條・引導線構圖|Lines: leading lines|線・誘導線構図|선·유도선 구도
+線條・水平三分構圖|Lines: horizontal thirds|線・水平の三分割構図|선·수평 삼분할 구도
+線條・對角線構圖|Lines: diagonal|線・対角線構図|선·대각선 구도
+線條・垂直置中|Lines: vertical centering|線・垂直の中央構図|선·수직 중앙 배치
+軀幹呈明顯斜向，建議沿身體延伸方向安排對角線；請依實際傾斜方向取景。|The torso leans noticeably. Compose along its diagonal direction.|胴体が傾いています。体の伸びる方向に合わせて対角線で構図を整えましょう。|몸통이 기울어져 있습니다. 몸이 뻗는 대각선 방향에 맞춰 구도를 잡으세요.
+手臂向右延伸，建議人物靠左，右側保留動作空間。|The arm extends right. Place the person left and leave room on the right.|腕が右に伸びています。人物を左に配置し、右に動作の余白を残しましょう。|팔이 오른쪽으로 뻗어 있습니다. 인물을 왼쪽에 두고 오른쪽에 여백을 남기세요.
+手臂向左延伸，建議人物靠右三分線，左側保留動作空間。|The arm extends left. Place the person on the right third and leave room on the left.|腕が左に伸びています。人物を右の三分割線に配置し、左に余白を残しましょう。|팔이 왼쪽으로 뻗어 있습니다. 인물을 오른쪽 삼분할선에 두고 왼쪽에 여백을 남기세요.
+手肘外展或雙腿張開形成三角支撐，建議保留肢體兩側空間。|Spread elbows or legs form a triangular base. Leave space around the limbs.|肘や脚の広がりが三角形の支えを作っています。手足の両側に余白を残しましょう。|벌어진 팔꿈치나 다리가 삼각형을 만듭니다. 팔다리 양쪽에 공간을 남기세요.
+骨架呈坐姿，建議置中安排並保留膝蓋與腳部空間。|The skeleton suggests sitting. Center the person and leave room for knees and feet.|骨格から座位が推定されます。中央に配置し、膝と足の余白を残しましょう。|골격이 앉은 자세로 보입니다. 중앙에 배치하고 무릎과 발 공간을 확보하세요.
+軀幹接近直立，以置中構圖保持人物視覺平衡。|The torso is nearly upright. Centering helps balance the portrait.|胴体はほぼ直立しています。中央構図で人物のバランスを整えましょう。|몸통이 거의 수직입니다. 중앙 구도로 인물의 균형을 잡으세요.
+主要線條形成近似四邊框，建議以內框集中視覺重心；不代表已辨識門窗。|The main lines form an approximate frame. Use its interior as a focus; doors or windows are not verified.|主な線が四角い枠に近い形を作っています。枠内に視線を集めましょう。ドアや窓を認識したとは限りません。|주요 선이 사각 프레임과 비슷합니다. 안쪽에 시선을 모으세요. 문이나 창문을 확인한 것은 아닙니다.
+左右有接近對稱的主要直線，建議對齊中央軸；仍請確認實際結構。|Main lines appear roughly symmetric. Align the central axis and check the actual structure.|左右にほぼ対称の主線があります。中央軸を合わせ、実際の構造を確認してください。|주요 선이 좌우로 대략 대칭입니다. 중앙축을 맞추고 실제 구조를 확인하세요.
+多條斜線向畫面內匯聚，建議沿線條引導視線至交會區域。|Several diagonal lines converge inward. Guide attention toward their meeting area.|複数の斜線が画面内に収束しています。交わる領域へ視線を導きましょう。|여러 사선이 화면 안으로 모입니다. 교차 영역으로 시선을 유도하세요.
+偵測到主要水平線，建議將它安排在上方或下方三分線；不一定是地平線。|A dominant horizontal line was found. Place it on an upper or lower third; it may not be a horizon.|主な水平線を検出しました。上下いずれかの三分割線に配置しましょう。地平線とは限りません。|주요 수평선이 감지되었습니다. 위나 아래 삼분할선에 배치하세요. 지평선은 아닐 수 있습니다.
+主要線條呈斜向，建議依斜線方向安排畫面。|The dominant line is diagonal. Compose along its direction.|主な線は斜めに伸びています。その方向に合わせて構図を整えましょう。|주요 선이 대각선입니다. 선의 방향에 맞춰 구도를 잡으세요.
+主要直線呈垂直方向，建議保持相機水平並平衡左右空間。|The main lines are vertical. Keep the camera level and balance space on both sides.|主な直線は垂直です。カメラを水平に保ち、左右の余白を整えましょう。|주요 직선이 수직입니다. 카메라 수평을 유지하고 좌우 공간을 균형 있게 배치하세요.
+多人畫面先以置中保留合照空間，單人骨架無法代表所有人的動作。|Center the group first. A single skeleton cannot represent everyone.|集合写真はまず中央に配置します。1人の骨格で全員の動作は判断できません。|단체는 우선 중앙에 배치합니다. 한 사람의 골격으로 모두의 동작을 판단할 수 없습니다.
+骨架資訊不足，先提供人物置中建議，請讓肩膀、髖部與肢體清楚入鏡。|Not enough skeleton data. Start centered and keep shoulders, hips and limbs visible.|骨格情報が不足しています。まず中央に配置し、肩・腰・手足をはっきり写してください。|골격 정보가 부족합니다. 우선 중앙에 배치하고 어깨, 엉덩이와 팔다리가 보이게 하세요.
+未取得明確主線條，暫依場景提供基本建議。|No clear dominant lines were found. Using a basic scene suggestion.|明確な主線が見つからないため、場面に基づく基本の提案を表示します。|뚜렷한 주요 선이 없어 장면에 따른 기본 구도를 제안합니다.
+已套用構圖參考線，請依主要線條調整取景|Composition guides applied. Adjust framing to the main lines.|構図ガイドを適用しました。主な線に合わせて画角を調整してください。|구도 안내선이 적용되었습니다. 주요 선에 맞춰 구도를 조절하세요.
+展開工具面板|Show tools|ツールパネルを開く|도구 패널 펼치기
+收合工具面板|Hide tools|ツールパネルを閉じる|도구 패널 접기

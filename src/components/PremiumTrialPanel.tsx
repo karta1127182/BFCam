@@ -11,7 +11,7 @@ export function PremiumTrialPanel({remaining, status, visible, topInset, billing
   const insets = useSafeAreaInsets();
   const label = closedTesting ? '測試期間 Pro 免費開放 · 不限張數' : billing.access.active ? (billing.access.trial ? 'Pro 訂閱試用中' : 'Pro 已啟用') : status === 'loading' ? '正在讀取免費體驗…' : status === 'error' ? '體驗紀錄異常，請重新讀取' : `Pro 免費體驗剩餘 ${remaining} / 20 張`;
   return <>
-    <Pressable accessibilityRole="button" onPress={onOpen} style={[styles.banner, topInset && {paddingTop: insets.top + 9}]}><Text style={styles.text}>{label} · 查看方案</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={onOpen} style={[styles.banner, topInset && {paddingTop: insets.top + 9}]}><Text style={styles.bannerText}>{label} · 查看方案</Text></Pressable>
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={[styles.backdrop, {paddingTop: Math.max(48, insets.top), paddingBottom: Math.max(48, insets.bottom), paddingLeft: Math.max(20, insets.left), paddingRight: Math.max(20, insets.right)}]}><ScrollView contentContainerStyle={styles.sheet}>
         <Text style={styles.title}>BFCam-男友相機 Pro</Text>
@@ -55,7 +55,8 @@ export function PremiumTrialPanel({remaining, status, visible, topInset, billing
   </>;
 }
 const styles = StyleSheet.create({
-  banner: {backgroundColor: colors.card, paddingHorizontal: 16, paddingVertical: 9},
+  banner: {backgroundColor: colors.background, paddingHorizontal: 16, paddingVertical: 9, borderBottomWidth: 1, borderColor: colors.border},
+  bannerText: {color: colors.textSecondary, fontSize: 12, lineHeight: 23},
   text: {color: colors.text, fontSize: 14, lineHeight: 23},
   detail: {color: colors.textSecondary, fontSize: 13, lineHeight: 22, marginTop: 8},
   title: {color: colors.primarySoft, fontSize: 24, fontWeight: '700', marginBottom: 8},
