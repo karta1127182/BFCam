@@ -1,33 +1,34 @@
 import {Text, View} from '../../i18n/components';
 import React from 'react';
 import {StyleSheet} from 'react-native';
-import Svg, {Circle, Line} from 'react-native-svg';
-import type {NormalizedPose, PoseLandmarkName} from '../../utils/poseDetection';
+import Svg, {Circle, Line, Path} from 'react-native-svg';
+import {subjectBones, type SmartSubjectGeometry} from '../../utils/smartSubjectGeometry';
 
-type Props = {pose: NormalizedPose | null; mirrored: boolean};
-const bones: Array<[PoseLandmarkName, PoseLandmarkName]> = [
-  ['leftShoulder', 'rightShoulder'], ['leftShoulder', 'leftElbow'], ['leftElbow', 'leftWrist'], ['rightShoulder', 'rightElbow'], ['rightElbow', 'rightWrist'],
-  ['leftShoulder', 'leftHip'], ['rightShoulder', 'rightHip'], ['leftHip', 'rightHip'], ['leftHip', 'leftKnee'], ['leftKnee', 'leftAnkle'], ['rightHip', 'rightKnee'], ['rightKnee', 'rightAnkle'],
-];
+type Props = {geometry: SmartSubjectGeometry; mirrored: boolean; opacity: number};
 
-export function PoseDetectionOverlay({pose, mirrored}: Props) {
-  if (!pose) return null;
-  const visible = pose.landmarks.filter(point => point.confidence >= .55);
+export function PoseDetectionOverlay({geometry, mirrored, opacity}: Props) {
+  const {width, height, pose, edges} = geometry;
+  const visible = pose?.landmarks.filter(point => point.confidence >= .55) ?? [];
   const points = new Map(visible.map(point => [point.name, point]));
-  const x = (value: number) => `${(mirrored ? 1 - value : value) * 100}%` as `${number}%`;
-  const y = (value: number) => `${value * 100}%` as `${number}%`;
+  const x = (value: number) => (mirrored ? 1 - value : value) * width;
+  const y = (value: number) => value * height;
+  const stroke = Math.min(width, height) * .006;
+  const outline = edges.map(([x1, y1, x2, y2]) => `M${x(x1)},${y(y1)}L${x(x2)},${y(y2)}`).join(' ');
   return <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-    <Svg width="100%" height="100%">
-      {bones.map(([from, to]) => {const start = points.get(from); const end = points.get(to); return start && end ? <Line key={`${from}-${to}`} x1={x(start.x)} y1={y(start.y)} x2={x(end.x)} y2={y(end.y)} stroke="#ffcf5a" strokeWidth={3} /> : null;})}
-      {visible.map(point => <Circle key={point.name} cx={x(point.x)} cy={y(point.y)} r={5} fill="#ffcf5a" stroke="#302000" strokeWidth={2} />)}
+    <Svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid slice" opacity={opacity}>
+      {outline ? <Path d={outline} stroke="#79D8BD" strokeWidth={stroke} strokeLinecap="round" fill="none" /> : null}
+      {subjectBones.map(([from, to]) => {
+        const start = points.get(from);
+        const end = points.get(to);
+        return start && end ? <Line key={`${from}-${to}`} x1={x(start.x)} y1={y(start.y)} x2={x(end.x)} y2={y(end.y)} stroke="#ffcf5a" strokeWidth={stroke} /> : null;
+      })}
+      {visible.map(point => <Circle key={point.name} cx={x(point.x)} cy={y(point.y)} r={stroke} fill="#ffcf5a" />)}
     </Svg>
-    <View style={styles.badge}><Text style={styles.score}>姿勢 {pose.score}</Text><Text style={styles.hint}>{pose.hint}</Text><Text style={styles.stale}>上次一鍵偵測結果</Text></View>
+    <View style={styles.badge}><Text style={styles.stale}>上次一鍵偵測結果 · 移動相機後請重新偵測</Text></View>
   </View>;
 }
 
 const styles = StyleSheet.create({
   badge: {position: 'absolute', top: '22%', alignSelf: 'center', maxWidth: '84%', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(38,27,5,.82)', alignItems: 'center'},
-  score: {color: '#ffdc82', fontSize: 14, fontWeight: '800'},
-  hint: {color: '#fff4d4', fontSize: 11, fontWeight: '600', textAlign: 'center', marginTop: 2},
   stale: {color: '#c5ad70', fontSize: 9, marginTop: 2},
 });

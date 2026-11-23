@@ -1,17 +1,17 @@
 import React from 'react';
 import Svg, {Circle, Ellipse, G, Path} from 'react-native-svg';
-import {foodPlacements, type FoodComposition} from '../../utils/foodComposition';
+import {foodPlacements, projectFoodPlacement, type FoodAngle, type FoodComposition} from '../../utils/foodComposition';
 
-export function FoodCompositionDrawing({config}: {config: FoodComposition}) {
-  const angle = config.angle ?? 'overhead';
+export function FoodCompositionDrawing({config, detectedAngle}: {config: FoodComposition; detectedAngle?: FoodAngle}) {
+  const angle = config.angle === 'auto' ? detectedAngle ?? 'overhead' : config.angle ?? 'overhead';
   return <Svg width="100%" height="100%" viewBox="0 0 1000 1000">
-    {foodPlacements(config).sort((a, b) => a.y - b.y).map((item, index) => {
+    {foodPlacements(config).map(item => projectFoodPlacement(item, angle)).sort((a, b) => a.y - b.y).map((item, index) => {
       const x = item.x * 1000, y = item.y * 1000, radius = item.radius * 1000;
       if (angle !== 'overhead') {
-        const cy = 480 + (y - 500) * (angle === 'level' ? .35 : .65);
-        const ry = radius * (angle === 'level' ? .16 : .5);
-        const cupTop = cy - radius * (angle === 'level' ? 1.2 : .85);
-        const cupBottom = cy + radius * .7;
+        const cy = y;
+        const ry = item.rimHeight * 1000;
+        const cupTop = item.cupRimY * 1000;
+        const cupBottom = item.cupBaseY * 1000;
         return <G key={`${item.kind}-${index}`} stroke="#79D8BD" strokeWidth={5} fill="none">
           {item.kind === 'plate' ? <>
             <Ellipse cx={x} cy={cy} rx={radius} ry={ry} fill="rgba(121,216,189,0.06)" />

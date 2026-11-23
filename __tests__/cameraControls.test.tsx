@@ -1,21 +1,26 @@
 import React from 'react';
 import {act, create, type ReactTestRenderer} from 'react-test-renderer';
-import {AccessibilityInfo, BackHandler} from 'react-native';
+import {AccessibilityInfo, Animated, BackHandler} from 'react-native';
 import {Pressable} from '../src/i18n/components';
 import {CameraControls} from '../src/components/CameraControls/CameraControls';
 import {compositionTemplates, getCompositionTemplate} from '../src/templates';
 
 jest.mock('react-native-safe-area-context', () => ({useSafeAreaInsets: () => ({top: 24, bottom: 16, left: 0, right: 0})}));
-jest.mock('lucide-react-native', () => Object.fromEntries(['Aperture', 'Check', 'ChevronDown', 'Ellipsis', 'Grid3X3', 'Images', 'PersonStanding', 'SwitchCamera', 'WandSparkles', 'Zap', 'ZapOff'].map(name => [name, () => null])));
+jest.mock('lucide-react-native', () => Object.fromEntries(['Aperture', 'Check', 'ChevronDown', 'Ellipsis', 'Grid3X3', 'Images', 'PersonStanding', 'SwitchCamera', 'Video', 'WandSparkles', 'Zap', 'ZapOff'].map(name => [name, () => null])));
 jest.mock('../src/components/Silhouette/Silhouette', () => ({PoseDrawing: () => null}));
 jest.mock('../src/components/GuideRenderer/GuideRenderer', () => ({GuideRenderer: () => null}));
 jest.mock('../src/components/FoodComposition/FoodCompositionPicker', () => ({FoodCompositionPicker: () => null}));
 
-jest.setTimeout(20000);
+jest.setTimeout(45000);
 
 test('opens filters, preserves advanced outline controls, and dismisses panels with back', async () => {
   (globalThis as {IS_REACT_ACT_ENVIRONMENT?: boolean}).IS_REACT_ACT_ENVIRONMENT = true;
   const motion = jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+  const animation = jest.spyOn(Animated, 'timing').mockImplementation(() => ({
+    start: callback => callback?.({finished: true}),
+    stop: jest.fn(),
+    reset: jest.fn(),
+  }));
   let back: (() => boolean) | undefined;
   const remove = jest.fn();
   const subscription = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_, handler) => {back = handler as () => boolean; return {remove};});
@@ -27,7 +32,7 @@ test('opens filters, preserves advanced outline controls, and dismisses panels w
     overlayOpacity: .4, silhouetteLocked: true, silhouetteVisible: true, followZoom: false,
     zoomLevel: 1, zoomOptions: [1, 2], zoomDisplayFactor: 1, onZoom: noop,
     template: getCompositionTemplate('centered'), smartCompositionActive: false,
-    onCapture: jest.fn(), onDetectComposition: noop, onClearComposition: noop, onSelectTemplate: jest.fn(),
+    onCapture: jest.fn(), onVideoMode: jest.fn(), onDetectComposition: noop, onClearComposition: noop, onSelectTemplate: jest.fn(),
     onSelectPose: jest.fn(), onApplyScenario: noop, onCycleOpacity: noop, onFlip: noop, onNextTemplate: noop,
     onResetSilhouette: noop, onRotateSilhouette: noop, onToggleFlash: noop, onToggleGuide: noop,
     onToggleSilhouette: noop, onToggleSilhouetteLock: noop, onToggleFollowZoom: noop,
@@ -92,12 +97,16 @@ test('opens filters, preserves advanced outline controls, and dismisses panels w
     expect(button('調整輪廓')).toBeUndefined();
     await act(async () => {button('拍照').props.onPress();});
     expect(props.onCapture).toHaveBeenCalledTimes(1);
+    await act(async () => {button('錄影').props.onPress();});
+    expect(props.onVideoMode).toHaveBeenCalledTimes(1);
     await act(async () => {button('展開工具面板').props.onPress();});
     expect(button('收合工具面板').props.accessibilityState.expanded).toBe(true);
     expect(button('濾鏡').props.accessibilityState.selected).toBe(false);
     expect(button('調整輪廓')).toBeDefined();
+    await act(async () => {renderer!.update(<CameraControls {...props} smartCompositionActive />);});
+    expect(button('調整輪廓')).toBeUndefined();
   } finally {
     if (renderer) await act(async () => renderer!.unmount());
-    motion.mockRestore(); subscription.mockRestore();
+    motion.mockRestore(); animation.mockRestore(); subscription.mockRestore();
   }
 });

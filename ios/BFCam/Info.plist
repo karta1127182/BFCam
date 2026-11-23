@@ -39,9 +39,11 @@
 	<key>NSCameraUsageDescription</key>
 	<string>BFCam-男友相機需要使用相機，提供即時構圖輔助與拍照功能。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>BFCam-男友相機需要存取相簿，以儲存拍攝的照片。</string>
+	<string>BFCam-男友相機需要存取相簿，以儲存拍攝的照片與影片。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>BFCam-男友相機需要將拍攝的照片儲存到相簿。</string>
+	<string>BFCam-男友相機需要將拍攝的照片與影片儲存到相簿。</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>BFCam-男友相機需要使用麥克風，為錄影收錄聲音。</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

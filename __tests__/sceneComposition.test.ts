@@ -14,6 +14,12 @@ test('scene rule engine selects matching composition templates', () => {
   expect(chooseSceneComposition([], 3)).toMatchObject({templateIndex: 1, title: '多人置中'});
 });
 
+test('does not confuse a partial word or a close call between scene categories with confident recognition', () => {
+  expect(classifyScene([{text: 'Hotdog', confidence: .98}], 0)).toBe('unknown');
+  expect(classifyScene([{text: 'Building', confidence: .88}, {text: 'Coffee drinks', confidence: .86}], 0)).toBe('unknown');
+  expect(classifyScene([{text: 'Coffee drinks', confidence: .92}, {text: 'Nature', confidence: .67}], 0)).toBe('food');
+});
+
 test('returns Chinese positioning guidance from detected geometry', () => {
   expect(compositionGuidance([{x: .7, y: .2, width: .2, height: .2}], null)).toBe('往左一點');
   expect(compositionGuidance([{x: .05, y: .2, width: .2, height: .2}], null)).toBe('往右一點');

@@ -324,6 +324,7 @@ S 型|S-curve|S字|S자
 跟隨縮放 {0}|Follow zoom {0}|ズーム連動 {0}|줌 연동 {0}
 {0} 倍|{0}×|{0}倍|{0}배
 拍攝角度：{0}|Camera angle: {0}|撮影角度：{0}|촬영 각도: {0}
+自動|Auto|自動|자동
 {0} {1} 個|{0}: {1}|{0}：{1}個|{0}: {1}개
 套用{0}美食構圖|Apply {0} food composition|料理の{0}構図を適用|{0} 음식 구도 적용
 Pro 免費體驗剩餘 {0} / 20 張|Pro trial: {0} / 20 photos left|Pro体験：残り{0} / 20枚|Pro 체험: {0} / 20장 남음
@@ -663,5 +664,19 @@ Please wait…|Please wait…|お待ちください…|잠시 기다려 주세�
 骨架資訊不足，先提供人物置中建議，請讓肩膀、髖部與肢體清楚入鏡。|Not enough skeleton data. Start centered and keep shoulders, hips and limbs visible.|骨格情報が不足しています。まず中央に配置し、肩・腰・手足をはっきり写してください。|골격 정보가 부족합니다. 우선 중앙에 배치하고 어깨, 엉덩이와 팔다리가 보이게 하세요.
 未取得明確主線條，暫依場景提供基本建議。|No clear dominant lines were found. Using a basic scene suggestion.|明確な主線が見つからないため、場面に基づく基本の提案を表示します。|뚜렷한 주요 선이 없어 장면에 따른 기본 구도를 제안합니다.
 已套用構圖參考線，請依主要線條調整取景|Composition guides applied. Adjust framing to the main lines.|構図ガイドを適用しました。主な線に合わせて画角を調整してください。|구도 안내선이 적용되었습니다. 주요 선에 맞춰 구도를 조절하세요.
+請依構圖參考線調整取景|Adjust framing using the composition guides|構図ガイドに合わせて画角を調整してください|구도 안내선에 맞춰 구도를 조절하세요
+錄影|Video|動画|동영상
+拍照模式|Photo mode|写真モード|사진 모드
+錄影引導開|Video guides on|動画ガイドオン|동영상 가이드 켜짐
+錄影引導關|Video guides off|動画ガイドオフ|동영상 가이드 꺼짐
+開始錄影|Start recording|録画開始|녹화 시작
+停止錄影|Stop recording|録画停止|녹화 정지
+錄影中|Recording|録画中|녹화 중
+無聲錄影|Recording without audio|音声なしで録画|오디오 없이 녹화
+重試儲存|Retry saving|保存を再試行|저장 다시 시도
+重新啟動相機|Restart camera|カメラを再起動|카메라 다시 시작
+影片儲存失敗|Video could not be saved|動画を保存できませんでした|동영상을 저장할 수 없습니다
+錄影失敗，請再試一次。|Recording failed. Try again.|録画に失敗しました。もう一度お試しください。|녹화에 실패했습니다. 다시 시도하세요.
+需要相簿寫入權限才能儲存影片。|Allow photo library access to save videos.|動画の保存には写真ライブラリへのアクセスが必要です。|동영상을 저장하려면 사진 보관함 접근을 허용하세요.
 展開工具面板|Show tools|ツールパネルを開く|도구 패널 펼치기
 收合工具面板|Hide tools|ツールパネルを閉じる|도구 패널 접기

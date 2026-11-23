@@ -13,27 +13,33 @@ import {Check} from 'lucide-react-native';
 import {colors, radii} from '../../theme';
 import {saveEditedPhoto} from '../../filters/saveFilteredPhoto';
 import {
-  ActivityIndicator, AppState, Linking, PermissionsAndroid, Platform, StyleSheet} from 'react-native';
+  ActivityIndicator, AppState, Linking, PermissionsAndroid, Platform, StyleSheet, useWindowDimensions} from 'react-native';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import Share from 'react-native-share';
 import {
   useCameraDevice,
   useCameraDevices,
   useCameraPermission,
+  useMicrophonePermission,
   usePhotoOutput,
+  useVideoOutput,
+  CommonResolutions,
 } from 'react-native-vision-camera';
 import {useImageFaceDetector} from 'react-native-vision-camera-face-detector';
 import {CameraPreview, type ZoomCapabilities} from '../../components/Camera/CameraPreview';
 import {CameraControls} from '../../components/CameraControls/CameraControls';
+import {VideoControls} from '../../components/Camera/VideoControls';
+import {GuideRenderer} from '../../components/GuideRenderer/GuideRenderer';
 import {CompositionOverlay} from '../../components/CompositionOverlay/CompositionOverlay';
 import {RecommendationPanel} from '../../components/RecommendationPanel/RecommendationPanel';
 import {EditorScreen} from '../EditorScreen/EditorScreen';
 import {useCameraZoom} from '../../hooks/useCameraZoom';
+import {useVideoRecording} from '../../hooks/useVideoRecording';
 import {usePremiumTrial} from '../../hooks/usePremiumTrial';
 import {PremiumTrialPanel} from '../../components/PremiumTrialPanel';
 import {compositionTemplates} from '../../templates';
 import {poseCatalog} from '../../silhouettes/catalog';
-import {normalizeFoodComposition, type FoodComposition} from '../../utils/foodComposition';
+import {foodAngleFromGravity, normalizeFoodComposition, type FoodAngle, type FoodComposition} from '../../utils/foodComposition';
 import {resolveScenario, type ScenarioPreset} from '../../scenarios';
 import type {SilhouetteDefinition} from '../../types/composition';
 import {
@@ -53,9 +59,11 @@ import {
   detectSceneObjects,
   detectPose,
   sampleGeometry,
-  type NormalizedPose,
+  readFoodGravity,
 } from '../../utils/poseDetection';
 import {compositionGuidance, mirrorFaceBounds} from '../../utils/sceneComposition';
+import {createLiveComposition, updateLiveComposition, type TrackedFace} from '../../utils/liveComposition';
+import {detectedSkeleton, makeCoverProjection, traceObjectEdges, type SmartSubjectGeometry} from '../../utils/smartSubjectGeometry';
 import {buildSubjectRecommendations} from '../../utils/subjectComposition';
 import {PoseCoaching} from '../../components/PoseCoaching/PoseCoaching';
 import {SmartCompositionHint} from '../../components/SmartCompositionHint/SmartCompositionHint';
@@ -64,6 +72,7 @@ import {compositionPlacementForPose} from '../../utils/posePlacement';
 
 export function CameraScreen() {
   const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
   const [dockHeight, setDockHeight] = useState(212);
   const [bannerHeight, setBannerHeight] = useState(insets.top + 41);
   const [saveNotice, setSaveNotice] = useState(false);
@@ -79,6 +88,7 @@ export function CameraScreen() {
 
 
   const [foodComposition, setFoodComposition] = useState<FoodComposition | null>(null);
+  const [detectedFoodAngle, setDetectedFoodAngle] = useState<FoodAngle>();
 
   const [preferencesHydrated, setPreferencesHydrated] = useState(false);
 
@@ -87,6 +97,13 @@ export function CameraScreen() {
   const editExportLock = useRef(false);
   const permissionRequestedRef = useRef(false);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
+  const [videoMode, setVideoMode] = useState<{audio: boolean} | null>(null);
+  const [videoGuides, setVideoGuides] = useState(true);
+  const [videoTrackingAvailable, setVideoTrackingAvailable] = useState(true);
+  const [videoTrackingAttached, setVideoTrackingAttached] = useState(true);
+  const [videoHint, setVideoHint] = useState('');
+  const [viewfinderSize, setViewfinderSize] = useState({width: 0, height: 0});
+  const microphone = useMicrophonePermission();
 
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState('');
@@ -158,7 +175,6 @@ export function CameraScreen() {
     x: compositionTemplates[0].silhouette.x,
     y: compositionTemplates[0].silhouette.y,
   }));
-  const [smartSilhouetteSize, setSmartSilhouetteSize] = useState<{width: number; height: number} | null>(null);
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -175,8 +191,9 @@ export function CameraScreen() {
   const [detectedFaces, setDetectedFaces] =
     useState<NormalizedFaceBounds[]>([]);
 
-  const [detectedPose, setDetectedPose] =
-    useState<NormalizedPose | null>(null);
+  const [smartGeometry, setSmartGeometry] = useState<SmartSubjectGeometry | null>(null);
+  const [smartGeometryVisible, setSmartGeometryVisible] = useState(true);
+  const visibleSilhouette = smartCompositionActive ? smartGeometryVisible && smartGeometry !== null : silhouetteVisible;
 
   const [recommendations, setRecommendations] =
     useState<CompositionRecommendation[]>([]);
@@ -191,11 +208,10 @@ export function CameraScreen() {
     const reset = createSmartCompositionResetState();
     setSmartCompositionActive(reset.smartCompositionActive);
     setDetectedFaces(reset.detectedFaces);
-    setDetectedPose(reset.detectedPose);
+    setSmartGeometry(reset.smartGeometry);
     setRecommendations(reset.recommendations);
     setSmartHint(reset.smartHint);
     setSceneDetectionNotice(reset.sceneDetectionNotice);
-    setSmartSilhouetteSize(reset.smartSilhouetteSize);
     setSilhouetteLocked(reset.silhouetteLocked);
   }, []);
 
@@ -206,24 +222,22 @@ export function CameraScreen() {
     visible={trial.plansVisible} onOpen={() => {trial.setPlansVisible(true); trial.billing.refresh();}}
     onClose={() => trial.setPlansVisible(false)} onRetry={trial.reload} />;
 
-  const handleLiveFacesDetected = useCallback((faces: NormalizedFaceBounds[]) => {
-    if (!smartCompositionActive || !smartCompositionRuntimeRef.current.faceTracking) return;
+  const handleLiveFacesDetected = useCallback((faces: TrackedFace[]) => {
+    if (videoMode ? !videoGuides || !videoTrackingAvailable : !smartCompositionActive || !smartCompositionRuntimeRef.current.faceTracking) return;
     const now = Date.now();
     const runtime = smartCompositionRuntimeRef.current;
     if (now - runtime.lastLiveFaceUpdate < 180) return;
     runtime.lastLiveFaceUpdate = now;
 
-    const displayFaces = position === 'front' ? mirrorFaceBounds(faces) : faces;
-    const nextHint = compositionGuidance(displayFaces, null, runtime.liveSilhouette ?? undefined);
-    const history = [...runtime.hintHistory, nextHint].slice(-3);
-    runtime.hintHistory = history;
-
-    setDetectedFaces(faces);
-    setDetectedPose(null);
-    if (history.length < 2 || history.filter(value => value === nextHint).length >= 2) {
-      setSmartHint(nextHint);
+    const tracked = updateLiveComposition(runtime.tracking, faces, now,
+      videoMode ? compositionTemplates[0].silhouette : runtime.liveSilhouette ?? undefined, position === 'front');
+    const hint = now - tracked.hintTime <= 450 ? tracked.hint : '';
+    if (videoMode) setVideoHint(hint);
+    else {
+      setDetectedFaces(tracked.subject && tracked.confidence >= .6 ? [tracked.subject] : []);
+      setSmartHint(hint);
     }
-  }, [position, smartCompositionActive]);
+  }, [position, smartCompositionActive, videoGuides, videoMode, videoTrackingAvailable]);
 
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isSharingEdit, setIsSharingEdit] = useState(false);
@@ -241,10 +255,72 @@ export function CameraScreen() {
       : undefined,
   );
   const device = position === 'back' && useSeparateUltraWide && separateUltraWide ? separateUltraWide : preferredDevice;
+  const autoFoodAngle = !videoMode && appActive && !!device && foodComposition?.angle === 'auto';
+  useEffect(() => {
+    setDetectedFoodAngle(undefined);
+    if (!autoFoodAngle) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let previous: FoodAngle | undefined;
+    async function sample() {
+      const z = await readFoodGravity();
+      if (stopped) return;
+      previous = z === null ? undefined : foodAngleFromGravity(z, position, previous);
+      setDetectedFoodAngle(previous);
+      timer = setTimeout(sample, 650);
+    }
+    sample();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [autoFoodAngle, position]);
 
   const photoOutput = usePhotoOutput({
     qualityPrioritization: 'balanced',
   });
+  const videoOutput = useVideoOutput({targetResolution: CommonResolutions.HD_16_9, enableAudio: videoMode?.audio ?? false, fileType: 'mp4'});
+  const showSaveNotice = useCallback(() => setSaveNotice(true), []);
+  const video = useVideoRecording(videoOutput, captureLock, appActive && videoMode !== null && cameraReady, readyRef, showSaveNotice);
+  const videoBusy = video.state !== 'idle' && video.state !== 'saveFailed';
+  useEffect(() => {
+    if (!videoTrackingAvailable && !videoBusy) setVideoTrackingAttached(false);
+  }, [videoBusy, videoTrackingAvailable]);
+
+  const openVideoMode = async () => {
+    if (captureLock.current || !readyRef.current) return;
+    captureLock.current = true;
+    try {
+      if (Platform.OS === 'android' && Platform.Version <= 28 &&
+        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE) !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert('需要相簿寫入權限才能儲存影片。');
+        return;
+      }
+      const audio = microphone.hasPermission || (microphone.canRequestPermission && await microphone.requestPermission().catch(() => false));
+      markStopped();
+      setCameraError('');
+      setFlashEnabled(false);
+      resetSmartComposition();
+      setVideoTrackingAvailable(true);
+      setVideoTrackingAttached(true);
+      setVideoHint('');
+      setVideoMode({audio});
+    } catch {
+      Alert.alert('錄影失敗，請再試一次。');
+    } finally {
+      captureLock.current = false;
+    }
+  };
+
+  const flipCamera = () => {
+    if (captureLock.current) return;
+    markStopped();
+    resetSmartComposition();
+    setVideoHint('');
+    setPosition(value => value === 'back' ? 'front' : 'back');
+    setUseSeparateUltraWide(false);
+    setFlashEnabled(false);
+  };
 
   useEffect(() => {
     setZoomCapabilities(null);
@@ -384,6 +460,8 @@ export function CameraScreen() {
         readyRef.current = false;
         setCameraReady(false);
         setFlashEnabled(false);
+        setVideoHint('');
+        smartCompositionRuntimeRef.current.tracking = createLiveComposition();
       }
     });
     return () => subscription.remove();
@@ -427,8 +505,8 @@ export function CameraScreen() {
       x: silhouetteAnchor.x,
       y: silhouetteAnchor.y,
 
-      height: smartSilhouetteSize?.height ?? selectedPose.height * (baseTemplate.subjectScale ?? 1),
-      width: smartSilhouetteSize?.width ?? selectedPose.width * (baseTemplate.subjectScale ?? 1),
+      height: selectedPose.height * (baseTemplate.subjectScale ?? 1),
+      width: selectedPose.width * (baseTemplate.subjectScale ?? 1),
 
       rotation: normalizeRotation(
         (baseTemplate.silhouette.rotation ?? 0) +
@@ -678,6 +756,10 @@ export function CameraScreen() {
     captureLock.current = true;
 
     setFoodComposition(null);
+    setSmartGeometry(null);
+    setDetectedFaces([]);
+    setRecommendations([]);
+    resetSmartCompositionRuntime(smartCompositionRuntimeRef.current);
     setIsDetecting(true);
 
     try {
@@ -745,27 +827,54 @@ export function CameraScreen() {
             labelDetection.status === 'available' ? '' : labelDetection.message,
             objectDetection.status === 'available' ? '' : '景物位置辨識暫不可用，本次提供基本構圖建議',
           ].filter(Boolean).join('；'));
+          const geometryImage = geometryResult.status === 'fulfilled' ? geometryResult.value : null;
+          const skeleton = detectedSkeleton(nextPose);
+          const normalizedFaces = normalizeFaceBounds(bounds, oriented.width, oriented.height);
+          const personPoints = [
+            ...normalizedFaces.map(face => ({x: face.x + face.width / 2, y: face.y + face.height / 2})),
+            ...(skeleton?.landmarks.filter(point => point.confidence >= .55) ?? []),
+          ];
+          const sceneObjects = objectDetection.objects.filter(object =>
+            !object.labels.some(label => /^(person|people|man|woman|boy|girl)$/i.test(label.text))
+            && !personPoints.some(point => point.x >= object.x && point.x <= object.x + object.width
+              && point.y >= object.y && point.y <= object.y + object.height));
+          const edges = geometryImage ? traceObjectEdges(geometryImage, sceneObjects) : [];
+          const geometry = skeleton || edges.length
+            ? {width: oriented.width, height: oriented.height, pose: skeleton, edges} : null;
           const nextRecommendations = buildSubjectRecommendations({
             faces: bounds, width: oriented.width, height: oriented.height,
             pose: nextPose, labels, objects: objectDetection.objects, mirrored: position === 'front',
-            geometryImage: geometryResult.status === 'fulfilled' ? geometryResult.value : null,
+            geometryImage,
           });
+          if (!nextRecommendations.length && geometry) {
+            nextRecommendations.push({templateIndex: 1, pose: 'full-body', title: '置中構圖', reason: '請依構圖參考線調整取景'});
+          }
+          setSmartGeometry(geometry);
+          setSmartGeometryVisible(true);
 
-          const normalizedFaces = normalizeFaceBounds(
-              bounds,
-              oriented.width,
-              oriented.height,
-            );
-          smartCompositionRuntimeRef.current.faceTracking = normalizedFaces.length > 0
+          smartCompositionRuntimeRef.current.faceTracking = normalizedFaces.length === 1
             && !nextRecommendations[0]?.pose.startsWith('person-with-');
-          setDetectedFaces(normalizedFaces);
+          const project = makeCoverProjection(oriented, viewfinderSize);
+          const previewFaces = normalizedFaces.flatMap(face => {
+            const topLeft = project(face);
+            const bottomRight = project({x: face.x + face.width, y: face.y + face.height});
+            const x = Math.max(0, topLeft.x);
+            const y = Math.max(0, topLeft.y);
+            const width = Math.min(1, bottomRight.x) - x;
+            const height = Math.min(1, bottomRight.y) - y;
+            return width > 0 && height > 0 ? [{x, y, width, height}] : [];
+          });
+          setDetectedFaces(previewFaces);
 
-          setDetectedPose(nextPose);
-          const displayFaces = position === 'front' ? mirrorFaceBounds(normalizedFaces) : normalizedFaces;
-          setSmartHint(normalizedFaces.length || nextPose
-            ? nextRecommendations[0]?.pose.startsWith('person-with-') ? '人物與寵物依輪廓並排入鏡，確認兩者都完整可見' : compositionGuidance(displayFaces, nextPose, nextRecommendations[0]?.silhouette)
-            : nextRecommendations[0]?.showSilhouette === false ? '已套用構圖參考線，請依主要線條調整取景' : '已套用主題輪廓，請依輪廓安排主體後拍攝');
-          smartCompositionRuntimeRef.current.hintHistory = [];
+          const displayFaces = position === 'front' ? mirrorFaceBounds(previewFaces) : previewFaces;
+          const displayPose = nextPose && {...nextPose, landmarks: nextPose.landmarks.map(point => {
+            const {x, y} = project(point);
+            return {...point, x: position === 'front' ? 1 - x : x, y};
+          })};
+          setSmartHint(previewFaces.length || displayPose
+            ? compositionGuidance(displayFaces, displayPose, nextRecommendations[0]?.silhouette)
+            : '請依構圖參考線調整取景');
+          smartCompositionRuntimeRef.current.tracking = createLiveComposition();
 
           setRecommendations(
             nextRecommendations,
@@ -774,20 +883,11 @@ export function CameraScreen() {
           const best = nextRecommendations[0];
           if (best) {
             setTemplateIndex(best.templateIndex);
-            setPose(best.pose);
             const bestTemplate = compositionTemplates[best.templateIndex];
             setSilhouetteAnchor({x: bestTemplate.silhouette.x, y: bestTemplate.silhouette.y});
-            setSmartSilhouetteSize(null);
-            if (best.silhouette) {
-              setSilhouetteAnchor({x: best.silhouette.x, y: best.silhouette.y});
-              setSmartSilhouetteSize({width: best.silhouette.width, height: best.silhouette.height});
-              smartCompositionRuntimeRef.current.liveSilhouette = best.silhouette;
-            } else {
-              smartCompositionRuntimeRef.current.liveSilhouette = null;
-            }
+            smartCompositionRuntimeRef.current.liveSilhouette = best.silhouette ?? null;
             setSilhouetteRotationOffset(0);
             setGuideVisible(true);
-            setSilhouetteVisible(best.showSilhouette !== false);
             setSilhouetteResetKey(value => value + 1);
           }
 
@@ -840,6 +940,7 @@ export function CameraScreen() {
     requireAccess,
     resetSmartComposition,
     recoverCaptureError,
+    viewfinderSize,
   ]);
 
   /**
@@ -874,12 +975,28 @@ export function CameraScreen() {
     }, [resetSmartComposition]);
 
   const handleLiveFaceDetectionError = useCallback((error: Error) => {
+    if (videoMode) {
+      setVideoTrackingAvailable(false);
+      setVideoHint('');
+      return;
+    }
     clearSmartComposition();
     Alert.alert(
       '即時追蹤已停止',
       friendlyCameraError(error, '請點選「智慧構圖」重新偵測。'),
     );
-  }, [clearSmartComposition]);
+  }, [clearSmartComposition, videoMode]);
+
+  const handlePreviewError = useCallback((error: Error) => {
+    if (videoMode && videoTrackingAvailable && !videoBusy) {
+      setVideoTrackingAvailable(false);
+      setVideoTrackingAttached(false);
+      setVideoHint('');
+      restartCamera();
+      return;
+    }
+    handleCameraError(error);
+  }, [handleCameraError, restartCamera, videoBusy, videoMode, videoTrackingAvailable]);
 
   /**
    * 套用情境
@@ -1023,15 +1140,23 @@ export function CameraScreen() {
     );
   }
 
+  const videoAspect = window.width > window.height ? 16 / 9 : 9 / 16;
+  const videoPreviewWidth = Math.max(1, Math.min(viewfinderSize.width - 2, (viewfinderSize.height - 2) * videoAspect));
+
   return (
     <View style={styles.container}>
       <View onLayout={event => setBannerHeight(event.nativeEvent.layout.height)}>{trialPanel}</View>
-      <View style={[styles.viewfinder, {top: bannerHeight + 8, left: insets.left + 8, right: insets.right + 8, bottom: dockHeight + 8}]}>
+      <View style={[styles.viewfinder, {top: bannerHeight + 8, left: insets.left + 8, right: insets.right + 8, bottom: dockHeight + 8}]}
+        onLayout={event => {
+          const {width, height} = event.nativeEvent.layout;
+          setViewfinderSize(current => current.width === width && current.height === height ? current : {width, height});
+        }}>
+        <View style={videoMode ? {width: videoPreviewWidth, height: videoPreviewWidth / videoAspect} : StyleSheet.absoluteFill}>
         <View
           style={styles.cameraFill}
           pointerEvents={
-            !silhouetteLocked &&
-            silhouetteVisible
+            !videoMode && !smartCompositionActive && !foodComposition && !silhouetteLocked &&
+            visibleSilhouette
               ? 'none'
               : 'auto'
           }>
@@ -1040,13 +1165,15 @@ export function CameraScreen() {
             restartRequest={cameraRestartRequest}
             onConfigured={markConfigured}
             onStopped={markStopped}
-            onError={handleCameraError}
+            onError={handlePreviewError}
             onZoomCapabilities={setZoomCapabilities}
             onLiveFacesDetected={handleLiveFacesDetected}
             onLiveFaceDetectionError={handleLiveFaceDetectionError}
-            liveFaceDetectionEnabled={smartCompositionActive && smartCompositionRuntimeRef.current.faceTracking}
+            liveFaceDetectionEnabled={videoMode ? videoTrackingAttached : smartCompositionActive && smartCompositionRuntimeRef.current.faceTracking}
             device={device}
             photoOutput={photoOutput}
+            videoOutput={videoMode ? videoOutput : undefined}
+            lockConfiguration={videoBusy}
             pinchGesture={pinchGesture}
             torchEnabled={flashEnabled && device.hasTorch}
             zoom={zoom}
@@ -1054,16 +1181,22 @@ export function CameraScreen() {
           />
         </View>
 
+        {videoMode ? videoGuides && <>
+          <View pointerEvents="none" style={StyleSheet.absoluteFill}><GuideRenderer guides={compositionTemplates[0].guides} /></View>
+          <SmartCompositionHint text={videoHint} notice="" />
+        </> : <>
         <CompositionOverlay
           foodComposition={foodComposition}
-          template={template}
+          detectedFoodAngle={detectedFoodAngle}
+          template={smartCompositionActive ? baseTemplate : template}
           guidesVisible={guideVisible}
-          silhouetteVisible={silhouetteVisible}
+          silhouetteVisible={visibleSilhouette}
           silhouetteOpacity={overlayOpacity}
           silhouetteLocked={smartCompositionActive || silhouetteLocked}
           silhouetteResetKey={silhouetteResetKey}
           detectedFaces={detectedFaces}
-          detectedPose={detectedPose}
+          smartGeometry={smartGeometry}
+          smartCompositionActive={smartCompositionActive || isDetecting}
           mirrored={position === 'front'}
           cameraZoom={zoom}
           followZoom={followZoom}
@@ -1078,7 +1211,7 @@ export function CameraScreen() {
            * 關閉智慧構圖推薦時，
            * 同時清除偵測框。
            */
-          resetSmartComposition();
+          clearSmartComposition();
         }}
         onApply={recommendation => {
           setFoodComposition(null);
@@ -1086,21 +1219,11 @@ export function CameraScreen() {
             recommendation.templateIndex,
           );
           smartCompositionRuntimeRef.current.liveSilhouette = recommendation.silhouette ?? null;
-          smartCompositionRuntimeRef.current.hintHistory = [];
+          smartCompositionRuntimeRef.current.tracking = createLiveComposition();
           setSilhouetteLocked(true);
-          setSmartHint(recommendation.showSilhouette === false ? '已套用構圖參考線，請依主要線條調整取景' : '已套用建議，請依輪廓安排主體');
+          setSmartHint('請依構圖參考線調整取景');
           const recommendedTemplate = compositionTemplates[recommendation.templateIndex];
           setSilhouetteAnchor({x: recommendedTemplate.silhouette.x, y: recommendedTemplate.silhouette.y});
-          if (recommendation.silhouette) {
-            setSilhouetteAnchor({x: recommendation.silhouette.x, y: recommendation.silhouette.y});
-            setSmartSilhouetteSize({width: recommendation.silhouette.width, height: recommendation.silhouette.height});
-          } else {
-            setSmartSilhouetteSize(null);
-          }
-
-          setPose(
-            recommendation.pose,
-          );
 
           setSilhouetteRotationOffset(0);
 
@@ -1109,14 +1232,12 @@ export function CameraScreen() {
            * 確保框線與輪廓顯示。
            */
           setGuideVisible(true);
-          setSilhouetteVisible(recommendation.showSilhouette !== false);
 
           /**
            * 套用完成後，
            * 不需要再留下偵測框。
            */
           setDetectedFaces([]);
-          setDetectedPose(null);
           setRecommendations([]);
 
           /**
@@ -1132,23 +1253,51 @@ export function CameraScreen() {
         }}
         />
 
-        {silhouetteVisible && !foodComposition && selectedPose.category === '人物' ? <PoseCoaching
+        {!smartCompositionActive && !isDetecting && silhouetteVisible && !foodComposition && selectedPose.category === '人物' ? <PoseCoaching
           key={pose + ':' + silhouetteResetKey + ':' + position}
           pose={selectedPose}
           checkPose={checkCoachingPose}
-          hint={smartCompositionActive ? smartHint : undefined}
-          notice={smartCompositionActive ? sceneDetectionNotice : undefined}
         /> : <SmartCompositionHint
-          text={smartCompositionActive ? silhouetteVisible ? `${selectedPose.name} · ${smartHint}` : smartHint : ''}
+          text={smartCompositionActive ? smartHint : ''}
           notice={smartCompositionActive ? sceneDetectionNotice : ''}
         />}
+        </>}
+        </View>
       </View>
 
       {saveNotice && <View pointerEvents="none" accessibilityLiveRegion="polite" style={[styles.saveNotice, {top: bannerHeight + 24}]}><Check size={18} color={colors.success} /><Text style={styles.saveNoticeText}>已儲存至 BFCam 相簿</Text></View>}
-      <CameraControls
+      {videoMode ? <VideoControls
+        state={video.state}
+        ready={cameraReady}
+        audio={videoMode.audio}
+        guides={videoGuides}
+        error={video.error === 'save' ? '影片儲存失敗' : video.error === 'record' ? '錄影失敗，請再試一次。' : ''}
+        cameraError={!!cameraError}
+        bottom={insets.bottom}
+        onLayout={setDockHeight}
+        onCapture={() => {
+          if (video.state === 'recording') video.stop();
+          else if (video.state === 'saveFailed') video.save();
+          else video.start();
+        }}
+        onPhoto={() => {
+          if (captureLock.current) return;
+          markStopped();
+          setCameraError('');
+          setVideoMode(null);
+        }}
+        onToggleGuides={() => {
+          smartCompositionRuntimeRef.current.tracking = createLiveComposition();
+          setVideoHint('');
+          setVideoGuides(value => !value);
+        }}
+        onRetryCamera={restartCamera}
+        onFlip={flipCamera}
+      /> : <CameraControls
         onDockHeight={setDockHeight}
         noticeOffset={bannerHeight - insets.top + 8}
         foodComposition={foodComposition}
+        detectedFoodAngle={detectedFoodAngle}
         onFoodComposition={config => {
           setFoodComposition(normalizeFoodComposition(config));
           resetSmartComposition();
@@ -1189,7 +1338,7 @@ export function CameraScreen() {
           silhouetteLocked
         }
         silhouetteVisible={
-          silhouetteVisible
+          visibleSilhouette
         }
         followZoom={followZoom}
         zoomLevel={zoomLevel}
@@ -1219,6 +1368,7 @@ export function CameraScreen() {
         }
 
         onCapture={capture}
+        onVideoMode={openVideoMode}
         onSelectTemplate={
           selectTemplate
         }
@@ -1244,7 +1394,6 @@ export function CameraScreen() {
             ),
           );
 
-          setSmartSilhouetteSize(null);
 
           setSilhouetteRotationOffset(
             0,
@@ -1271,27 +1420,7 @@ export function CameraScreen() {
               : value + 0.2,
           )
         }
-        onFlip={() => {
-          if (captureLock.current) {
-            return;
-          }
-
-          markStopped();
-
-          /**
-           * 翻轉鏡頭後清除智慧偵測。
-           */
-          resetSmartComposition();
-
-          setPosition(value =>
-            value === 'back'
-              ? 'front'
-              : 'back',
-          );
-          setUseSeparateUltraWide(false);
-
-          setFlashEnabled(false);
-        }}
+        onFlip={flipCamera}
         onNextTemplate={() =>
           selectTemplate(
             (templateIndex + 1) %
@@ -1324,11 +1453,10 @@ export function CameraScreen() {
             value => !value,
           )
         }
-        onToggleSilhouette={() =>
-          setSilhouetteVisible(
-            value => !value,
-          )
-        }
+        onToggleSilhouette={() => {
+          if (smartCompositionActive) setSmartGeometryVisible(value => !value);
+          else setSilhouetteVisible(value => !value);
+        }}
         onToggleSilhouetteLock={() =>
           setSilhouetteLocked(
             value => !value,
@@ -1339,7 +1467,7 @@ export function CameraScreen() {
             value => !value,
           )
         }
-      />
+      />}
     </View>
   );
 }
@@ -1359,6 +1487,8 @@ const styles = StyleSheet.create({
     right: 8,
     bottom: 230,
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radii.large,
     borderWidth: 1,
     borderColor: colors.borderStrong,

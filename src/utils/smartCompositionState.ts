@@ -1,15 +1,16 @@
 import type {CompositionRecommendation, NormalizedFaceBounds, SmartSilhouetteBounds} from './compositionRecommender';
-import type {NormalizedPose} from './poseDetection';
+import type {SmartSubjectGeometry} from './smartSubjectGeometry';
+import {createLiveComposition} from './liveComposition';
 
 export type SmartCompositionRuntime = {
   lastLiveFaceUpdate: number;
-  hintHistory: string[];
+  tracking: ReturnType<typeof createLiveComposition>;
   faceTracking: boolean;
   liveSilhouette: SmartSilhouetteBounds | null;
 };
 
 export function createSmartCompositionRuntime(): SmartCompositionRuntime {
-  return {lastLiveFaceUpdate: 0, hintHistory: [], faceTracking: false, liveSilhouette: null};
+  return {lastLiveFaceUpdate: 0, tracking: createLiveComposition(), faceTracking: false, liveSilhouette: null};
 }
 
 export function resetSmartCompositionRuntime(runtime: SmartCompositionRuntime) {
@@ -20,11 +21,10 @@ export function createSmartCompositionResetState() {
   return {
     smartCompositionActive: false as const,
     detectedFaces: [] as NormalizedFaceBounds[],
-    detectedPose: null as NormalizedPose | null,
+    smartGeometry: null as SmartSubjectGeometry | null,
     recommendations: [] as CompositionRecommendation[],
     smartHint: '',
     sceneDetectionNotice: '',
-    smartSilhouetteSize: null,
     silhouetteLocked: false as const,
   };
 }

@@ -1,6 +1,11 @@
 import {NativeModules} from 'react-native';
 import type {GrayImage} from './geometryComposition';
 
+export async function readFoodGravity(): Promise<number | null> {
+  const detector = NativeModules.PoseDetectorModule as {readFoodGravity?: () => Promise<number | null>} | undefined;
+  try { return await detector?.readFoodGravity?.() ?? null; } catch { return null; }
+}
+
 export async function sampleGeometry(uri: string): Promise<GrayImage | null> {
   const detector = NativeModules.PoseDetectorModule as {sampleGeometry?: (path: string) => Promise<GrayImage>} | undefined;
   if (!detector?.sampleGeometry) return null;

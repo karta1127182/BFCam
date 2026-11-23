@@ -7,10 +7,27 @@ import MLKitVision
 import MLKitImageLabeling
 import MLKitObjectDetection
 import ImageIO
+import CoreMotion
 
 @objc(PoseDetectorModule)
 final class PoseDetectorModule: NSObject {
   @objc static func requiresMainQueueSetup() -> Bool { false }
+
+  @objc(readFoodGravity:rejecter:)
+  func readFoodGravity(_ resolve: @escaping RCTPromiseResolveBlock, rejecter _: @escaping RCTPromiseRejectBlock) {
+    DispatchQueue.main.async {
+      let motion = CMMotionManager()
+      guard motion.isDeviceMotionAvailable else { resolve(nil); return }
+      motion.deviceMotionUpdateInterval = 0.05
+      motion.startDeviceMotionUpdates()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+        let gravity = motion.deviceMotion?.gravity
+        motion.stopDeviceMotionUpdates()
+        // Core Motion reports downward gravity. Convert to screen-up positive Z.
+        resolve(gravity.map { max(-1, min(1, -$0.z)) })
+      }
+    }
+  }
 
   @objc(sampleGeometry:resolver:rejecter:)
   func sampleGeometry(_ uri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {

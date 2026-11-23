@@ -2,7 +2,7 @@ import {Pressable, Text, View} from '../../i18n/components';
 import React, {useEffect, useRef, useState} from 'react';
 import {AccessibilityInfo, ActivityIndicator, Animated, BackHandler, FlatList, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Aperture, Check, ChevronDown, Ellipsis, Grid3X3, Images, PersonStanding, SwitchCamera, WandSparkles, Zap, ZapOff, type LucideIcon} from 'lucide-react-native';
+import {Aperture, Check, ChevronDown, Ellipsis, Grid3X3, Images, PersonStanding, SwitchCamera, Video, WandSparkles, Zap, ZapOff, type LucideIcon} from 'lucide-react-native';
 import {compositionCategories, templatesForCategory, type CompositionCategoryId} from '../../templates/categories';
 import {GuideRenderer} from '../GuideRenderer/GuideRenderer';
 import {PoseDrawing} from '../Silhouette/Silhouette';
@@ -15,7 +15,7 @@ import {
 } from '../../silhouettes/catalog';
 import {filterPoseCatalog, poseScenes, type PoseSceneId} from '../../silhouettes/poseScenes';
 import {FoodCompositionPicker} from '../FoodComposition/FoodCompositionPicker';
-import type {FoodComposition} from '../../utils/foodComposition';
+import type {FoodAngle, FoodComposition} from '../../utils/foodComposition';
 import {filters} from '../../filters';
 import {
   scenarioPresets,
@@ -29,6 +29,7 @@ type Props = {
   onDockHeight?: (height: number) => void;
   noticeOffset?: number;
   foodComposition: FoodComposition | null;
+  detectedFoodAngle?: FoodAngle;
   onFoodComposition: (config: FoodComposition) => void;
   cameraReady: boolean;
   cameraError: string;
@@ -77,6 +78,7 @@ type Props = {
   smartCompositionActive: boolean;
 
   onCapture: () => void;
+  onVideoMode?: () => void;
 
   /**
    * 開始智慧構圖
@@ -138,6 +140,7 @@ export function CameraControls(
     >(null);
 
   const {height: windowHeight, width: windowWidth} = useWindowDimensions();
+  const canAdjustOutline = !props.foodComposition && !props.smartCompositionActive && !props.isDetecting;
   const panelProgress = useRef(new Animated.Value(1)).current;
   const shutterScale = useRef(new Animated.Value(1)).current;
   const reduceMotion = useRef(false);
@@ -278,7 +281,7 @@ export function CameraControls(
         />
       )}
       {/* 上方提示 */}
-      <View
+      {(canAdjustOutline || !!props.cameraError || !props.cameraReady) && <View
         pointerEvents={props.cameraError ? 'auto' : 'none'}
         style={[
           styles.hint,
@@ -306,7 +309,7 @@ export function CameraControls(
             <Text style={styles.label}>{'\u91cd\u65b0\u555f\u52d5\u76f8\u6a5f'}</Text>
           </Pressable>
         )}
-      </View>
+      </View>}
 
       <View
         onLayout={event => {if (!panel) props.onDockHeight?.(event.nativeEvent.layout.height);}}
@@ -816,7 +819,7 @@ export function CameraControls(
               </ScrollView>
             </View>}
             {(poseScene !== null || silhouettePoseGroup !== null) && <Pressable accessibilityRole="button" accessibilityLabel="清除姿勢篩選" onPress={clearPoseFilters} style={styles.clearPoseFilters}><Text style={styles.actionText}>清除姿勢篩選</Text></Pressable>}
-            {silhouetteCategory === '美食' && <FoodCompositionPicker value={props.foodComposition} onChange={props.onFoodComposition} />}
+            {silhouetteCategory === '美食' && <FoodCompositionPicker value={props.foodComposition} detectedAngle={props.detectedFoodAngle} onChange={props.onFoodComposition} />}
             {silhouetteCategory !== '美食' && <Text style={styles.catalogMeta}>{visibleSilhouettes.length} 款姿勢 · 左右滑動選擇</Text>}
             {silhouetteCategory !== '美食' && <FlatList
               key={`${silhouetteCategory}:${silhouettePoseGroup ?? 'all'}:${poseScene ?? 'all'}`}
@@ -944,7 +947,7 @@ export function CameraControls(
               }`,
               props.onToggleFollowZoom,
               props.followZoom,
-              !props.silhouetteVisible,
+              !canAdjustOutline || !props.silhouetteVisible,
             )}
 
 
@@ -955,7 +958,7 @@ export function CameraControls(
         </Animated.View>}
 
         {/* Keep outline editing reachable without opening a tools panel. */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickAdjust}>
+        {canAdjustOutline && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickAdjust}>
           {button(props.silhouetteLocked ? '調整輪廓' : '完成調整', () => {
             setPanel(null);
             props.onToggleSilhouetteLock();
@@ -988,7 +991,7 @@ export function CameraControls(
               !props.silhouetteVisible,
             )}
           </>}
-        </ScrollView>
+        </ScrollView>}
 
         {/* 主選單 */}
         <ScrollView
@@ -1163,6 +1166,7 @@ export function CameraControls(
             false,
             props.isCapturing,
           )}
+          {props.onVideoMode && cameraAction('錄影', Video, props.onVideoMode, false, props.isCapturing || props.isDetecting || !props.cameraReady)}
         </View>
       </View>
     </View>
@@ -1302,7 +1306,7 @@ const styles =
       paddingTop: 2,
     },
 
-    cameraAction: {width: 70, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8},
+    cameraAction: {width: 70, flexShrink: 1, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8},
     cameraActionLabel: {color: '#AAB2B9', fontSize: 12, fontWeight: '500'},
 
     currentZoom: {alignSelf: 'center', color: colors.primarySoft, fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'], backgroundColor: 'rgba(0,0,0,.48)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 4, marginBottom: 4},

@@ -11,7 +11,7 @@ export function mirrorFaceBounds(faces: NormalizedFaceBounds[]): NormalizedFaceB
 }
 
 const keywords: Record<Exclude<SceneKind, 'person' | 'unknown'>, string[]> = {
-  food: ['food', 'dish', 'meal', 'cuisine', 'dessert', 'fruit', 'vegetable', 'drink'],
+  food: ['food', 'dish', 'meal', 'cuisine', 'dessert', 'fruit', 'vegetable', 'drink', 'beverage', 'coffee', 'tableware', 'plate'],
   architecture: ['building', 'architecture', 'house', 'skyscraper', 'bridge', 'palace', 'tower'],
   landscape: ['landscape', 'mountain', 'sky', 'sea', 'beach', 'forest', 'nature', 'sunset'],
   pet: ['dog', 'cat', 'pet', 'animal'],
@@ -20,14 +20,16 @@ const keywords: Record<Exclude<SceneKind, 'person' | 'unknown'>, string[]> = {
 
 export function classifyScene(labels: ImageLabel[], personCount: number): SceneKind {
   if (personCount > 0) return 'person';
-  const confident = labels.filter(label => label.confidence >= .55).sort((a, b) => b.confidence - a.confidence);
-  for (const label of confident) {
-    const text = label.text.toLowerCase();
-    const match = (Object.keys(keywords) as Array<keyof typeof keywords>)
-      .find(scene => keywords[scene].some(keyword => text.includes(keyword)));
-    if (match) return match;
+  const scores = new Map<SceneKind, number>();
+  for (const {text, confidence} of labels) {
+    if (!Number.isFinite(confidence) || confidence < .55 || confidence > 1) continue;
+    const words = new Set(text.toLowerCase().split(/[^a-z]+/).map(word => word.replace(/s$/, '')));
+    for (const [scene, terms] of Object.entries(keywords) as [keyof typeof keywords, string[]][]) {
+      if (terms.some(term => words.has(term))) scores.set(scene, Math.max(scores.get(scene) ?? 0, confidence));
+    }
   }
-  return personCount > 0 ? 'person' : 'unknown';
+  const [first, second] = [...scores].sort((a, b) => b[1] - a[1]);
+  return first && (!second || first[1] - second[1] >= .08) ? first[0] : 'unknown';
 }
 
 export function chooseSceneSilhouette(scene: SceneKind, labels: ImageLabel[]): SilhouetteDefinition['variant'] {

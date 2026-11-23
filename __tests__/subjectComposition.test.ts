@@ -22,10 +22,10 @@ test('a face alone falls back to centered and does not imply standing or seated 
   expect(recommendations[0].silhouette!.x).toBeCloseTo(compositionTemplates[1].silhouette.x);
 });
 
-test('double portraits retain a double silhouette with a centered group target', () => {
+test('double portraits retain a centered group target without choosing a reference pose', () => {
   const recommendations = buildSubjectRecommendations({...input, faces: [person, {...person, x: 400}], labels: [{text: 'Mountain', confidence: .9}]});
   expect(recommendations[0].templateIndex).toBe(1);
-  expect(recommendations.every(item => getReferencePose(item.pose)?.subject === 'couple')).toBe(true);
+  expect(recommendations.every(item => !getReferencePose(item.pose))).toBe(true);
 });
 
 test('composition target never depends on the detected person position', () => {

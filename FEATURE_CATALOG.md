@@ -37,6 +37,7 @@
 | CAM-006 | 主畫面工具列與面板 | [src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 輪廓調整須從主畫面直接操作；檢查窄螢幕、安全區與返回鍵。 |
 | CAM-007 | 相機偏好保存 | [src/store/cameraPreferences.ts](src/store/cameraPreferences.ts)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/cameraPreferences.test.ts](__tests__/cameraPreferences.test.ts) | 更改資料格式時保留既有資料讀取與預設值。 |
 | CAM-008 | 工具面板收合開關 | [src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 主畫面可收合／展開工具列與倍率選擇，收合時關閉已開啟選單；保留快門、閃光、翻轉、構圖輔助與目前設定。依收合後面板高度更新取景區，不持久保存收合狀態；不停止智慧構圖。 |
+| CAM-009 | 錄影與即時構圖引導 | [src/components/Camera/VideoControls.tsx](src/components/Camera/VideoControls.tsx)<br>[src/hooks/useVideoRecording.ts](src/hooks/useVideoRecording.ts) | [__tests__/videoRecording.test.tsx](__tests__/videoRecording.test.tsx) | 相機可切至 16:9 錄影，目標為 720p MP4，授權麥克風後可錄音。三分線與人物方向提示可關閉，僅顯示於預覽。停止後存入 BFCam 相簿；儲存失敗可重試同一個檔案。 |
 
 ## CMP — 構圖與場景推薦
 
@@ -47,12 +48,14 @@
 | CMP-003 | 人物智慧構圖推薦 | [src/utils/compositionRecommender.ts](src/utils/compositionRecommender.ts)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/compositionRecommender.test.ts](__tests__/compositionRecommender.test.ts) | 推薦輪廓不等於動作已到位；前鏡頭須處理鏡像座標。 |
 | CMP-004 | 景物與背景分析 | [src/utils/sceneComposition.ts](src/utils/sceneComposition.ts)<br>[src/utils/geometryComposition.ts](src/utils/geometryComposition.ts) | [__tests__/sceneComposition.test.ts](__tests__/sceneComposition.test.ts)<br>[__tests__/geometryComposition.test.ts](__tests__/geometryComposition.test.ts) | 無人物時優先以 CMP-011 主線條分析推薦；標籤只作退回建議，並非完整深度或像素分割。 |
 | CMP-005 | 寵物與人物合照推薦 | [src/utils/subjectComposition.ts](src/utils/subjectComposition.ts) | [__tests__/subjectComposition.test.ts](__tests__/subjectComposition.test.ts) | 辨識不足時保留退回提示，不宣稱可靠辨識寵物朝向。 |
-| CMP-006 | 美食構圖 | [src/components/FoodComposition/FoodCompositionPicker.tsx](src/components/FoodComposition/FoodCompositionPicker.tsx)<br>[src/utils/foodComposition.ts](src/utils/foodComposition.ts) | [__tests__/foodComposition.test.ts](__tests__/foodComposition.test.ts) | 檢查角度、餐具數量及切換回人物輪廓的狀態。 |
+| CMP-006 | 美食構圖 | [src/components/FoodComposition/FoodCompositionPicker.tsx](src/components/FoodComposition/FoodCompositionPicker.tsx)<br>[src/utils/foodComposition.ts](src/utils/foodComposition.ts)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/foodComposition.test.ts](__tests__/foodComposition.test.ts) | 套用美食擺盤後，自動模式用裝置重力與鏡頭朝向判斷俯拍、斜拍、平拍；姿態不可用時使用俯拍，可手動選角度。縮圖與取景疊圖採相同投影，保留餐具前後順序，斜拍和平拍以杯底對齊桌面。實機驗收需涵蓋前後鏡頭、角度切換與切回人物輪廓。 |
 | CMP-007 | 構圖評分與提示 | [src/utils/compositionScore.ts](src/utils/compositionScore.ts)<br>[src/components/CompositionScoreBadge/CompositionScoreBadge.tsx](src/components/CompositionScoreBadge/CompositionScoreBadge.tsx)<br>[src/components/SmartCompositionHint/SmartCompositionHint.tsx](src/components/SmartCompositionHint/SmartCompositionHint.tsx) | [__tests__/compositionScore.test.ts](__tests__/compositionScore.test.ts) | 構圖分數不代表姿勢匹配程度；左右上下提示需驗證座標方向。 |
 | CMP-008 | 智慧構圖狀態與清除 | [src/utils/smartCompositionState.ts](src/utils/smartCompositionState.ts)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/smartCompositionState.test.ts](__tests__/smartCompositionState.test.ts) | 清除、切鏡頭與新請求須使舊偵測結果失效。 |
 | CMP-009 | 構圖分類瀏覽 | [src/templates/categories.ts](src/templates/categories.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/compositionCategories.test.ts](__tests__/compositionCategories.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 全部、人像、旅遊風景、街拍、建築、美食、特寫商品；同一模板可跨分類。篩選只改變列表，不更改已套用模板；點選保留原陣列索引以避免套錯。 |
 | CMP-010 | 人體骨架形狀構圖 | [src/utils/geometryComposition.ts](src/utils/geometryComposition.ts)<br>[src/utils/subjectComposition.ts](src/utils/subjectComposition.ts) | [__tests__/geometryComposition.test.ts](__tests__/geometryComposition.test.ts)<br>[__tests__/subjectComposition.test.ts](__tests__/subjectComposition.test.ts) | 人物優先：依高信心關節判斷傾斜、單側伸手、三角支撐、坐姿或直立；前鏡頭依顯示方向留白。單人不再隨機挑選與動作無關的參考輪廓。骨架不足或多人退回置中，並非逐姿勢精確匹配。 |
 | CMP-011 | 背景主要線條構圖 | [src/utils/geometryComposition.ts](src/utils/geometryComposition.ts)<br>[src/utils/poseDetection.ts](src/utils/poseDetection.ts)<br>[android/app/src/main/java/com/bfcam/PoseDetectionModule.kt](android/app/src/main/java/com/bfcam/PoseDetectionModule.kt)<br>[ios/BFCam/PoseDetectorModule.swift](ios/BFCam/PoseDetectorModule.swift) | [__tests__/geometryComposition.test.ts](__tests__/geometryComposition.test.ts) | Android／iOS 提供正向、最長邊 128px 灰階圖；共用 Sobel／Hough 分析長線、匯聚與近似框架／對稱。有人時不以背景覆蓋骨架建議。線條建議只顯示模板參考線，不顯示人物輪廓；模板為固定參考，非逐條描繪偵測線。無可靠線條則退回場景／置中，不宣稱辨識門窗、地平線或真正對稱。 |
+| CMP-012 | 實際主體輪廓與骨架 | [src/utils/smartSubjectGeometry.ts](src/utils/smartSubjectGeometry.ts)<br>[src/components/PoseDetectionOverlay/PoseDetectionOverlay.tsx](src/components/PoseDetectionOverlay/PoseDetectionOverlay.tsx) | [__tests__/smartSubjectGeometry.test.ts](__tests__/smartSubjectGeometry.test.ts) | 智慧構圖使用實際關節或物件範圍內的灰階像素邊界。邊界不足時保留構圖參考線。疊圖依預覽裁切與前鏡頭鏡像顯示，取樣後移動主體或鏡頭需重新分析。 |
+| CMP-013 | 主體追蹤與構圖穩定判定 | [src/utils/liveComposition.ts](src/utils/liveComposition.ts)<br>[src/utils/sceneComposition.ts](src/utils/sceneComposition.ts)<br>[src/utils/subjectComposition.ts](src/utils/subjectComposition.ts) | [__tests__/liveComposition.test.ts](__tests__/liveComposition.test.ts)<br>[__tests__/sceneComposition.test.ts](__tests__/sceneComposition.test.ts) | 以追蹤 ID 或距離延續主要人臉，平滑位置與尺寸，並以連續穩定樣本和提示一致性決定更新。場景標籤過於接近時視為不確定，全圖辨識不足時可參考高信心的主要物件標籤。 |
 
 ## OVL — 輪廓與操作
 
@@ -130,7 +133,7 @@
 | 輪廓移動、大小 | OVL-002 | 拖曳、雙指縮放。 |
 | 輪廓左轉、右轉、重設 | OVL-003 | 輪廓幾何操作。 |
 | 修圖頁面的「調整」 | EDT-003 | 修改照片色彩參數。 |
-| 智慧構圖 | CMP-003～CMP-008、CMP-010～CMP-011 | 有人優先依骨架形狀推薦；無人以背景主要線條推薦，資訊不足退回基本建議；不是姿勢到位判定。 |
+| 智慧構圖 | CMP-003～CMP-008、CMP-010～CMP-013、CAM-009 | 依骨架形狀或背景主要線條推薦。拍照疊圖使用偵測到的關節或像素邊界，錄影顯示簡化參考線與穩定的人物方向提示。 |
 | 姿勢提示 | POS-001／POS-002 | 分清分步教學與根據關節自動提示。 |
 
 ## 修改紀錄格式
@@ -156,6 +159,9 @@ Git commit：（提交後再填寫）
 
 | 日期 | 功能編號 | 變更 | 驗證／交付狀態 |
 |---|---|---|---|
+| 2026-11-23 | CMP-013、CAM-009；相關 CAM-001～CAM-003、CAM-005、CAM-006、CMP-003、CMP-004、CMP-007、CMP-008、SYS-001 | 改善場景標籤判定、新增共用的主體追蹤與提示穩定判定，加入可錄音、可開關三分線與方向提示的錄影模式。 | 程式檢查：TypeScript、相關 ESLint 與 36 組共 204 項測試通過。Pixel 8 模擬器：錄影途中關閉引導，停止後成功儲存 11.5 秒的 720p MP4，確認含視訊、音訊軌，並切回拍照。實機驗收：尚未完成。APK／AAB：已產出獨立 x86_64 debug APK，未產出正式 APK／AAB。 |
+| 2026-11-23 | CMP-012；相關 CMP-003～CMP-005、CMP-008、CMP-010、CMP-011、OVL-004、SYS-001 | 智慧構圖改為繪製偵測骨架與灰階前景像素邊界，並保留手動選擇輪廓的入口。快照套用裁切與鏡像；相機或主體移動後需重新分析。 | 程式檢查包含物件邊界、低對比退回與狀態清除。Pixel 8 模擬器：室內場景退回對角線，畫面無預設人物輪廓。實機驗收：尚未完成。APK／AAB：已包含於 x86_64 debug APK。 |
+| 2026-11-23 | CMP-006；相關 CAM-006、SYS-001 | 新增 Android／iOS 重力取樣與自動拍攝角度，保留手動角度；統一擺盤縮圖與取景疊圖的餐具投影和前後順序。美食擺盤仍依所選餐具數量和排列繪製。 | 程式檢查：TypeScript、相關 ESLint、33 組共 195 項測試通過。原生編譯與實機驗收：尚未完成。APK／AAB：未產出。 |
 | 2026-11-18 | CAM-008；相關 CAM-006、CAM-003、OVL-001、SYS-001 | 新增主畫面工具面板收合／展開按鈕，收合時關閉選單並隱藏工具列、輪廓調整列與倍率選擇；保留快門、閃光、翻轉、構圖輔助及目前選擇，依面板高度調整取景區。補上英日韓文字。 | 程式檢查：TypeScript、相關 ESLint、相機控制／恢復／多語系 3 組共 25 項測試通過。實機驗收：尚未進行 Android／iOS 窄螢幕、安全區與取景裁切確認。APK／AAB：未重新產出。Git commit：未提交。 |
 | 2026-11-18 | CMP-010、CMP-011；相關 CMP-003、CMP-004、CMP-005、CMP-008、CMP-009、SYS-001 | 智慧構圖改為有人依骨架形狀、無人依主要線條推薦；加入 Android／iOS 灰階取樣橋接。單人取消隨機參考姿勢；線條推薦隱藏輪廓，保留基本退回。補上三語文案與既有 17 模板清單回歸。 | 程式檢查：TypeScript、相關 ESLint、33 組共 193 項測試通過。Android 原生編譯：Gradle 快取鎖檔存取遭拒，未通過；iOS 原生編譯與兩平台實機辨識／效能／鏡像／EXIF 驗收未完成。APK／AAB：未產出。線條為低解析幾何估計，需實拍調整門檻；參考線是既有固定模板。Git commit：未提交。 |
 | 2026-11-17 | POS-002、POS-001、CAM-003 | 接上定期姿勢取樣與基本動作判定，連續兩次通過才提示到位；切換姿勢或前後鏡頭重設。 | 此功能加入時 TypeScript、相關 ESLint 及全套 177 項測試通過；尚未完成這項功能的手機準確度驗收。 |

@@ -6,6 +6,13 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.graphics.Rect
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.Handler
+import android.os.Looper
 import com.google.android.gms.tasks.Tasks
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
@@ -22,6 +29,44 @@ import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 
 class PoseDetectionModule(private val context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
+  @ReactMethod
+  fun readFoodGravity(promise: Promise) {
+    val manager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+    val sensor = manager?.getDefaultSensor(Sensor.TYPE_GRAVITY)
+    if (manager == null || sensor == null) {
+      promise.resolve(null)
+      return
+    }
+    val handler = Handler(Looper.getMainLooper())
+    handler.post {
+      val listener = object : SensorEventListener {
+        private var finished = false
+        val timeout = Runnable { finish(null) }
+
+        fun finish(value: Double?) {
+          if (finished) return
+          finished = true
+          handler.removeCallbacks(timeout)
+          manager.unregisterListener(this)
+          promise.resolve(value)
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
+
+        override fun onSensorChanged(event: SensorEvent) {
+          val (x, y, z) = event.values
+          val magnitude = kotlin.math.sqrt(x * x + y * y + z * z)
+          // Like the accelerometer at rest, positive Z means the screen faces up.
+          finish(if (magnitude > 0f) (z / magnitude).toDouble().coerceIn(-1.0, 1.0) else null)
+        }
+      }
+      if (manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI, handler)) {
+        handler.postDelayed(listener.timeout, 500)
+      } else {
+        listener.finish(null)
+      }
+    }
+  }
   override fun getName() = "PoseDetectorModule"
 
   @ReactMethod

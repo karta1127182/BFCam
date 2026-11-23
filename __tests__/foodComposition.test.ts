@@ -1,4 +1,29 @@
-import {foodArrangements, foodPlacements, normalizeFoodComposition} from '../src/utils/foodComposition';
+import {foodAngleFromGravity, foodArrangements, foodPlacements, normalizeFoodComposition, projectFoodPlacement} from '../src/utils/foodComposition';
+
+test('classifies camera tilt using lens direction and keeps thresholds stable', () => {
+  expect(foodAngleFromGravity(1, 'back')).toBe('overhead');
+  expect(foodAngleFromGravity(-1, 'front')).toBe('overhead');
+  expect(foodAngleFromGravity(-1, 'back')).toBeUndefined();
+  expect(foodAngleFromGravity(0, 'back')).toBe('level');
+  expect(foodAngleFromGravity(.7, 'back')).toBe('angled');
+  expect(foodAngleFromGravity(.9, 'back', 'overhead')).toBe('overhead');
+  expect(foodAngleFromGravity(.9, 'back', 'angled')).toBe('angled');
+  expect(foodAngleFromGravity(.4, 'back', 'level')).toBe('level');
+  expect(foodAngleFromGravity(.4, 'back', 'angled')).toBe('angled');
+  expect(foodAngleFromGravity(NaN, 'back')).toBeUndefined();
+});
+
+test('retains tabletop depth order and places the cup rim above its base', () => {
+  const config = {plates: 1, cups: 1, arrangement: 'auto' as const, angle: 'auto' as const};
+  expect(normalizeFoodComposition(config)).toEqual(config);
+  const [plate, cup] = foodPlacements(config);
+  for (const angle of ['overhead', 'angled', 'level'] as const) {
+    const projectedPlate = projectFoodPlacement(plate, angle);
+    const projectedCup = projectFoodPlacement(cup, angle);
+    expect(projectedPlate.y).toBeLessThan(projectedCup.y);
+    expect(projectedCup.cupRimY).toBeLessThan(projectedCup.cupBaseY);
+  }
+});
 
 test('keeps the selected angle when changing counts and normalizes unknown angles', () => {
   for (const angle of ['overhead', 'angled', 'level'] as const) {

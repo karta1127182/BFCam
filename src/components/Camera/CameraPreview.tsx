@@ -4,20 +4,23 @@ import {Platform, StyleSheet, type LayoutChangeEvent} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import type {GestureType} from 'react-native-gesture-handler';
 import type {SharedValue} from 'react-native-reanimated';
-import {Camera, type CameraDevice, type CameraPhotoOutput, type CameraRef} from 'react-native-vision-camera';
+import {Camera, type CameraDevice, type CameraPhotoOutput, type CameraRef, type CameraVideoOutput} from 'react-native-vision-camera';
 import {createFaceDetectorOutput} from 'react-native-vision-camera-face-detector';
 import {cameraZoomDisplayMultiplier} from '../../utils/zoom';
-import type {NormalizedFaceBounds} from '../../utils/compositionRecommender';
+import type {TrackedFace} from '../../utils/liveComposition';
 import {useCameraRecovery} from '../../hooks/useCameraRecovery';
 
 export type ZoomCapabilities = {minimum: number; maximum: number; displayFactor: number};
-type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; onZoomCapabilities: (capabilities: ZoomCapabilities) => void; onLiveFacesDetected: (faces: NormalizedFaceBounds[]) => void; onLiveFaceDetectionError: (error: Error) => void; liveFaceDetectionEnabled: boolean; device: CameraDevice; photoOutput: CameraPhotoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>; isActive: boolean};
+type Props = {onConfigured: () => void; onStopped: () => void; onError: (error: Error) => void; onZoomCapabilities: (capabilities: ZoomCapabilities) => void; onLiveFacesDetected: (faces: TrackedFace[]) => void; onLiveFaceDetectionError: (error: Error) => void; liveFaceDetectionEnabled: boolean; device: CameraDevice; photoOutput: CameraPhotoOutput; videoOutput?: CameraVideoOutput; pinchGesture: GestureType; torchEnabled: boolean; zoom: SharedValue<number>; isActive: boolean};
 
-export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilities, onLiveFacesDetected, onLiveFaceDetectionError, liveFaceDetectionEnabled, device, photoOutput, pinchGesture, torchEnabled, zoom, isActive, restartRequest = 0}: Props & {restartRequest?: number}) {
+export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilities, onLiveFacesDetected, onLiveFaceDetectionError, liveFaceDetectionEnabled, device, photoOutput, videoOutput, pinchGesture, torchEnabled, zoom, isActive, restartRequest = 0, lockConfiguration = false}: Props & {restartRequest?: number; lockConfiguration?: boolean}) {
   const cameraRef = useRef<CameraRef>(null);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusPoint, setFocusPoint] = useState<{x: number; y: number} | null>(null);
   const [previewSize, setPreviewSize] = useState({width: 0, height: 0});
+  const detectorSize = useRef(previewSize);
+  if (!lockConfiguration) detectorSize.current = previewSize;
+  const {width: detectorWidth, height: detectorHeight} = detectorSize.current;
   const liveFaceDetectionEnabledRef = useRef(liveFaceDetectionEnabled);
   const onLiveFacesDetectedRef = useRef(onLiveFacesDetected);
   const onLiveFaceDetectionErrorRef = useRef(onLiveFaceDetectionError);
@@ -34,20 +37,21 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
   }, []);
   const faceDetectorOutput = useMemo(() => createFaceDetectorOutput({
       onFacesDetected: faces => {
-        if (!liveFaceDetectionEnabledRef.current || previewSize.width <= 0 || previewSize.height <= 0) return;
+        if (!liveFaceDetectionEnabledRef.current || detectorWidth <= 0 || detectorHeight <= 0) return;
         const normalized = faces.map(face => {
           // Android autoMode already mirrors front-camera coordinates. Convert
           // them back to source coordinates so the shared overlay mirrors once.
-          const displayX = face.bounds.x / previewSize.width;
-          const width = face.bounds.width / previewSize.width;
+          const displayX = face.bounds.x / detectorWidth;
+          const width = face.bounds.width / detectorWidth;
           const x = device.position === 'front' && Platform.OS === 'android'
             ? 1 - displayX - width
             : displayX;
           return {
+            trackingId: face.trackingId,
             x: Math.max(0, Math.min(1, x)),
-            y: Math.max(0, Math.min(1, face.bounds.y / previewSize.height)),
+            y: Math.max(0, Math.min(1, face.bounds.y / detectorHeight)),
             width: Math.max(0, Math.min(1, width)),
-            height: Math.max(0, Math.min(1, face.bounds.height / previewSize.height)),
+            height: Math.max(0, Math.min(1, face.bounds.height / detectorHeight)),
           };
         });
         onLiveFacesDetectedRef.current(normalized);
@@ -60,18 +64,19 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
       outputResolution: 'preview',
       cameraFacing: device.position,
       autoMode: true,
-      windowWidth: Math.max(1, previewSize.width),
-      windowHeight: Math.max(1, previewSize.height),
+      windowWidth: Math.max(1, detectorWidth),
+      windowHeight: Math.max(1, detectorHeight),
       performanceMode: 'fast',
       runLandmarks: false,
       runContours: false,
       runClassifications: false,
       trackingEnabled: true,
-    }), [device.position, previewSize.height, previewSize.width]);
-  const photoOutputs = useMemo(() => [photoOutput], [photoOutput]);
-  const detectionOutputs = useMemo(() => [photoOutput, faceDetectorOutput], [photoOutput, faceDetectorOutput]);
-  const outputs = liveFaceDetectionEnabled && previewSize.width > 0 && previewSize.height > 0
-    ? detectionOutputs : photoOutputs;
+    }), [device.position, detectorHeight, detectorWidth]);
+  const captureOutput = videoOutput ?? photoOutput;
+  const captureOutputs = useMemo(() => [captureOutput], [captureOutput]);
+  const detectionOutputs = useMemo(() => [captureOutput, faceDetectorOutput], [captureOutput, faceDetectorOutput]);
+  const outputs = liveFaceDetectionEnabled && detectorWidth > 0 && detectorHeight > 0
+    ? detectionOutputs : captureOutputs;
   const getInitialZoom = useCallback(() => zoom.get(), [zoom]);
   const reportStarted = useCallback(() => {
     const controller = cameraRef.current?.controller;
@@ -110,6 +115,7 @@ export function CameraPreview({onConfigured, onStopped, onError, onZoomCapabilit
           device={device}
           isActive={isActive}
           outputs={outputs}
+          orientationSource={videoOutput ? 'interface' : 'device'}
           implementationMode="compatible"
           resizeMode="cover"
           style={styles.fill}

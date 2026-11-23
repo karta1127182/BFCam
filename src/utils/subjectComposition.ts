@@ -1,8 +1,8 @@
 import {calculateSmartSilhouette, normalizeFaceBounds, recommendFaceCompositions, type CompositionRecommendation, type FaceBounds, type SmartSilhouetteBounds} from './compositionRecommender';
-import {chooseSceneComposition, chooseSceneSilhouette, type SceneKind} from './sceneComposition';
+import {chooseSceneComposition, chooseSceneSilhouette, classifyScene, type SceneKind} from './sceneComposition';
 import type {ImageLabel, NormalizedPose, SceneObject} from './poseDetection';
 import {compositionTemplates} from '../templates';
-import {chooseHumanOutline, classifyHumanPosture} from './humanOutline';
+import {classifyHumanPosture} from './humanOutline';
 import {recommendSkeletonComposition, recommendLineComposition, type GrayImage, type GeometryDecision} from './geometryComposition';
 
 type Box = {x: number; y: number; width: number; height: number};
@@ -80,6 +80,11 @@ export function buildSubjectRecommendations(input: {
 }): CompositionRecommendation[] {
   const {faces, width, height, pose, labels, mirrored} = input;
   const objects = input.objects.map(object => ({...object, x: mirrored ? 1 - object.x - object.width : object.x}));
+  const sceneLabels = classifyScene(labels, 0) === 'unknown' ? [
+    ...labels,
+    ...objects.filter(object => object.width * object.height >= .06)
+      .flatMap(object => object.labels.filter(label => label.confidence >= .8)),
+  ] : labels;
   const normalizedFaces = normalizeFaceBounds(faces, width, height).map(face => ({...face, x: mirrored ? 1 - face.x - face.width : face.x}));
   const pet = findPet(objects, normalizedFaces);
   const subject = analyzeSubject({faces, width, height, pose, mirrored});
@@ -88,12 +93,9 @@ export function buildSubjectRecommendations(input: {
   const lineDecision = !subject && !personHint && input.geometryImage ? recommendLineComposition(input.geometryImage) : null;
   const personDecision: GeometryDecision = skeletonDecision ?? {templateIndex: 1, title: '人物・基本置中',
     reason: faces.length > 1 ? '多人畫面先以置中保留合照空間，單人骨架無法代表所有人的動作。' : '骨架資訊不足，先提供人物置中建議，請讓肩膀、髖部與肢體清楚入鏡。'};
-  const compositionTarget = buildCompositionTarget(labels, subject || personHint ? personDecision : lineDecision);
+  const compositionTarget = buildCompositionTarget(sceneLabels, subject || personHint ? personDecision : lineDecision);
   if (subject) {
     if (subject.personCount === 1 && classifyHumanPosture(pose, width, height) === 'sitting') subject.pose = 'sitting';
-    // A random pose must not contradict the action that selected the composition.
-    const outline = subject.personCount > 1 ? chooseHumanOutline({pose, width, height, personCount: subject.personCount, labels}) : undefined;
-    if (outline) subject.pose = outline.id;
   }
   let recommendations = recommendFaceCompositions(faces, width, height, pose, mirrored);
   const personCount = subject?.personCount ?? 0;
@@ -102,7 +104,7 @@ export function buildSubjectRecommendations(input: {
     const box = pet.object;
     const scale = Math.min(1, .65 / box.height, .72 / box.width);
     recommendations = [{templateIndex: 0, pose: cat ? (box.width / box.height > 1.5 ? 'cat-resting' : 'cat') : 'dog',
-      title: cat ? '貓咪三分法' : '狗狗三分法', reason: '已依寵物範圍調整輪廓；朝向仍請以實際姿勢確認。',
+      title: cat ? '貓咪三分法' : '狗狗三分法', reason: '請依構圖參考線調整取景',
       silhouette: {x: Math.min(2 / 3, 1 - box.width * scale / 2 - .03), y: Math.max(box.height * scale / 2 + .03, Math.min(1 - box.height * scale / 2 - .03, box.y + box.height / 2)), width: box.width * scale, height: box.height * scale}}];
   }
   if (!recommendations.length) {
@@ -111,10 +113,10 @@ export function buildSubjectRecommendations(input: {
     } else if (personHint) {
       recommendations = [{...personDecision, pose: 'full-body', showSilhouette: false}];
     } else {
-      const scene = chooseSceneComposition(labels, 0);
+      const scene = chooseSceneComposition(sceneLabels, 0);
       if (scene.scene === 'unknown' && !input.geometryImage) return [];
-      if (scene.scene === 'pet' && !labels.some(label => /\b(cat|dog)\b/i.test(label.text) && label.confidence >= .65)) return [];
-      recommendations = [{templateIndex: scene.templateIndex, pose: chooseSceneSilhouette(scene.scene, labels), title: scene.title, showSilhouette: false,
+      if (scene.scene === 'pet' && !sceneLabels.some(label => /\b(cat|dog)\b/i.test(label.text) && label.confidence >= .65)) return [];
+      recommendations = [{templateIndex: scene.templateIndex, pose: chooseSceneSilhouette(scene.scene, sceneLabels), title: scene.title, showSilhouette: false,
         reason: '未取得明確主線條，暫依場景提供基本建議。' + scene.reason}];
     }
   }
@@ -130,10 +132,10 @@ export function buildSubjectRecommendations(input: {
       templateIndex: target.templateIndex,
       pose: subject.pose,
       silhouette: placeOutlineAtTarget(subject, target),
-      title: index === 0 ? `${target.title}・人物輪廓` : item.title,
-      reason: index === 0 ? `${target.reason} 人物輪廓依偵測到的身形縮放，請移動到構圖目標。` : item.reason};
+      title: index === 0 ? target.title : item.title,
+      reason: index === 0 ? target.reason : item.reason};
   });
-  if (personCount === 1 && pet && personBounds && !subject?.pose.startsWith('ref-')) {
+  if (personCount === 1 && pet && personBounds) {
     const person = asRect(personBounds); const animal = pet.object;
     const left = Math.min(person.x, animal.x); const right = Math.max(person.x + person.width, animal.x + animal.width);
     const top = Math.min(person.y, animal.y); const bottom = Math.max(person.y + person.height, animal.y + animal.height);
@@ -152,7 +154,7 @@ export function buildSubjectRecommendations(input: {
           height: compositeHeight,
         },
         title: cat ? '人物與貓咪合照' : '人物與狗狗合照',
-        reason: '人物靠左、寵物靠右，依輪廓安排站位並保留完整身形。',
+        reason: '請依構圖參考線調整取景',
       };
     });
   }
