@@ -1,6 +1,17 @@
 # Android 上傳包與簽署
 
-目前套件 ID：`com.bfcam`，顯示名稱 `BFCam-男友相機`，版本名稱 `1.1.0`，versionCode `11`（目前原始碼設定；Release 與 ClosedTesting 共用）。
+目前套件 ID：`com.bfcam`，顯示名稱 `BFCam-男友相機`，版本名稱 `1.1.3`，versionCode `13`（Release 與 ClosedTesting 共用）。
+
+## 2026-11-23：版本 1.1.3（13）
+
+- REL-002：版本由本機原已暫存的 `1.1.2`（12）升為 `1.1.3`（13）。
+- 包含 CMP-006、CMP-012、CMP-013 與 CAM-009：美食自動角度、從影像產生骨架與物件邊界、構圖提示穩定判定及錄影引導。
+- 程式檢查：TypeScript、相關 ESLint 與 36 組共 204 項測試通過。
+- Pixel 8 模擬器（debug APK）：平拍、斜拍和俯拍自動切換，室內場景退回參考線，錄影中關閉引導，停止後儲存含視訊與音訊軌的 720p MP4，再切回拍照。
+- REL-001、REL-002、REL-003：正式 APK 與 AAB 從本機 main 的 `0319ca5` 建置，均核對為 `com.bfcam`、`1.1.3`（13）且符合既有上傳憑證。AAB 通過 bundletool、854 個內容項目簽章與 R8 保留檢查。
+- APK：`artifacts/BFCam-1.1.3-release.apk`，304,261,626 bytes，SHA-256 `751a533c43b39ac168cbfb898c36c7d22f9d1996ec42976b320d172f510361ea`。
+- AAB：`artifacts/BFCam-1.1.3-upload.aab`，209,918,377 bytes，SHA-256 `1444d9a4944f9055e47bdbf013d76870c514a920b598bf2b9bff88e5e0d11012`。尚未上傳 Google Play。
+- Android 實機、iOS 建置與實機尚未驗收。
 
 ## 2026-11-17：版本設定 1.1.0（11）
 
