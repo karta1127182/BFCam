@@ -1,11 +1,39 @@
 import type {ImageSourcePropType} from 'react-native';
 
 export type ReferencePoseGroup = '坐姿' | '站姿' | '趴姿' | '情侶';
-export type ReferencePoseSubject = 'male' | 'female' | 'couple';
+export type ReferencePoseSubject = 'male' | 'female' | 'couple' | 'pet';
 
-const pose = (id: string, name: string, subject: ReferencePoseSubject, group: ReferencePoseGroup, source: ImageSourcePropType, mirrorSelfie = false) => ({id, name, subject, group, source, mirrorSelfie});
+const pose = (id: string, name: string, subject: ReferencePoseSubject, group: ReferencePoseGroup, source: ImageSourcePropType, mirrorSelfie = false, redOnly = false) => ({id, name, subject, group, source, mirrorSelfie, redOnly});
 
 export const referencePoses = [
+  pose('ref-pet-dog-sit-together', '跪坐摸狗狗背', 'pet', '坐姿', require('../assets/poses/photo-pet-dog-sit-together.png'), false, true),
+  pose('ref-pet-dog-treat', '單膝跪姿餵狗', 'pet', '坐姿', require('../assets/poses/photo-pet-dog-treat.png'), false, true),
+  pose('ref-pet-dog-pet-hands', '摸摸狗狗特寫', 'pet', '站姿', require('../assets/poses/photo-pet-dog-pet-hands.png'), false, true),
+  pose('ref-pet-cat-over-shoulder', '側身抱貓回眸', 'pet', '站姿', require('../assets/poses/photo-pet-cat-over-shoulder.png'), false, true),
+  pose('ref-pet-rabbit-cuddle', '抱兔靠近臉頰', 'pet', '站姿', require('../assets/poses/photo-pet-rabbit-cuddle.png'), false, true),
+  pose('ref-pet-cat-face-to-face', '坐姿與貓咪互看', 'pet', '坐姿', require('../assets/poses/photo-pet-cat-face-to-face.png'), false, true),
+  pose('male-wall-shoulder', '男生側肩靠牆', 'male', '站姿', require('../assets/poses/photo-wall-folded-arms.png'), false, true),
+  pose('female-wall-shoulder', '女生側肩靠牆', 'female', '站姿', require('../assets/poses/photo-wall-hand-on-head.png'), false, true),
+  pose('ref-photo-wall-pockets', '男生插袋交叉腿靠牆', 'male', '站姿', require('../assets/poses/photo-wall-pockets.png'), false, true),
+  pose('ref-photo-wall-folded-women', '女生抱臂靠牆', 'female', '站姿', require('../assets/poses/photo-wall-folded-women.png'), false, true),
+  pose('ref-photo-wall-raised-palm', '女生側身撐手靠牆', 'female', '站姿', require('../assets/poses/photo-wall-raised-palm.png'), false, true),
+  pose('ref-photo-wall-doorframe', '女生側看靠牆', 'female', '站姿', require('../assets/poses/photo-wall-doorframe.png'), false, true),
+  pose('ref-photo-stairs-rail', '男生扶樓梯欄杆交叉腿', 'male', '站姿', require('../assets/poses/photo-stairs-rail.png'), false, true),
+  pose('ref-photo-stairs-open', '男生樓梯開腿坐姿', 'male', '坐姿', require('../assets/poses/photo-stairs-open.png'), false, true),
+  pose('ref-photo-stairs-raised-knee', '男生樓梯高低腳坐姿', 'male', '坐姿', require('../assets/poses/photo-stairs-raised-knee.png'), false, true),
+  pose('ref-photo-stairs-chin', '男生樓梯托臉坐姿', 'male', '坐姿', require('../assets/poses/photo-stairs-chin.png'), false, true),
+  pose('ref-photo-stairs-side', '女生樓梯側坐托臉', 'female', '坐姿', require('../assets/poses/photo-stairs-side.png'), false, true),
+  pose('ref-photo-stairs-asymmetric', '女生樓梯錯落腿坐姿', 'female', '坐姿', require('../assets/poses/photo-stairs-asymmetric.png'), false, true),
+  pose('ref-photo-stairs-together', '女生樓梯併腿坐姿', 'female', '坐姿', require('../assets/poses/photo-stairs-together.png'), false, true),
+  pose('ref-photo-stairs-hand-on-head', '女生樓梯扶頭坐姿', 'female', '坐姿', require('../assets/poses/photo-stairs-hand-on-head.png'), false, true),
+  pose('ref-photo-wall-seated', '男生靠牆屈膝坐姿', 'male', '坐姿', require('../assets/poses/photo-wall-seated.png'), false, true),
+  pose('ref-photo-wall-crossed', '男生靠牆踝交叉', 'male', '站姿', require('../assets/poses/photo-wall-crossed.png'), false, true),
+  pose('ref-photo-wall-polo', '男生靠牆插袋站姿', 'male', '站姿', require('../assets/poses/photo-wall-polo.png'), false, true),
+  pose('ref-photo-street-look-back', '男生側身回頭站姿', 'male', '站姿', require('../assets/poses/photo-street-look-back.png'), false, true),
+  pose('ref-photo-street-hand-neck', '男生扶頸插袋站姿', 'male', '站姿', require('../assets/poses/photo-street-hand-neck.png'), false, true),
+  pose('ref-photo-street-rail', '男生扶欄屈膝站姿', 'male', '站姿', require('../assets/poses/photo-street-rail.png'), false, true),
+  pose('ref-photo-street-walk', '男生插袋跨步', 'male', '站姿', require('../assets/poses/photo-street-walk.png'), false, true),
+  pose('ref-photo-stairs-step', '男生張臂下樓梯', 'male', '站姿', require('../assets/poses/photo-stairs-step.png'), false, true),
   pose('ref-male-selfie-01', '男生高角度自拍', 'male', '站姿', require('../assets/poses/male-selfie-01.png')),
   pose('ref-male-selfie-02', '男生撥髮自拍', 'male', '站姿', require('../assets/poses/male-selfie-02.png')),
   pose('ref-male-selfie-03', '男生坐姿托臉自拍', 'male', '坐姿', require('../assets/poses/male-selfie-03.png')),

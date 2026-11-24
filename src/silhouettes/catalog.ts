@@ -1,5 +1,5 @@
 import type {SilhouetteDefinition} from '../types/composition';
-import {extraPoses} from './extraPoses';
+import {environmentPoses, extraPoses} from './extraPoses';
 import {getReferencePose, referencePoses} from './referencePoses';
 
 export const silhouetteCategories = ['全部', '男', '女', '多人', '寵物', '美食', '風景', '建築', '商品'] as const;
@@ -81,10 +81,10 @@ export const poseCatalog: SilhouetteCatalogItem[] = [
   ...referencePoses.map(item => ({
     id: item.id,
     name: item.name,
-    category: '人物' as const,
-    width: item.group === '情侶' ? .66 : item.group === '趴姿' ? .72 : item.group === '坐姿' ? .58 : .44,
-    height: item.group === '趴姿' ? .46 : item.group === '坐姿' ? .58 : .72,
-    hint: item.mirrorSelfie
+    category: item.subject === 'pet' ? '寵物' as const : '人物' as const,
+    width: item.subject === 'pet' ? .76 : item.group === '情侶' ? .66 : item.group === '趴姿' ? .72 : item.group === '坐姿' ? .58 : .44,
+    height: item.subject === 'pet' ? .70 : item.group === '趴姿' ? .46 : item.group === '坐姿' ? .58 : .72,
+    hint: item.subject === 'pet' ? '先讓寵物放鬆，再依照輪廓調整位置，保留寵物的臉部。' : item.redOnly ? '依照紅色輪廓調整肩膀、手臂與腳的位置。' : item.mirrorSelfie
       ? '手機朝向鏡子，依照輪廓調整姿勢，保留手機與手臂線條。'
       : item.group === '趴姿'
       ? '依照紅色外輪廓趴下，讓身體曲線貼近綠色虛線。'
@@ -100,5 +100,5 @@ export const poseCatalog: SilhouetteCatalogItem[] = [
 // Keep reference poses and non-human guides in the picker. Legacy definitions
 // remain available to composition presets and saved camera preferences.
 export const selectablePoseCatalog = poseCatalog.filter(
-  item => item.category !== '人物' || getReferencePose(item.id) !== undefined,
+  item => item.category !== '人物' || getReferencePose(item.id) !== undefined || environmentPoses.some(pose => pose.id === item.id),
 );

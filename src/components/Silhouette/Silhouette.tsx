@@ -182,18 +182,26 @@ const silhouetteViewBoxes: Partial<Record<Exclude<SilhouetteDefinition['variant'
 
 const humanVariants = new Set<SilhouetteDefinition['variant']>([
   'male-seated', 'male-backpack', 'male-long-coat', 'female-seated', 'female-handbag', 'female-umbrella', 'group-three', 'family-three',
-  'female-prone',
+  'female-prone', 'male-stair-step', 'female-stair-step',
   'full-body', 'half-body', 'bust', 'headshot', 'side', 'hand-on-hip', 'looking-back', 'sitting',
   'walking', 'arms-crossed', 'waving', 'kneeling', 'selfie', 'street-coat',
   'male-suit', 'male-pocket', 'male-lean', 'female-dress', 'female-cross-leg', 'female-street-side',
   'couple-side-by-side', 'couple-staggered', 'couple-facing', 'couple-sit-stand', 'couple-holding-hands',
 ]);
 
+const wallPoseColor = '#FF372F';
+
 export function PoseDrawing({variant}: {variant: SilhouetteDefinition['variant']}) {
   if (isReferencePose(variant)) {
     const referencePose = getReferencePose(variant)!;
-    return <Image key={variant} source={referencePose.source} resizeMode="contain" resizeMethod="resize" fadeDuration={0} style={styles.referencePose} />;
+    return <Image key={variant} source={referencePose.source} resizeMode="contain" resizeMethod="resize" fadeDuration={0} style={[styles.referencePose, (referencePose.redOnly || variant === 'ref-mixed-11') && {tintColor: wallPoseColor}]} />;
   }
+  if (variant === 'male-lean') {
+    return <Svg viewBox={silhouetteViewBoxes[variant] ?? '0 0 100 240'} width="100%" height="100%">
+      <Path d={silhouettePaths[variant]} {...silhouetteStroke} fill="none" stroke={wallPoseColor} strokeWidth={2} />
+    </Svg>;
+  }
+
   if (variant === 'person-with-dog' || variant === 'person-with-cat') return <View style={styles.composite}>
     <View style={styles.compositePerson}><PoseDrawing variant="full-body" /></View>
     <View style={styles.compositePet}><PoseDrawing variant={variant === 'person-with-cat' ? 'cat' : 'dog'} /></View>

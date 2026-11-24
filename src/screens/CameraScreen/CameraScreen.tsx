@@ -8,12 +8,12 @@ import React, {
   useState,
 } from 'react';
 import type {PhotoGeometry, RetouchSettings} from '../../filters';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Check} from 'lucide-react-native';
 import {colors, radii} from '../../theme';
 import {saveEditedPhoto} from '../../filters/saveFilteredPhoto';
 import {
-  ActivityIndicator, AppState, Linking, PermissionsAndroid, Platform, StyleSheet, useWindowDimensions} from 'react-native';
+  ActivityIndicator, AppState, Linking, PermissionsAndroid, Platform, ScrollView, StyleSheet, useWindowDimensions} from 'react-native';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import Share from 'react-native-share';
 import {
@@ -66,6 +66,7 @@ import {createLiveComposition, updateLiveComposition, type TrackedFace} from '..
 import {detectedSkeleton, makeCoverProjection, traceObjectEdges, type SmartSubjectGeometry} from '../../utils/smartSubjectGeometry';
 import {buildSubjectRecommendations} from '../../utils/subjectComposition';
 import {PoseCoaching} from '../../components/PoseCoaching/PoseCoaching';
+import {guidedScenes, guidedSceneTemplateIndex, type GuidedScene} from '../../scenarios/guidedCapture';
 import {SmartCompositionHint} from '../../components/SmartCompositionHint/SmartCompositionHint';
 import {createSmartCompositionResetState, createSmartCompositionRuntime, resetSmartCompositionRuntime} from '../../utils/smartCompositionState';
 import {compositionPlacementForPose} from '../../utils/posePlacement';
@@ -235,7 +236,8 @@ export function CameraScreen() {
     if (videoMode) setVideoHint(hint);
     else {
       setDetectedFaces(tracked.subject && tracked.confidence >= .6 ? [tracked.subject] : []);
-      setSmartHint(hint);
+      setSmartHint(hint === '保持不動'
+        ? (tracked.confidence >= .6 && tracked.candidate === hint ? '構圖穩定，可以拍攝。' : '') : hint);
     }
   }, [position, smartCompositionActive, videoGuides, videoMode, videoTrackingAvailable]);
 
@@ -1078,6 +1080,29 @@ export function CameraScreen() {
     [resetSmartComposition],
   );
 
+  const selectedGuidedScene = guidedScenes.find(scene => scene.id === activeScenarioId);
+  const selectPose = (value: typeof pose, targetTemplate = baseTemplate) => {
+    const nextPose = poseCatalog.find(item => item.id === value) ?? poseCatalog[0];
+    setFoodComposition(null);
+    setPose(nextPose.id);
+    resetSmartComposition();
+    setSilhouetteVisible(true);
+    setSilhouetteAnchor(compositionPlacementForPose(nextPose, targetTemplate.silhouette));
+    setSilhouetteRotationOffset(0);
+    setSilhouetteResetKey(current => current + 1);
+    setActiveScenarioId(null);
+  };
+
+  const applyGuidedScene = (scene: GuidedScene, value: typeof pose) => {
+    const index = guidedSceneTemplateIndex(scene);
+    if (index < 0) return;
+    selectPose(value, compositionTemplates[index]);
+    setTemplateIndex(index);
+    setGuideVisible(true);
+    setSilhouetteLocked(true);
+    setActiveScenarioId(scene.id);
+  };
+
   /**
    * 編輯頁
    */
@@ -1107,20 +1132,22 @@ export function CameraScreen() {
    */
   if (!permission.hasPermission) {
     return (
-      <View style={styles.message}>
-        <View style={styles.messageCard}>
-          <Text style={styles.brand}>BFCam-男友相機</Text>
-          <View style={styles.brandMark}><Text style={styles.brandMarkText}>B</Text></View>
-          <Text style={styles.title}>需要相機權限</Text>
-          <Text style={styles.body}>允許相機權限後，即可使用取景構圖、人物輪廓與智慧拍攝功能。</Text>
-          {permission.canRequestPermission && (
-            <Text accessibilityRole="button" accessibilityHint="重新顯示系統相機權限視窗" style={styles.link} onPress={() => {permissionRequestedRef.current = true; requestPermission().catch(() => undefined);}}>允許使用相機</Text>
-          )}
-          {!permission.canRequestPermission && (
-            <Text accessibilityRole="link" accessibilityHint="開啟系統中的 BFCam-男友相機權限設定" style={styles.link} onPress={() => Linking.openSettings()}>前往系統設定</Text>
-          )}
-        </View>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.message}>
+          <View style={styles.messageCard}>
+            <Text style={styles.brand}>BFCam-男友相機</Text>
+            <View style={styles.brandMark}><Text style={styles.brandMarkText}>B</Text></View>
+            <Text style={styles.title}>需要相機權限</Text>
+            <Text style={styles.body}>允許相機權限後，即可使用取景構圖、人物輪廓與智慧拍攝功能。</Text>
+            {permission.canRequestPermission && (
+              <Text accessibilityRole="button" accessibilityHint="重新顯示系統相機權限視窗" style={styles.link} onPress={() => {permissionRequestedRef.current = true; requestPermission().catch(() => undefined);}}>允許使用相機</Text>
+            )}
+            {!permission.canRequestPermission && (
+              <Text accessibilityRole="link" accessibilityHint="開啟系統中的 BFCam-男友相機權限設定" style={styles.link} onPress={() => Linking.openSettings()}>前往系統設定</Text>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -1129,14 +1156,16 @@ export function CameraScreen() {
    */
   if (!device) {
     return (
-      <View style={styles.message}>
-        <View style={styles.messageCard}>
-          <Text style={styles.brand}>BFCam-男友相機</Text>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.title}>準備拍攝</Text>
-          <Text style={styles.body}>正在連接相機與載入鏡頭能力…</Text>
-        </View>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.message}>
+          <View style={styles.messageCard}>
+            <Text style={styles.brand}>BFCam-男友相機</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.title}>準備拍攝</Text>
+            <Text style={styles.body}>正在連接相機與載入鏡頭能力…</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -1203,6 +1232,8 @@ export function CameraScreen() {
         />
 
         <RecommendationPanel
+        personCount={Math.max(detectedFaces.length, smartGeometry?.pose ? 1 : 0)}
+        onSelectPose={selectPose}
         recommendations={
           recommendations
         }
@@ -1253,12 +1284,13 @@ export function CameraScreen() {
         }}
         />
 
-        {!smartCompositionActive && !isDetecting && silhouetteVisible && !foodComposition && selectedPose.category === '人物' ? <PoseCoaching
+        {!selectedGuidedScene && !smartCompositionActive && !isDetecting && silhouetteVisible && !foodComposition && selectedPose.category === '人物' ? <PoseCoaching
           key={pose + ':' + silhouetteResetKey + ':' + position}
           pose={selectedPose}
           checkPose={checkCoachingPose}
+          initiallyCollapsed
         /> : <SmartCompositionHint
-          text={smartCompositionActive ? smartHint : ''}
+          text={smartCompositionActive ? smartHint : (guideVisible && (silhouetteLocked || !silhouetteVisible) ? selectedGuidedScene?.hint ?? '' : '')}
           notice={smartCompositionActive ? sceneDetectionNotice : ''}
         />}
         </>}
@@ -1372,44 +1404,8 @@ export function CameraScreen() {
         onSelectTemplate={
           selectTemplate
         }
-        onSelectPose={value => {
-          setFoodComposition(null);
-          const nextPose =
-            poseCatalog.find(item => item.id === value) ??
-            poseCatalog[0];
-
-          setPose(nextPose.id);
-          resetSmartComposition();
-          // Selecting a pose also restores an overlay hidden manually or by
-          // clearing smart composition (including live-tracking failures).
-          setSilhouetteVisible(true);
-
-          setSilhouetteAnchor(
-            compositionPlacementForPose(
-              nextPose,
-              {
-                x: baseTemplate.silhouette.x,
-                y: baseTemplate.silhouette.y,
-              },
-            ),
-          );
-
-
-          setSilhouetteRotationOffset(
-            0,
-          );
-
-          setSilhouetteResetKey(
-            current => current + 1,
-          );
-
-          setActiveScenarioId(null);
-
-          /**
-           * 手動改輪廓後，
-           * 離開智慧構圖模式。
-           */
-        }}
+        onSelectPose={selectPose}
+        onApplyGuidedScene={applyGuidedScene}
         onApplyScenario={
           applyScenario
         }
@@ -1504,7 +1500,7 @@ const styles = StyleSheet.create({
   },
 
   message: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,

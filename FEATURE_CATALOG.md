@@ -29,7 +29,7 @@
 
 | 功能編號 | 功能名稱 | 主要程式位置 | 相關驗證入口 | 修改注意事項與限制 |
 |---|---|---|---|---|
-| CAM-001 | 相機預覽與權限 | [src/components/Camera/CameraPreview.tsx](src/components/Camera/CameraPreview.tsx)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/cameraRecovery.test.tsx](__tests__/cameraRecovery.test.tsx) | 驗證拒絕權限、背景切回與預覽恢復；勿只驗證首次開啟。 |
+| CAM-001 | 相機預覽與權限 | [src/components/Camera/CameraPreview.tsx](src/components/Camera/CameraPreview.tsx)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/cameraRecovery.test.tsx](__tests__/cameraRecovery.test.tsx) | 驗證拒絕權限、背景切回與預覽恢復；在 Android 手勢與三鍵導覽下確認權限頁與無相機畫面的安全區。 |
 | CAM-002 | 相機錯誤恢復 | [src/hooks/useCameraRecovery.ts](src/hooks/useCameraRecovery.ts)<br>[src/utils/cameraErrors.ts](src/utils/cameraErrors.ts) | [__tests__/cameraRecovery.test.tsx](__tests__/cameraRecovery.test.tsx)<br>[__tests__/cameraErrors.test.ts](__tests__/cameraErrors.test.ts) | 恢復期間避免重複初始化及過期回呼更新畫面。 |
 | CAM-003 | 快門與照片取得 | [src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/cameraRecovery.test.tsx](__tests__/cameraRecovery.test.tsx) | 與智慧構圖、姿勢取樣共用拍攝鎖；需實機驗證連點與忙碌狀態。 |
 | CAM-004 | 倍率與超廣角切換 | [src/hooks/useCameraZoom.ts](src/hooks/useCameraZoom.ts)<br>[src/utils/zoom.ts](src/utils/zoom.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/cameraZoom.test.ts](__tests__/cameraZoom.test.ts) | 顯示倍率與裝置倍率不同；鏡頭能力依裝置而異。 |
@@ -49,13 +49,15 @@
 | CMP-004 | 景物與背景分析 | [src/utils/sceneComposition.ts](src/utils/sceneComposition.ts)<br>[src/utils/geometryComposition.ts](src/utils/geometryComposition.ts) | [__tests__/sceneComposition.test.ts](__tests__/sceneComposition.test.ts)<br>[__tests__/geometryComposition.test.ts](__tests__/geometryComposition.test.ts) | 無人物時優先以 CMP-011 主線條分析推薦；標籤只作退回建議，並非完整深度或像素分割。 |
 | CMP-005 | 寵物與人物合照推薦 | [src/utils/subjectComposition.ts](src/utils/subjectComposition.ts) | [__tests__/subjectComposition.test.ts](__tests__/subjectComposition.test.ts) | 辨識不足時保留退回提示，不宣稱可靠辨識寵物朝向。 |
 | CMP-006 | 美食構圖 | [src/components/FoodComposition/FoodCompositionPicker.tsx](src/components/FoodComposition/FoodCompositionPicker.tsx)<br>[src/utils/foodComposition.ts](src/utils/foodComposition.ts)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/foodComposition.test.ts](__tests__/foodComposition.test.ts) | 套用美食擺盤後，自動模式用裝置重力與鏡頭朝向判斷俯拍、斜拍、平拍；姿態不可用時使用俯拍，可手動選角度。縮圖與取景疊圖採相同投影，保留餐具前後順序，斜拍和平拍以杯底對齊桌面。實機驗收需涵蓋前後鏡頭、角度切換與切回人物輪廓。 |
-| CMP-007 | 構圖評分與提示 | [src/utils/compositionScore.ts](src/utils/compositionScore.ts)<br>[src/components/CompositionScoreBadge/CompositionScoreBadge.tsx](src/components/CompositionScoreBadge/CompositionScoreBadge.tsx)<br>[src/components/SmartCompositionHint/SmartCompositionHint.tsx](src/components/SmartCompositionHint/SmartCompositionHint.tsx) | [__tests__/compositionScore.test.ts](__tests__/compositionScore.test.ts) | 構圖分數不代表姿勢匹配程度；左右上下提示需驗證座標方向。 |
+| CMP-007 | 構圖評分與提示 | [src/utils/compositionScore.ts](src/utils/compositionScore.ts)<br>[src/components/CompositionScoreBadge/CompositionScoreBadge.tsx](src/components/CompositionScoreBadge/CompositionScoreBadge.tsx)<br>[src/components/SmartCompositionHint/SmartCompositionHint.tsx](src/components/SmartCompositionHint/SmartCompositionHint.tsx) | [__tests__/compositionScore.test.ts](__tests__/compositionScore.test.ts) | 取景時只顯示一則操作提示。持續追蹤確認穩定後才顯示可以拍攝；構圖分數保留數值。 |
 | CMP-008 | 智慧構圖狀態與清除 | [src/utils/smartCompositionState.ts](src/utils/smartCompositionState.ts)<br>[src/screens/CameraScreen/CameraScreen.tsx](src/screens/CameraScreen/CameraScreen.tsx) | [__tests__/smartCompositionState.test.ts](__tests__/smartCompositionState.test.ts) | 清除、切鏡頭與新請求須使舊偵測結果失效。 |
-| CMP-009 | 構圖分類瀏覽 | [src/templates/categories.ts](src/templates/categories.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/compositionCategories.test.ts](__tests__/compositionCategories.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 全部、人像、旅遊風景、街拍、建築、美食、特寫商品；同一模板可跨分類。篩選只改變列表，不更改已套用模板；點選保留原陣列索引以避免套錯。 |
+| CMP-009 | 構圖分類瀏覽 | [src/templates/categories.ts](src/templates/categories.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/compositionCategories.test.ts](__tests__/compositionCategories.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 全部、人像、旅遊風景、街拍、建築、美食、特寫商品、靠牆及樓梯；同一模板可跨分類。篩選保留已套用模板和姿勢；構圖卡使用當前姿勢預覽，並顯示所選構圖的操作說明。 |
 | CMP-010 | 人體骨架形狀構圖 | [src/utils/geometryComposition.ts](src/utils/geometryComposition.ts)<br>[src/utils/subjectComposition.ts](src/utils/subjectComposition.ts) | [__tests__/geometryComposition.test.ts](__tests__/geometryComposition.test.ts)<br>[__tests__/subjectComposition.test.ts](__tests__/subjectComposition.test.ts) | 人物優先：依高信心關節判斷傾斜、單側伸手、三角支撐、坐姿或直立；前鏡頭依顯示方向留白。單人不再隨機挑選與動作無關的參考輪廓。骨架不足或多人退回置中，並非逐姿勢精確匹配。 |
 | CMP-011 | 背景主要線條構圖 | [src/utils/geometryComposition.ts](src/utils/geometryComposition.ts)<br>[src/utils/poseDetection.ts](src/utils/poseDetection.ts)<br>[android/app/src/main/java/com/bfcam/PoseDetectionModule.kt](android/app/src/main/java/com/bfcam/PoseDetectionModule.kt)<br>[ios/BFCam/PoseDetectorModule.swift](ios/BFCam/PoseDetectorModule.swift) | [__tests__/geometryComposition.test.ts](__tests__/geometryComposition.test.ts) | Android／iOS 提供正向、最長邊 128px 灰階圖；共用 Sobel／Hough 分析長線、匯聚與近似框架／對稱。有人時不以背景覆蓋骨架建議。線條建議只顯示模板參考線，不顯示人物輪廓；模板為固定參考，非逐條描繪偵測線。無可靠線條則退回場景／置中，不宣稱辨識門窗、地平線或真正對稱。 |
 | CMP-012 | 實際主體輪廓與骨架 | [src/utils/smartSubjectGeometry.ts](src/utils/smartSubjectGeometry.ts)<br>[src/components/PoseDetectionOverlay/PoseDetectionOverlay.tsx](src/components/PoseDetectionOverlay/PoseDetectionOverlay.tsx) | [__tests__/smartSubjectGeometry.test.ts](__tests__/smartSubjectGeometry.test.ts) | 智慧構圖使用實際關節或物件範圍內的灰階像素邊界。邊界不足時保留構圖參考線。疊圖依預覽裁切與前鏡頭鏡像顯示，取樣後移動主體或鏡頭需重新分析。 |
 | CMP-013 | 主體追蹤與構圖穩定判定 | [src/utils/liveComposition.ts](src/utils/liveComposition.ts)<br>[src/utils/sceneComposition.ts](src/utils/sceneComposition.ts)<br>[src/utils/subjectComposition.ts](src/utils/subjectComposition.ts) | [__tests__/liveComposition.test.ts](__tests__/liveComposition.test.ts)<br>[__tests__/sceneComposition.test.ts](__tests__/sceneComposition.test.ts) | 以追蹤 ID 或距離延續主要人臉，平滑位置與尺寸，並以連續穩定樣本和提示一致性決定更新。場景標籤過於接近時視為不確定，全圖辨識不足時可參考高信心的主要物件標籤。 |
+| CMP-014 | 構圖操作提示與推薦姿勢 | [src/templates/poseSuggestions.ts](src/templates/poseSuggestions.ts)<br>[src/components/RecommendationPanel/CompositionPoseSuggestions.tsx](src/components/RecommendationPanel/CompositionPoseSuggestions.tsx) | [__tests__/compositionCategories.test.ts](__tests__/compositionCategories.test.ts) | 每個構圖至少提供三個單人姿勢與三個雙人姿勢。智慧構圖依人物偵測顯示建議，手動點選才套用並保留目前構圖。 |
+| CMP-015 | 場景快速搭配 | [src/scenarios/guidedCapture.ts](src/scenarios/guidedCapture.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/compositionCategories.test.ts](__tests__/compositionCategories.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 靠牆、樓梯、咖啡廳各提供至少三個姿勢，點選後同時套用該構圖與姿勢。兩者仍可從原入口分別更換。 |
 
 ## OVL — 輪廓與操作
 
@@ -67,7 +69,7 @@
 | OVL-004 | 輪廓分類、選擇與素材 | [src/silhouettes/catalog.ts](src/silhouettes/catalog.ts)<br>[src/silhouettes/referencePoses.ts](src/silhouettes/referencePoses.ts)<br>[src/components/Silhouette/Silhouette.tsx](src/components/Silhouette/Silhouette.tsx) | [__tests__/silhouetteCatalog.test.ts](__tests__/silhouetteCatalog.test.ts)<br>[__tests__/humanOutline.test.ts](__tests__/humanOutline.test.ts) | 素材 ID 可能用於保存狀態，勿因改名重建或重用 ID。 |
 | OVL-005 | 輪廓透明度、顯示及跟隨倍率 | [src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx)<br>[src/components/CompositionOverlay/CompositionOverlay.tsx](src/components/CompositionOverlay/CompositionOverlay.tsx) | [__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 相關元件回歸不能取代透明度與跟隨倍率的實機驗收。 |
 | OVL-006 | 新輪廓初始位置 | [src/utils/posePlacement.ts](src/utils/posePlacement.ts) | [__tests__/posePlacement.test.ts](__tests__/posePlacement.test.ts) | 切換姿勢需重建位置，避免沿用上一個姿勢的高度與中心。 |
-| OVL-007 | 姿勢場景交叉篩選 | [src/silhouettes/poseScenes.ts](src/silhouettes/poseScenes.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/poseScenes.test.ts](__tests__/poseScenes.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 街拍旅遊、咖啡廳、室內居家、職場形象、海邊泳池、自拍對鏡、情侶約會可與人物分類及姿態交叉篩選；屬姿勢資料的適用場景建議，不是相機自動辨識場景。篩選不改變目前已套用姿勢；切換大分類清除場景與姿態條件，避免隱藏條件。 |
+| OVL-007 | 姿勢場景交叉篩選 | [src/silhouettes/poseScenes.ts](src/silhouettes/poseScenes.ts)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/poseScenes.test.ts](__tests__/poseScenes.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 街拍旅遊、咖啡廳、室內居家、職場形象、海邊泳池、自拍對鏡、情侶約會、靠牆及樓梯可與人物分類及姿態交叉篩選；屬姿勢資料的適用場景建議，不是相機自動辨識場景。篩選不改變目前已套用姿勢；切換大分類清除場景與姿態條件，避免隱藏條件。 |
 
 ## POS — 姿勢教學與偵測
 
@@ -82,7 +84,7 @@
 
 | 功能編號 | 功能名稱 | 主要程式位置 | 相關驗證入口 | 修改注意事項與限制 |
 |---|---|---|---|---|
-| EDT-001 | 編輯器分頁與互動 | [src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/App.test.tsx](__tests__/App.test.tsx) | 入口為拍照後的編輯頁；與 OVL-001 的輪廓調整不同。 |
+| EDT-001 | 編輯器分頁與互動 | [src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/App.test.tsx](__tests__/App.test.tsx) | 入口為拍照後的編輯頁；可收合編輯工具，保留重拍、分享、儲存與已做的編輯。 |
 | EDT-002 | 濾鏡與強度 | [src/filters/index.ts](src/filters/index.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx)<br>[src/components/CameraControls/CameraControls.tsx](src/components/CameraControls/CameraControls.tsx) | [__tests__/filters.test.ts](__tests__/filters.test.ts)<br>[__tests__/cameraControls.test.tsx](__tests__/cameraControls.test.tsx) | 同時存在相機預覽與拍後編輯入口，兩者皆需確認。 |
 | EDT-003 | 照片色彩參數調整 | [src/filters/index.ts](src/filters/index.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/filters.test.ts](__tests__/filters.test.ts) | 此處「調整」是照片參數，不是相機主畫面的輪廓調整。 |
 | EDT-004 | 裁切與幾何變換 | [src/filters/index.ts](src/filters/index.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/filters.test.ts](__tests__/filters.test.ts)<br>[__tests__/editorViewport.test.ts](__tests__/editorViewport.test.ts) | 輸出幾何與畫面預覽須一致。 |
@@ -91,7 +93,8 @@
 | EDT-007 | 五官與臉型調整 | [src/filters/faceReshape.ts](src/filters/faceReshape.ts)<br>[src/filters/faceReshapeModel.ts](src/filters/faceReshapeModel.ts) | [__tests__/faceReshapeModel.test.ts](__tests__/faceReshapeModel.test.ts) | 缺少關鍵點時不能強行套用變形。 |
 | EDT-008 | 黑眼圈與局部修飾 | [src/filters/manualRetouch.ts](src/filters/manualRetouch.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/darkCircle.test.ts](__tests__/darkCircle.test.ts)<br>[__tests__/manualRetouch.test.ts](__tests__/manualRetouch.test.ts) | 檢查羽化邊界、皮膚紋理與原始解析度。 |
 | EDT-009 | 手動筆刷與局部變形 | [src/filters/manualRetouch.ts](src/filters/manualRetouch.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/manualRetouch.test.ts](__tests__/manualRetouch.test.ts) | 確認縮放後筆刷座標、筆畫上限及復原／重做。 |
-| EDT-010 | 編輯畫面縮放與平移 | [src/utils/editorViewport.ts](src/utils/editorViewport.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/editorViewport.test.ts](__tests__/editorViewport.test.ts) | 顯示用變換不應意外改變照片輸出。 |
+| EDT-010 | 編輯畫面縮放與平移 | [src/utils/editorViewport.ts](src/utils/editorViewport.ts)<br>[src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/editorViewport.test.ts](__tests__/editorViewport.test.ts) | 任何編輯分頁或收合工具後都可在預覽雙指縮放至 5×。瀏覽時放大後可單指平移，修容工具開啟時保留單指筆刷；顯示變換僅用於預覽。
+| EDT-011 | 未儲存照片離開提醒 | [src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | 拍後編輯頁 | 重拍或 Android 返回會詢問繼續編輯或放棄。完成儲存後依原流程回相機並通知。 | |
 | EDT-011 | 復原、重做與重設 | [src/screens/EditorScreen/EditorScreen.tsx](src/screens/EditorScreen/EditorScreen.tsx) | [__tests__/App.test.tsx](__tests__/App.test.tsx) | 僅有應用程式基礎回歸；完整操作序列需另行驗收。 |
 
 ## OUT — 輸出與分享
@@ -106,7 +109,7 @@
 | 功能編號 | 功能名稱 | 主要程式位置 | 相關驗證入口 | 修改注意事項與限制 |
 |---|---|---|---|---|
 | PRO-001 | 體驗額度與輸出計次 | [src/hooks/usePremiumTrial.ts](src/hooks/usePremiumTrial.ts)<br>[src/store/premiumTrial.ts](src/store/premiumTrial.ts) | [__tests__/premiumTrial.test.ts](__tests__/premiumTrial.test.ts)<br>[__tests__/premiumTrialHook.test.tsx](__tests__/premiumTrialHook.test.tsx) | 成功輸出才計次，同張避免重複計次；本機資料不提供可靠防重裝濫用。 |
-| PRO-002 | 方案、購買與恢復 | [src/hooks/useStoreBilling.ts](src/hooks/useStoreBilling.ts)<br>[src/services/billing.ts](src/services/billing.ts)<br>[src/config/billing.ts](src/config/billing.ts)<br>[src/components/PremiumTrialPanel.tsx](src/components/PremiumTrialPanel.tsx) | [__tests__/billing.test.ts](__tests__/billing.test.ts) | 商店設定與資格由實際設定決定；單元測試不代表商店購買驗收。 |
+| PRO-002 | 方案、購買與恢復 | [src/hooks/useStoreBilling.ts](src/hooks/useStoreBilling.ts)<br>[src/services/billing.ts](src/services/billing.ts)<br>[src/config/billing.ts](src/config/billing.ts)<br>[src/components/PremiumTrialPanel.tsx](src/components/PremiumTrialPanel.tsx) | [__tests__/billing.test.ts](__tests__/billing.test.ts) | 方案視窗使用獨立 Modal 安全區，內容可捲動；商店設定與資格須另行驗收。 |
 | PRO-003 | 體驗提醒與通知 | [src/services/trialNotifications.ts](src/services/trialNotifications.ts)<br>[src/utils/trialReminder.ts](src/utils/trialReminder.ts)<br>[android/app/src/main/java/com/bfcam/TrialReminderModule.kt](android/app/src/main/java/com/bfcam/TrialReminderModule.kt)<br>[ios/BFCam/TrialReminderModule.swift](ios/BFCam/TrialReminderModule.swift) | [__tests__/trialNotifications.test.ts](__tests__/trialNotifications.test.ts) | 確認通知權限、排程取消與平台差異。 |
 | PRO-004 | 測試存取與版本資格 | [src/store/testingAccess.ts](src/store/testingAccess.ts)<br>[android/app/build.gradle](android/app/build.gradle) | [__tests__/premiumTrial.test.ts](__tests__/premiumTrial.test.ts) | 依現行程式與建置類型確認，不從舊文件推斷；不可在功能文件記錄私人代碼或金鑰。 |
 
@@ -115,7 +118,7 @@
 | 功能編號 | 功能名稱 | 主要程式位置 | 相關驗證入口 | 修改注意事項與限制 |
 |---|---|---|---|---|
 | SYS-001 | 多語系與文字元件 | [src/i18n/index.ts](src/i18n/index.ts)<br>[src/i18n/components.tsx](src/i18n/components.tsx)<br>[src/i18n/translations.json](src/i18n/translations.json) | [__tests__/i18n.test.ts](__tests__/i18n.test.ts)<br>[__tests__/i18nComponents.test.tsx](__tests__/i18nComponents.test.tsx) | 新增可見文字與無障礙標籤時檢查翻譯及長文字排版。 |
-| SYS-002 | 主題與共用視覺 | [src/theme.ts](src/theme.ts) | [__tests__/App.test.tsx](__tests__/App.test.tsx) | 主題影響相機、面板、編輯器及付費入口，須檢查可讀性。 |
+| SYS-002 | 主題與共用視覺 | [src/theme.ts](src/theme.ts)<br>[App.tsx](App.tsx)<br>[Android 主題](android/app/src/main/res/values/styles.xml)<br>[Android API 29+ 主題](android/app/src/main/res/values-v29/styles.xml) | [__tests__/App.test.tsx](__tests__/App.test.tsx) | 深色背景延伸至系統列；驗證狀態列與手勢／三鍵導覽圖示的可讀性。 |
 
 ## REL — 建置與安裝
 
@@ -159,6 +162,16 @@ Git commit：（提交後再填寫）
 
 | 日期 | 功能編號 | 變更 | 驗證／交付狀態 |
 |---|---|---|---|
+| 2026-11-24 | OVL-004；相關 CMP-005、POS-002 | 重畫六款寵物紅線姿勢，改用新的視角、人物姿勢和人寵相對位置，沿用既有姿勢 ID。 | 實機驗收與 APK／AAB 尚未完成。 |
+| 2026-11-24 | OVL-004；相關 CMP-005、POS-002 | 寵物分類新增六款照片衍生的透明紅線姿勢，包含與狗同坐、餵狗、摸狗特寫、側抱貓、抱兔與抱貓互看。取景與縮圖共用。 | 實機驗收與 APK／AAB 尚未完成。 |
+| 2026-11-24 | OVL-004、OVL-007；相關 CMP-014、CMP-015 | 移除兩款手繪側肩輪廓，改用使用者照片轉製的透明紅線素材並保留原選擇 ID。共加入 22 款靠牆、樓梯與街拍姿勢。 | 實機驗收與 APK／AAB 尚未完成。 |
+| 2026-11-24 | OVL-004；相關 CMP-014、CMP-015 | 依使用者附圖重畫男女側肩靠牆。男款抱臂屈膝，女款扶頭、單腳抵牆，取景與推薦縮圖共用透明紅線輪廓。 | 實機驗收及 APK／AAB 尚未完成。 |
+| 2026-11-24 | OVL-004；相關 CMP-014、CMP-015 | 參考姿勢庫線稿細化男女側肩靠牆的髮線、下顎、袖口、手部、衣褶與鞋線，舉手靠牆款統一為紅色描線。取景與縮圖共用繪製。 | 實機驗收及 APK／AAB 尚未完成。 |
+| 2026-11-23 | CMP-014、CMP-015；相關 OVL-004 | 17 個構圖各提供三個單人與三個雙人推薦，靠牆、樓梯、咖啡廳快捷搭配各有三個姿勢。擺盤模式保留餐具選擇。 | 實機驗收與正式 APK／AAB 尚未完成。 |
+| 2026-11-23 | OVL-004；相關 OVL-007、CMP-014、CMP-015 | 調整男女側肩靠牆輪廓，讓靠牆側肩臂更接近垂直、身體重心偏向牆側，並區分彎腿站姿與輕交叉腿站姿。保留原輪廓 ID 與推薦入口；靠牆姿勢在取景與縮圖使用紅色描邊及透明內部。 | 實機驗收與正式 APK／AAB 尚未完成。 |
+| 2026-11-23 | SYS-002、CAM-001、PRO-002 | Android 無邊框下，相機權限與無相機畫面避開系統列，Pro 方案視窗獨立取得安全區；深色背景延伸至狀態與導覽列。 | 程式檢查：TypeScript、相關 ESLint 與 36 組共 206 項測試通過。Pixel 8 API 37 模擬器：手勢與三鍵導覽皆確認權限拒絕頁、相機取景、Pro 視窗及拍後編輯避開系統列。API 35 與實機驗收：尚未完成。APK／AAB：已產出並安裝 x86_64 debug APK，正式包尚未產出。React Native 仍有無邊框相關淘汰 API，Play 警告待新版掃描。 |
+| 2026-11-23 | CMP-015、CMP-007；相關 CAM-006、CAM-007、CMP-013、CMP-014、POS-002、SYS-001 | 靠牆、樓梯、咖啡廳提供一鍵構圖與姿勢搭配，取景提示精簡為一句；智慧構圖追蹤穩定後才提示可以拍攝。 | 程式檢查：TypeScript、相關 ESLint 與 36 組共 206 項測試通過。實機驗收：尚未完成。APK／AAB：尚未重新產出。 |
+| 2026-11-23 | EDT-001、EDT-010、EDT-011、CMP-014；相關 CMP-003、CMP-009、OVL-004、OVL-007、SYS-001 | 拍後預覽加入全分頁縮放、工具收合與未儲存提醒。新增男女靠牆與樓梯姿勢、場景構圖入口與可手動套用的推薦姿勢。 | 程式檢查：TypeScript、相關 ESLint、36 組共 205 項測試通過。實機驗收：尚未完成。APK／AAB：尚未重新產出。 |
 | 2026-11-23 | REL-001～REL-003；相關 CMP-006、CMP-012、CMP-013、CAM-009 | Android 升為 1.1.3（13）並用既有上傳金鑰產包。 | 程式檢查：TypeScript、ESLint、204 項測試通過。Pixel 8 模擬器：三種美食角度、智慧構圖退回與錄影存檔通過。Android／iOS 實機：尚未驗收。APK／AAB：正式 1.1.3 檔案已產出且通過版本及簽章驗證，詳見 ANDROID_RELEASE.md。 |
 | 2026-11-23 | CMP-013、CAM-009；相關 CAM-001～CAM-003、CAM-005、CAM-006、CMP-003、CMP-004、CMP-007、CMP-008、SYS-001 | 改善場景標籤判定、新增共用的主體追蹤與提示穩定判定，加入可錄音、可開關三分線與方向提示的錄影模式。 | 程式檢查：TypeScript、相關 ESLint 與 36 組共 204 項測試通過。Pixel 8 模擬器：錄影途中關閉引導，停止後成功儲存 11.5 秒的 720p MP4，確認含視訊、音訊軌，並切回拍照。實機驗收：尚未完成。APK／AAB：已產出獨立 x86_64 debug APK，未產出正式 APK／AAB。 |
 | 2026-11-23 | CMP-012；相關 CMP-003～CMP-005、CMP-008、CMP-010、CMP-011、OVL-004、SYS-001 | 智慧構圖改為繪製偵測骨架與灰階前景像素邊界，並保留手動選擇輪廓的入口。快照套用裁切與鏡像；相機或主體移動後需重新分析。 | 程式檢查包含物件邊界、低對比退回與狀態清除。Pixel 8 模擬器：室內場景退回對角線，畫面無預設人物輪廓。實機驗收：尚未完成。APK／AAB：已包含於 x86_64 debug APK。 |

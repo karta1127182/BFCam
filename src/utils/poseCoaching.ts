@@ -4,7 +4,7 @@ import {getReferencePose} from '../silhouettes/referencePoses';
 /** Teaching cues only: progress is confirmed by the user, not by detection. */
 export function poseCoachingSteps(pose: SilhouetteCatalogItem): string[] {
   const reference = getReferencePose(pose.id);
-  if (!reference) return pose.hint.split(/[，。；]/).map(text => text.trim()).filter(Boolean);
+  if (!reference || reference.subject === 'pet') return pose.hint.split(/[，。；]/).map(text => text.trim()).filter(Boolean);
   const name = pose.name;
   const body = /回眸|回頭/.test(name) ? '身體微側或背向鏡頭，再輕輕回頭。'
     : /側身/.test(name) ? '身體微微側向鏡頭，肩膀放鬆。'

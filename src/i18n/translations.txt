@@ -680,3 +680,23 @@ Please wait…|Please wait…|お待ちください…|잠시 기다려 주세�
 需要相簿寫入權限才能儲存影片。|Allow photo library access to save videos.|動画の保存には写真ライブラリへのアクセスが必要です。|동영상을 저장하려면 사진 보관함 접근을 허용하세요.
 展開工具面板|Show tools|ツールパネルを開く|도구 패널 펼치기
 收合工具面板|Hide tools|ツールパネルを閉じる|도구 패널 접기
+照片尚未儲存|Photo not saved|写真が保存されていません|사진이 저장되지 않았습니다
+離開後，這張照片和編輯內容都會消失。|Leaving discards this photo and your edits.|離れると写真と編集内容が破棄されます。|나가면 사진과 편집 내용이 삭제됩니다.
+繼續編輯|Keep editing|編集を続ける|편집 계속
+放棄照片|Discard photo|写真を破棄|사진 버리기
+照片預覽|Photo preview|写真プレビュー|사진 미리보기
+靠牆|Wall|壁にもたれる|벽 기대기
+樓梯|Stairs|階段|계단
+男生側肩靠牆|Men · Shoulder against wall|男性・肩を壁に寄せる|남성 · 어깨를 벽에 기대기
+女生側肩靠牆|Women · Shoulder against wall|女性・肩を壁に寄せる|여성 · 어깨를 벽에 기대기
+男生樓梯錯步|Men · Staggered stance on stairs|男性・階段で段違いに立つ|남성 · 계단에 발을 엇갈려 서기
+女生樓梯扶欄|Women · Stair rail pose|女性・階段で手すりに手を添える|여성 · 계단 난간 잡기
+讓肩膀輕靠牆面，視線朝空白的一側。|Rest your shoulder lightly on the wall and look toward the open space.|肩を軽く壁に寄せ、余白のある方向を見ます。|어깨를 벽에 가볍게 기대고 여백 쪽을 바라보세요.
+雙腳分站在不同階梯，讓扶手或階梯線指向人物。|Stand with feet on different steps and use the railing or stairs to lead toward the subject.|両足を別の段に置き、手すりや段の線を人物へ導きます。|양발을 다른 계단에 두고 난간이나 계단 선이 인물을 향하게 하세요.
+牆面可以留白，讓人物靠畫面的一側。|Use the wall as open space and place the subject to one side.|壁を余白にし、人物を画面の片側に置きます。|벽을 여백으로 두고 인물을 화면 한쪽에 배치하세요.
+沿著階梯或扶手帶出方向，並保留人物腳下空間。|Follow the direction of the steps or railing and leave space below the feet.|階段や手すりの方向を生かし、足元に余白を残します。|계단이나 난간의 방향을 활용하고 발밑에 여백을 남기세요.
+查看適合的構圖|See matching compositions|相性のよい構図を見る|어울리는 구도 보기
+推薦姿勢|Suggested poses|おすすめポーズ|추천 포즈
+牆面留白，人物靠一側。|Leave open wall space and place the subject to one side.|壁に余白を残し、人物を片側に置きます。|벽에 여백을 두고 인물을 한쪽에 배치하세요.
+讓扶手線延伸到人物。|Let the railing lead toward the subject.|手すりの線が人物に向かうように構えます。|난간 선이 인물을 향하게 구도를 잡으세요.
+讓頭和雙臂形成三角。|Frame the head and arms as a triangle.|頭と両腕で三角形を作ります。|머리와 두 팔로 삼각형을 만드세요.

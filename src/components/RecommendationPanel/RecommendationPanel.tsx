@@ -2,11 +2,14 @@ import {Pressable, Text, View} from '../../i18n/components';
 import React from 'react';
 import {StyleSheet} from 'react-native';
 import type {CompositionRecommendation} from '../../utils/compositionRecommender';
+import {compositionTemplates} from '../../templates';
+import type {SilhouetteDefinition} from '../../types/composition';
+import {CompositionPoseSuggestions} from './CompositionPoseSuggestions';
 import {colors, radii, typography} from '../../theme';
 
-type Props = {recommendations: CompositionRecommendation[]; onApply: (recommendation: CompositionRecommendation) => void; onDismiss: () => void};
+type Props = {recommendations: CompositionRecommendation[]; onApply: (recommendation: CompositionRecommendation) => void; onDismiss: () => void; personCount: number; onSelectPose: (pose: SilhouetteDefinition['variant']) => void};
 
-export function RecommendationPanel({recommendations, onApply, onDismiss}: Props) {
+export function RecommendationPanel({recommendations, onApply, onDismiss, personCount, onSelectPose}: Props) {
   if (!recommendations.length) return null;
   return <View style={styles.panel}>
     <View style={styles.header}><View><Text style={styles.eyebrow}>智慧構圖推薦</Text><Text style={styles.title}>最佳構圖已自動套用</Text></View><Pressable accessibilityRole="button" accessibilityLabel="關閉構圖推薦" onPress={onDismiss} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable></View>
@@ -15,6 +18,7 @@ export function RecommendationPanel({recommendations, onApply, onDismiss}: Props
       <View style={styles.copy}><Text style={styles.optionTitle}>{recommendation.title}{index === 0 ? ' · 最適合' : ''}</Text><Text numberOfLines={2} style={styles.reason}>{recommendation.reason}</Text></View>
       <Text style={styles.apply}>{index === 0 ? '已套用' : '改用'}</Text>
     </Pressable>)}
+    <CompositionPoseSuggestions templateId={compositionTemplates[recommendations[0].templateIndex].id} personCount={personCount} onSelect={onSelectPose} />
   </View>;
 }
 

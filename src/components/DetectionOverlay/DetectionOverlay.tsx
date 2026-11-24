@@ -15,13 +15,10 @@ export function DetectionOverlay({faces, mirrored}: Props) {
       width: `${face.width * 100}%`,
       height: `${face.height * 100}%`,
     }]}><Text style={styles.label}>{index + 1}</Text></View>)}
-    <View style={styles.notice}><Text style={styles.noticeText}>上次一鍵偵測結果 · 移動相機後請重新偵測</Text></View>
   </View>;
 }
 
 const styles = StyleSheet.create({
   face: {position: 'absolute', borderWidth: 1.5, borderColor: colors.primarySoft, borderRadius: radii.medium, backgroundColor: 'rgba(215,185,120,.06)'},
   label: {position: 'absolute', top: -11, left: -2, minWidth: 22, height: 22, borderRadius: 11, overflow: 'hidden', textAlign: 'center', lineHeight: 22, color: '#211A0F', backgroundColor: colors.primarySoft, fontSize: 11, fontWeight: '900'},
-  notice: {position: 'absolute', top: '16%', alignSelf: 'center', paddingHorizontal: 11, paddingVertical: 7, borderRadius: radii.pill, borderWidth: 1, borderColor: 'rgba(215,185,120,.28)', backgroundColor: colors.overlay},
-  noticeText: {color: colors.primarySoft, fontSize: 11, fontWeight: '600'},
 });

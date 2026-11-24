@@ -2,6 +2,8 @@ import type {SilhouetteCatalogItem} from './catalog';
 
 // Real body/clothing shapes, shared by the preview and selection thumbnails.
 export const extraPosePaths = {
+  'male-stair-step': 'M50 6 C38 6 32 16 34 29 Q35 40 44 45 L43 53 Q31 56 25 70 L17 114 L21 130 L29 129 L35 112 L40 87 L38 137 L36 172 L30 220 L23 229 L28 235 L45 232 L49 220 L56 174 L66 165 L75 179 L75 199 L87 199 L90 190 L88 164 L76 139 L65 132 L64 89 L74 106 L88 107 L96 103 L93 94 L79 93 L72 68 Q67 56 55 53 L54 45 Q64 41 66 29 C68 15 61 6 50 6 Z',
+  'female-stair-step': 'M45 8 C33 8 29 18 31 31 L27 48 L39 50 L38 57 Q25 61 22 76 L18 123 L25 130 L31 111 L36 86 L40 111 L34 149 L44 155 L38 199 L32 225 L25 230 L31 237 L45 232 L50 218 L58 181 L69 165 L76 173 L79 195 L91 195 L95 189 L91 180 L87 157 L76 141 L68 137 L60 110 L61 85 L73 97 L88 91 L97 83 L92 77 L78 84 L68 72 Q62 59 51 57 L50 49 L63 47 L59 31 C62 17 56 8 45 8 Z',
   'male-seated': 'M47 8 C34 8 31 19 34 31 C36 39 40 43 46 45 L45 53 C29 57 23 66 22 82 L19 124 L27 128 L32 87 L36 124 L66 139 L84 166 L92 166 L91 155 L74 128 L57 114 L58 83 L70 105 L83 114 L87 105 L75 94 L66 63 L56 53 L55 45 C63 41 66 31 64 21 C63 12 56 8 47 8 Z M34 131 L58 143 L57 182 L51 213 L44 219 L46 225 L62 225 L66 214 L70 175 L71 146 L44 129 Z M72 144 L78 179 L80 214 L76 220 L82 226 L96 225 L94 214 L90 174 L83 146 Z',
   'male-backpack': 'M50 6 C38 6 33 16 35 29 C36 39 41 43 46 45 L45 52 L31 57 L23 72 L16 124 L20 143 L27 142 L30 122 L35 88 L34 147 L31 182 L27 222 L21 230 L26 235 L40 233 L45 216 L50 164 L56 216 L60 233 L74 235 L79 230 L73 222 L69 182 L66 147 L65 88 L71 122 L73 142 L80 143 L84 124 L77 72 L69 57 L55 52 L54 45 C60 42 65 36 65 26 C65 13 60 6 50 6 Z M36 66 Q50 57 64 66 L65 125 Q50 137 35 125 Z M40 77 L60 77 L61 110 L39 110 Z',
   'male-long-coat': 'M50 5 C38 5 33 15 35 28 C36 37 41 42 46 44 L44 52 L30 57 L22 71 L14 127 L17 146 L25 146 L29 122 L34 87 L30 169 L43 175 L39 222 L33 229 L37 235 L49 232 L53 183 L58 222 L55 230 L61 235 L73 233 L70 222 L65 175 L77 170 L67 87 L74 122 L77 146 L85 146 L88 127 L80 71 L70 57 L56 52 L54 44 C62 40 65 33 65 24 C65 11 59 5 50 5 Z M44 53 L49 75 L39 91 L36 62 Z M56 53 L52 75 L62 91 L66 62 Z',
@@ -16,7 +18,13 @@ export const extraPosePaths = {
   'cat-resting': 'M19 53 L13 27 L32 41 Q44 34 55 45 Q78 36 89 55 Q97 70 87 80 L25 83 Q9 82 10 70 Q10 60 19 53 Z M31 58 L35 58 M46 58 L50 58 M35 68 Q40 74 45 68 M77 74 Q95 63 96 79 Q93 94 64 89',
 };
 
+export const environmentPoses: SilhouetteCatalogItem[] = [
+  {id: 'male-stair-step', name: '男生樓梯錯步', category: '人物', width: .43, height: .72, hint: '雙腳分站在不同階梯，讓扶手或階梯線指向人物。'},
+  {id: 'female-stair-step', name: '女生樓梯扶欄', category: '人物', width: .45, height: .72, hint: '雙腳分站在不同階梯，讓扶手或階梯線指向人物。'},
+];
+
 export const extraPoses: SilhouetteCatalogItem[] = [
+  ...environmentPoses,
   {id: 'male-seated', name: '男生坐姿', category: '人物', width: .52, height: .58, hint: '坐穩並放鬆肩膀，保留完整膝蓋與腳部輪廓。'},
   {id: 'male-backpack', name: '男生背包站姿', category: '人物', width: .42, height: .7, hint: '背包與肩線完整入鏡，雙腳自然分開。'},
   {id: 'male-long-coat', name: '男生長外套', category: '人物', width: .44, height: .7, hint: '保留外套下襬及完整鞋型，身體微微側轉。'},

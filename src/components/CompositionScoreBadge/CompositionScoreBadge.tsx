@@ -11,7 +11,6 @@ export function CompositionScoreBadge({score}: Props) {
   const tone = score.total >= 80 ? styles.good : score.total >= 60 ? styles.fair : styles.needsWork;
   return <View pointerEvents="none" style={[styles.badge, tone]}>
     <View style={styles.row}><Text style={styles.label}>構圖</Text><Text style={styles.score}>{score.total}</Text><Text style={styles.maximum}>/100</Text></View>
-    <Text style={styles.hint}>{score.hint}</Text>
   </View>;
 }
 
@@ -20,5 +19,4 @@ const styles = StyleSheet.create({
   good: {borderColor: colors.success}, fair: {borderColor: colors.warning}, needsWork: {borderColor: colors.danger},
   row: {flexDirection: 'row', alignItems: 'baseline'}, label: {color: colors.textSecondary, fontSize: 12, fontWeight: '700', marginRight: 7, letterSpacing: .7},
   score: {color: colors.text, fontSize: 24, fontWeight: '900'}, maximum: {color: colors.textMuted, fontSize: 10, marginLeft: 2},
-  hint: {color: colors.text, fontSize: 12, lineHeight: 17, marginTop: 3},
 });

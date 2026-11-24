@@ -1,4 +1,4 @@
-import {Text, View} from '../../i18n/components';
+import {View} from '../../i18n/components';
 import React from 'react';
 import {StyleSheet} from 'react-native';
 import Svg, {Circle, Line, Path} from 'react-native-svg';
@@ -24,11 +24,5 @@ export function PoseDetectionOverlay({geometry, mirrored, opacity}: Props) {
       })}
       {visible.map(point => <Circle key={point.name} cx={x(point.x)} cy={y(point.y)} r={stroke} fill="#ffcf5a" />)}
     </Svg>
-    <View style={styles.badge}><Text style={styles.stale}>上次一鍵偵測結果 · 移動相機後請重新偵測</Text></View>
   </View>;
 }
-
-const styles = StyleSheet.create({
-  badge: {position: 'absolute', top: '22%', alignSelf: 'center', maxWidth: '84%', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: 'rgba(38,27,5,.82)', alignItems: 'center'},
-  stale: {color: '#c5ad70', fontSize: 9, marginTop: 2},
-});

@@ -1,5 +1,5 @@
 import {matchesSilhouetteCategory, matchesSilhouettePoseGroup, poseCatalog, selectablePoseCatalog, silhouetteCategories, silhouettePoseGroups} from '../src/silhouettes/catalog';
-import {extraPosePaths, extraPoses} from '../src/silhouettes/extraPoses';
+import {environmentPoses, extraPosePaths, extraPoses} from '../src/silhouettes/extraPoses';
 import {referencePoses} from '../src/silhouettes/referencePoses';
 
 describe('silhouette browsing', () => {
@@ -16,21 +16,33 @@ describe('silhouette browsing', () => {
     expect(selectablePoseCatalog).not.toContain(family);
   });
   it('removes legacy human silhouettes from the picker and preserves reference poses', () => {
-    expect(extraPoses).toHaveLength(12);
-    expect(new Set(Object.values(extraPosePaths)).size).toBe(12);
+    expect(extraPoses).toHaveLength(14);
+    expect(new Set(Object.values(extraPosePaths)).size).toBe(extraPoses.length);
     extraPoses.forEach(item => {
       expect(extraPosePaths[item.id as keyof typeof extraPosePaths]).toMatch(/^M/);
       expect(item.width).toBeGreaterThan(0); expect(item.height).toBeLessThanOrEqual(1);
     });
-    expect(referencePoses).toHaveLength(202);
-    expect(selectablePoseCatalog.filter(item => item.category === '人物')).toHaveLength(202);
+    expect(referencePoses).toHaveLength(230);
+    const photoPoses = referencePoses.filter(item => item.redOnly && item.subject !== 'pet');
+    expect(photoPoses).toHaveLength(22);
+    expect(photoPoses.map(item => item.id)).toEqual(expect.arrayContaining([
+      'male-wall-shoulder', 'female-wall-shoulder', 'ref-photo-stairs-open',
+    ]));
+    expect(extraPoses.some(item => item.id === 'male-wall-shoulder' || item.id === 'female-wall-shoulder')).toBe(false);
     expect(selectablePoseCatalog.filter(item => item.category === '人物').map(item => item.id))
-      .toEqual(referencePoses.map(item => item.id));
+      .toEqual([...referencePoses.filter(item => item.subject !== 'pet'), ...environmentPoses].map(item => item.id));
     expect(selectablePoseCatalog.filter(item => item.category !== '人物'))
       .toEqual(poseCatalog.filter(item => item.category !== '人物'));
     expect(silhouetteCategories).not.toContain('通用人物');
-    expect(new Set(referencePoses.map(item => item.id)).size).toBe(202);
+    expect(new Set(referencePoses.map(item => item.id)).size).toBe(230);
     expect(poseCatalog.some(item => /^(male|female)-/.test(item.id))).toBe(true);
+  });
+  it('puts all six pet references in the pet picker', () => {
+    const pets = referencePoses.filter(item => item.subject === 'pet');
+    expect(pets).toHaveLength(6);
+    const choices = selectablePoseCatalog.filter(item => matchesSilhouetteCategory(item, '寵物'));
+    expect(choices.map(item => item.id)).toEqual(expect.arrayContaining(pets.map(item => item.id)));
+    expect(pets.every(item => item.redOnly)).toBe(true);
   });
   it('supports gender and couple pose subcategories', () => {
     expect(matchesSilhouettePoseGroup(poseCatalog.find(item => item.id === 'ref-male-a-05')!, '坐姿')).toBe(true);

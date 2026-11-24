@@ -3,6 +3,8 @@ import {getReferencePose} from './referencePoses';
 
 export const poseScenes = [
   {id: 'street', label: '街拍旅遊'},
+  {id: 'wall', label: '靠牆'},
+  {id: 'stairs', label: '樓梯'},
   {id: 'cafe', label: '咖啡廳'},
   {id: 'home', label: '室內居家'},
   {id: 'work', label: '職場形象'},
@@ -34,6 +36,8 @@ export function poseSceneIds(item: SilhouetteCatalogItem): PoseSceneId[] {
   if (water || /草帽|躺椅/.test(name)) scenes.push('beach');
   if (selfie) scenes.push('selfie');
   if (couple) scenes.push('date');
+  if (/靠牆/.test(name)) scenes.push('wall');
+  if (/樓梯/.test(name)) scenes.push('stairs');
   return scenes;
 }
 

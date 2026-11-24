@@ -10,7 +10,7 @@ export function assessPoseReadiness(target: SilhouetteCatalogItem, pose: Normali
   const face = /托臉|扶頷|思考|撥髮|扶後腦|摸頸|扶頸|抱頭|扶髮/.test(name);
   const folded = /抱臂|抱胸/.test(name);
   // A single skeleton cannot verify couples, props, fingers, or depth/side views.
-  if (reference?.subject === 'couple' || reference?.mirrorSelfie ||
+  if (reference?.subject === 'pet' || reference?.subject === 'couple' || reference?.mirrorSelfie ||
       (reference && reference.group !== '站姿') ||
       /側|回眸|回頭|交叉腿|抬膝|插袋|提包|拿|手機/.test(name) ||
       (!raised && !face && !folded && target.id !== 'full-body')) {

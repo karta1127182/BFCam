@@ -33,7 +33,7 @@ test('opens filters, preserves advanced outline controls, and dismisses panels w
     zoomLevel: 1, zoomOptions: [1, 2], zoomDisplayFactor: 1, onZoom: noop,
     template: getCompositionTemplate('centered'), smartCompositionActive: false,
     onCapture: jest.fn(), onVideoMode: jest.fn(), onDetectComposition: noop, onClearComposition: noop, onSelectTemplate: jest.fn(),
-    onSelectPose: jest.fn(), onApplyScenario: noop, onCycleOpacity: noop, onFlip: noop, onNextTemplate: noop,
+    onSelectPose: jest.fn(), onApplyScenario: noop, onApplyGuidedScene: jest.fn(), onCycleOpacity: noop, onFlip: noop, onNextTemplate: noop,
     onResetSilhouette: noop, onRotateSilhouette: noop, onToggleFlash: noop, onToggleGuide: noop,
     onToggleSilhouette: noop, onToggleSilhouetteLock: noop, onToggleFollowZoom: noop,
   };
@@ -103,6 +103,13 @@ test('opens filters, preserves advanced outline controls, and dismisses panels w
     expect(button('收合工具面板').props.accessibilityState.expanded).toBe(true);
     expect(button('濾鏡').props.accessibilityState.selected).toBe(false);
     expect(button('調整輪廓')).toBeDefined();
+    await act(async () => {button('情境').props.onPress();});
+    await act(async () => {button('樓梯').props.onPress();});
+    expect(props.onApplyGuidedScene).not.toHaveBeenCalled();
+    await act(async () => {button('女生樓梯扶欄').props.onPress();});
+    expect(props.onApplyGuidedScene).toHaveBeenCalledWith(expect.objectContaining({templateId: 'leading-lines'}), 'female-stair-step');
+    expect(props.onSelectTemplate).toHaveBeenCalledTimes(1);
+    expect(props.onSelectPose).not.toHaveBeenCalled();
     await act(async () => {renderer!.update(<CameraControls {...props} smartCompositionActive />);});
     expect(button('調整輪廓')).toBeUndefined();
   } finally {

@@ -13,6 +13,8 @@ test('scene suggestions keep water, office, mirror and couple contexts distinct'
   expect(poseSceneIds(find('ref-male-selfie-06'))).not.toContain('street');
   expect(poseSceneIds(find('ref-final-06'))).toContain('date');
   expect(poseSceneIds(find('food-plate'))).toEqual([]);
+  expect(filterPoseCatalog(selectablePoseCatalog, '男', '站姿', 'stairs')).toContain(find('male-stair-step'));
+  expect(filterPoseCatalog(selectablePoseCatalog, '女', '站姿', 'wall')).toContain(find('female-wall-shoulder'));
 });
 test('category, position and scene intersect without changing the original catalog', () => {
   const original = selectablePoseCatalog.map(p => p.id);

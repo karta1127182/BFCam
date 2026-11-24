@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {filters} from '../filters';
 import {scenarioPresets} from '../scenarios';
+import {guidedScenes} from '../scenarios/guidedCapture';
 import {poseCatalog} from '../silhouettes/catalog';
 import {compositionTemplates} from '../templates';
 import type {SilhouetteDefinition} from '../types/composition';
@@ -45,6 +46,8 @@ export function parseCameraPreferences(value: unknown): CameraPreferences {
   const selectedPose = poseCatalog.find(item => item.id === input.pose);
   const filter = filters.find(item => item.name === input.filterName);
   const scenario = scenarioPresets.find(item => item.id === input.activeScenarioId);
+  const guidedScene = guidedScenes.find(item => item.id === input.activeScenarioId
+    && item.templateId === template?.id && item.poseIds.some(id => id === selectedPose?.id));
   return {
     version: 1,
     templateId: template?.id ?? defaultCameraPreferences.templateId,
@@ -55,7 +58,7 @@ export function parseCameraPreferences(value: unknown): CameraPreferences {
     silhouetteVisible: typeof input.silhouetteVisible === 'boolean' ? input.silhouetteVisible : defaultCameraPreferences.silhouetteVisible,
     overlayOpacity: clamp(input.overlayOpacity, defaultCameraPreferences.overlayOpacity),
     followZoom: typeof input.followZoom === 'boolean' ? input.followZoom : defaultCameraPreferences.followZoom,
-    activeScenarioId: scenario?.id ?? null,
+    activeScenarioId: scenario?.id ?? guidedScene?.id ?? null,
   };
 }
 

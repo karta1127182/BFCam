@@ -9,10 +9,10 @@ import type {NormalizedPose} from '../../utils/poseDetection';
 import {colors, radii} from '../../theme';
 
 // Parent keys this component by pose and selection revision to reset all progress.
-export function PoseCoaching({pose, hint, notice, checkPose}: {pose: SilhouetteCatalogItem; hint?: string; notice?: string; checkPose?: () => Promise<NormalizedPose | null | undefined>}) {
+export function PoseCoaching({pose, hint, notice, checkPose, initiallyCollapsed = false}: {initiallyCollapsed?: boolean; pose: SilhouetteCatalogItem; hint?: string; notice?: string; checkPose?: () => Promise<NormalizedPose | null | undefined>}) {
   const steps = poseCoachingSteps(pose);
   const [step, setStep] = useState(0);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(initiallyCollapsed);
   const [tracking, setTracking] = useState(false);
   const [readiness, setReadiness] = useState<PoseReadiness | null>(null);
   useEffect(() => {

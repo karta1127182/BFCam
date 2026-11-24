@@ -4,9 +4,12 @@ import {AccessibilityInfo, ActivityIndicator, Animated, BackHandler, FlatList, S
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Aperture, Check, ChevronDown, Ellipsis, Grid3X3, Images, PersonStanding, SwitchCamera, Video, WandSparkles, Zap, ZapOff, type LucideIcon} from 'lucide-react-native';
 import {compositionCategories, templatesForCategory, type CompositionCategoryId} from '../../templates/categories';
+import {guidedScenes, guidedSceneOptions, guidedSceneTemplateIndex, type GuidedScene} from '../../scenarios/guidedCapture';
+import {compositionTemplates} from '../../templates';
 import {GuideRenderer} from '../GuideRenderer/GuideRenderer';
 import {PoseDrawing} from '../Silhouette/Silhouette';
 import {
+  poseCatalog,
   selectablePoseCatalog,
   silhouetteCategories,
   silhouettePoseGroups,
@@ -14,6 +17,7 @@ import {
   type SilhouettePoseGroup,
 } from '../../silhouettes/catalog';
 import {filterPoseCatalog, poseScenes, type PoseSceneId} from '../../silhouettes/poseScenes';
+import {CompositionPoseSuggestions} from '../RecommendationPanel/CompositionPoseSuggestions';
 import {FoodCompositionPicker} from '../FoodComposition/FoodCompositionPicker';
 import type {FoodAngle, FoodComposition} from '../../utils/foodComposition';
 import {filters} from '../../filters';
@@ -90,6 +94,7 @@ type Props = {
    */
   onClearComposition: () => void;
 
+  onApplyGuidedScene?: (scene: GuidedScene, pose: CompositionTemplate['silhouette']['variant']) => void;
   onSelectTemplate: (
     index: number,
   ) => void;
@@ -186,6 +191,7 @@ export function CameraControls(
   const [compositionCategory, setCompositionCategory] = useState<CompositionCategoryId>('all');
   const visibleTemplates = templatesForCategory(compositionCategory);
 
+  const [guidedScene, setGuidedScene] = useState<GuidedScene | null>(null);
   const [poseScene, setPoseScene] = useState<PoseSceneId | null>(null);
   const sceneFiltersVisible = ['全部', '男', '女', '多人'].includes(silhouetteCategory);
 
@@ -281,7 +287,7 @@ export function CameraControls(
         />
       )}
       {/* 上方提示 */}
-      {(canAdjustOutline || !!props.cameraError || !props.cameraReady) && <View
+      {(canAdjustOutline && !props.silhouetteLocked && props.silhouetteVisible || !!props.cameraError || !props.cameraReady) && <View
         pointerEvents={props.cameraError ? 'auto' : 'none'}
         style={[
           styles.hint,
@@ -297,11 +303,7 @@ export function CameraControls(
             ? `相機無法就緒：${props.cameraError}`
             : !props.cameraReady
               ? '相機準備中…'
-              : !props.silhouetteLocked &&
-                  props.silhouetteVisible
-                ? '調整輪廓：拖曳移動 · 雙指改變大小'
-                : props.template
-                    .description}
+              : '調整輪廓：拖曳移動 · 雙指改變大小'}
         </Text>
         {!!props.cameraError && props.onRetryCamera && (
           <Pressable accessibilityRole="button" disabled={props.isCapturing || props.isDetecting}
@@ -342,6 +344,26 @@ export function CameraControls(
             <Pressable accessibilityRole="button" accessibilityLabel="收合面板" onPress={() => setPanel(null)} hitSlop={8} style={styles.closePanel}><ChevronDown size={21} color={colors.textSecondary} /></Pressable>
           </View>
           <ScrollView style={{maxHeight: Math.max(120, Math.min(360, windowHeight * .38))}} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+        {panel === 'scenario' && props.onApplyGuidedScene && <>
+          <View style={styles.guidedSceneRow}>
+            {guidedScenes.map(scene => <React.Fragment key={scene.id}>
+              {button(scene.title, () => setGuidedScene(scene), guidedScene?.id === scene.id)}
+            </React.Fragment>)}
+          </View>
+          {guidedScene && <View style={styles.guidedSceneContent}>
+            <Text style={styles.catalogMeta}>{compositionTemplates[guidedSceneTemplateIndex(guidedScene)]?.name} · {guidedScene.hint}</Text>
+            <View style={styles.guidedSceneRow}>{guidedSceneOptions(guidedScene).map(pose =>
+              <Pressable key={pose.id} accessibilityRole="button" accessibilityLabel={pose.name}
+                style={styles.guidedPose} onPress={() => {
+                  props.onApplyGuidedScene?.(guidedScene, pose.id);
+                  setPanel(null);
+                }}>
+                <View style={styles.guidedPoseThumbnail}><PoseDrawing variant={pose.id} /></View>
+                <Text style={[styles.label, styles.guidedPoseLabel]} numberOfLines={2}>{pose.name}</Text>
+              </Pressable>)}
+            </View>
+          </View>}
+        </>}
         {/* 情境 */}
         {panel === 'scenario' && (
           <ScrollView
@@ -622,6 +644,7 @@ export function CameraControls(
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryTabs}>
               {compositionCategories.map(category => <Pressable key={category.id} accessibilityRole="tab" accessibilityLabel={category.label + '構圖分類'} accessibilityState={{selected: compositionCategory === category.id}} onPress={() => setCompositionCategory(category.id)} style={[styles.categoryTab, compositionCategory === category.id && styles.activeCategoryTab]}><Text style={[styles.categoryTabLabel, compositionCategory === category.id && styles.activeCategoryTabLabel]}>{category.label}</Text></Pressable>)}
             </ScrollView>
+            {(compositionCategory === 'wall' || compositionCategory === 'stairs') && <Text style={styles.catalogMeta}>{compositionCategory === 'wall' ? '牆面可以留白，讓人物靠畫面的一側。' : '沿著階梯或扶手帶出方向，並保留人物腳下空間。'}</Text>}
             <Text style={styles.catalogMeta}>{visibleTemplates.length} 款構圖 · 左右滑動選擇</Text>
           <ScrollView
             horizontal
@@ -696,11 +719,7 @@ export function CameraControls(
                         },
                       ]}>
                       <PoseDrawing
-                        variant={
-                          template
-                            .silhouette
-                            .variant
-                        }
+                        variant={props.template.silhouette.variant}
                       />
                     </View>
 
@@ -734,6 +753,9 @@ export function CameraControls(
               ),
             )}
           </ScrollView>
+            <Text style={styles.catalogMeta}>{props.template.description}</Text>
+            {!props.foodComposition &&
+              <CompositionPoseSuggestions templateId={props.template.id} onSelect={props.onSelectPose} />}
           </View>
         )}
 
@@ -819,6 +841,10 @@ export function CameraControls(
               </ScrollView>
             </View>}
             {(poseScene !== null || silhouettePoseGroup !== null) && <Pressable accessibilityRole="button" accessibilityLabel="清除姿勢篩選" onPress={clearPoseFilters} style={styles.clearPoseFilters}><Text style={styles.actionText}>清除姿勢篩選</Text></Pressable>}
+            {(poseScene === 'wall' || poseScene === 'stairs') && button('查看適合的構圖', () => {
+              setCompositionCategory(poseScene);
+              setPanel('composition');
+            })}
             {silhouetteCategory === '美食' && <FoodCompositionPicker value={props.foodComposition} detectedAngle={props.detectedFoodAngle} onChange={props.onFoodComposition} />}
             {silhouetteCategory !== '美食' && <Text style={styles.catalogMeta}>{visibleSilhouettes.length} 款姿勢 · 左右滑動選擇</Text>}
             {silhouetteCategory !== '美食' && <FlatList
@@ -1197,6 +1223,11 @@ const styles =
       elevation: 5,
     },
 
+    guidedSceneRow: {flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 6},
+    guidedSceneContent: {paddingBottom: 8},
+    guidedPose: {flex: 1, minWidth: 0, minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: 12, backgroundColor: colors.card},
+    guidedPoseThumbnail: {width: 24, height: 38},
+    guidedPoseLabel: {flex: 1},
     poseSceneTabs: {gap: 8, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 4},
     clearPoseFilters: {minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 20},
     actionText: {color: colors.primarySoft, fontSize: 12},
